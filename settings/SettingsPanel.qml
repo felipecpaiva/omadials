@@ -16,6 +16,13 @@ Item {
     property string omarchyPath: ""
     property bool opened: false
     property int page: 0
+    // Id of the control whose Edit sheet is open, or "".
+    property string editing: ""
+    // Id of the row whose Up and Down buttons show; rows are rebuilt on every change, so it lives here.
+    property string moving: ""
+    // Clearing first rebuilds the sheet, so nothing typed for one control carries over to the next.
+    function edit(id) { moving = ""; editing = ""; editing = id; }
+    onEditingChanged: if (!editing) focusRequested()
     property Component previewComponent: null
     signal focusRequested
     signal scrollResetRequested
@@ -23,7 +30,12 @@ Item {
     function open(payloadJson) {
         if (store)
             store.reload();
-        page = 0;
+        // Open on a page when asked: summon with {"page": 1} for Rings (0 Corner, 1 Rings, 2 Toggles, 3 Behavior, 4 About).
+        let request = {};
+        try { request = payloadJson ? JSON.parse(payloadJson) : {}; } catch (e) { request = {}; }
+        page = Number.isInteger(request.page) && request.page >= 0 && request.page <= 4 ? request.page : 0;
+        editing = "";
+        moving = "";
         opened = true;
         Qt.callLater(function () {
             settingsPanel.focusRequested();
@@ -68,5 +80,5 @@ Item {
         active: settingsPanel.opened && !!settingsPanel.registry && !!settingsPanel.store
         sourceComponent: SettingsResources { registry: settingsPanel.registry; store: settingsPanel.store }
     }
-    onPageChanged: scrollResetRequested()
+    onPageChanged: { editing = ""; moving = ""; scrollResetRequested(); }
 }

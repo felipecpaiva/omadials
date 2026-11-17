@@ -8,6 +8,7 @@ SettingsCard {
     required property var store
     property string selectedSource: "laptopBattery"
     property string selectedDevice: ""
+    property bool full: false
     title: "Add a display ring"
     required property var registry
     SettingsResources { id: devices; loadIcons: false; loadPens: true; registry: addReadout.registry; store: addReadout.store }
@@ -28,9 +29,10 @@ SettingsCard {
         onChanged: v => addReadout.selectedDevice = v
     }
     HelpText { theme: addReadout.theme; visible: addReadout.selectedSource === "penBattery" && !devices.penDevices.length; text: "No pen battery found on this machine. Connect your pen and reopen settings to check again." }
+    HelpText { theme: addReadout.theme; visible: addReadout.full; text: "Remove one first, or choose a larger size." }
     SettingsButton {
         theme: addReadout.theme; text: "Add display ring"
-        enabled: ["bluetoothBattery","penBattery"].indexOf(addReadout.selectedSource) < 0 || !!addReadout.selectedDevice
+        enabled: !addReadout.full && (["bluetoothBattery","penBattery"].indexOf(addReadout.selectedSource) < 0 || !!addReadout.selectedDevice)
         onClicked: {
             const cfg = addReadout.store.config;
             const id = "display" + Date.now();

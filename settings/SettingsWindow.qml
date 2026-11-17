@@ -9,6 +9,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: panelWindow
     required property var panelHost
+    readonly property bool wide: width >= 1000
     Connections {
         target: panelWindow.panelHost
         function onFocusRequested() {
@@ -45,7 +46,9 @@ PanelWindow {
         Item {
             id: panelContent; anchors.fill: parent; anchors.margins: 16; focus: true
             Keys.onEscapePressed: {
-                if (panelWindow.panelHost.page)
+                if (panelWindow.panelHost.editing)
+                    panelWindow.panelHost.editing = "";
+                else if (panelWindow.panelHost.page)
                     panelWindow.panelHost.page = 0;
                 else
                     panelWindow.panelHost.dismiss();
@@ -80,18 +83,25 @@ PanelWindow {
                     }
                     GridLayout {
                         Layout.fillWidth: true; Layout.fillHeight: true
-                        columns: panelWindow.width >= 1000 ? 2 : 1
-                        PreviewPane {
-                            Layout.row: 0; Layout.column: panelWindow.width >= 1000 ? 1 : 0
-                            Layout.preferredWidth: 300; Layout.fillWidth: panelWindow.width < 1000
+                        columns: panelWindow.wide ? 2 : 1
+                        ColumnLayout {
+                            Layout.row: 0; Layout.column: panelWindow.wide ? 1 : 0
+                            Layout.preferredWidth: 300; Layout.fillWidth: !panelWindow.wide; Layout.fillHeight: panelWindow.wide
                             Layout.alignment: Qt.AlignTop
-                            theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
-                            registry: panelWindow.panelHost.registry; fanComponent: panelWindow.panelHost.previewComponent
-                            onShowOnScreen: panelWindow.panelHost.showFanOnScreen()
+                            PreviewPane {
+                                Layout.fillWidth: true
+                                theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
+                                registry: panelWindow.panelHost.registry; fanComponent: panelWindow.panelHost.previewComponent
+                                highlightId: panelWindow.panelHost.editing
+                                onShowOnScreen: panelWindow.panelHost.showFanOnScreen()
+                                onEditRequested: (id, toggle) => { panelWindow.panelHost.page = toggle ? 2 : 1; panelWindow.panelHost.edit(id); }
+                            }
+                            // Side sheet under the preview drawing, so the highlight stays visible.
+                            Loader { Layout.fillWidth: true; Layout.fillHeight: panelWindow.wide; active: panelWindow.wide && !!panelWindow.panelHost.editing; sourceComponent: editSheetComponent }
                         }
                         Flickable {
                             id: pageScroll
-                            Layout.row: panelWindow.width >= 1000 ? 0 : 1; Layout.column: 0
+                            Layout.row: panelWindow.wide ? 0 : 1; Layout.column: 0
                             Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: 580
                             clip: true; contentWidth: width; contentHeight: pageColumn.implicitHeight
                             boundsBehavior: Flickable.StopAtBounds
@@ -107,37 +117,21 @@ PanelWindow {
                     Layout.fillWidth: true; theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
                 }
             }
+            // Bottom sheet when narrow.
+            Loader { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: parent.height * 0.55; z: 2; active: !panelWindow.wide && !!panelWindow.panelHost.editing; sourceComponent: editSheetComponent }
         }
     }
+    Component { id: cornerComponent; CornerPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store } }
+    Component { id: ringsComponent; ControlsPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry; host: panelWindow.panelHost } }
+    Component { id: togglesComponent; ControlsPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry; host: panelWindow.panelHost; togglesOnly: true } }
+    Component { id: behaviorComponent; BehaviorPage { registry: panelWindow.panelHost.registry; theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store } }
+    Component { id: aboutComponent; AboutPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry } }
     Component {
-        id: cornerComponent
-        CornerPage {
-            theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
-        }
-    }
-    Component {
-        id: ringsComponent
-        ControlsPage {
-            theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
-            registry: panelWindow.panelHost.registry
-        }
-    }
-    Component {
-        id: togglesComponent
-        ControlsPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry; togglesOnly: true }
-    }
-    Component {
-        id: behaviorComponent
-        BehaviorPage {
-            registry: panelWindow.panelHost.registry
-            theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
-        }
-    }
-    Component {
-        id: aboutComponent
-        AboutPage {
-            theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
-            registry: panelWindow.panelHost.registry
+        id: editSheetComponent
+        EditSheet {
+            theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry
+            controlId: panelWindow.panelHost.editing; toggle: panelWindow.panelHost.page === 2
+            onCloseRequested: panelWindow.panelHost.editing = ""
         }
     }
 }

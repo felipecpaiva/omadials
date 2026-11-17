@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
+import qs.Ui as Ui
 
 ColumnLayout {
     id: controlOptions
@@ -34,21 +35,33 @@ ColumnLayout {
             choices: controlOptions.catalogEntry[modelData === "tapAction" ? "tapActions" : "holdActions"] || controlOptions.fallbackActions
         }
     }
-    HelpText {
+    // Defaults store a style equal to the common one, so "common" compares values; the flag lets the switch turn off.
+    property bool customising: false
+    readonly property bool common: !entry.style || ["track","knob","thickness"].every(k => controlOptions.group === "readoutRings" && k === "knob" || controlOptions.entry.style[k] === controlOptions.store.config.ringStyle[k])
+    RowLayout {
         visible: controlOptions.group !== "toggles"
-        theme: controlOptions.theme
-        text: controlOptions.entry.style && ["track","knob","thickness"].some(k => !(controlOptions.group === "readoutRings" && k === "knob") && controlOptions.entry.style[k] !== controlOptions.store.config.ringStyle[k]) ? "Custom" : "Uses the common style"
-    }
-    SettingsButton {
-        visible: controlOptions.group !== "toggles" && !!controlOptions.entry.style
-        theme: controlOptions.theme; text: "Use the common style"
-        onClicked: {
-            let next = Object.assign({}, controlOptions.entry); delete next.style;
-            controlOptions.store.set(controlOptions.entryPath, next);
+        Layout.fillWidth: true
+        ColumnLayout {
+            Layout.fillWidth: true
+            Text { Layout.fillWidth: true; text: "Use the common style"; color: controlOptions.theme.text; font.family: controlOptions.theme.font }
+            HelpText { theme: controlOptions.theme; text: "Off: this ring gets its own track, knob and thickness." }
+        }
+        Ui.ToggleSwitch {
+            checked: controlOptions.common && !controlOptions.customising
+            foreground: controlOptions.theme.text; accent: controlOptions.theme.accent
+            Accessible.name: "Use the common style"
+            // checked still holds the old value here, as in SettingField.
+            onToggled: {
+                controlOptions.customising = checked;
+                if (checked) return;
+                let next = Object.assign({}, controlOptions.entry); delete next.style;
+                if (controlOptions.group === "readoutRings") next.style = {knob:"none"};  // display rings never draw a knob
+                controlOptions.store.set(controlOptions.entryPath, next);
+            }
         }
     }
     RingStyleFields {
-        visible: controlOptions.group !== "toggles"
+        visible: controlOptions.group !== "toggles" && (controlOptions.customising || !controlOptions.common)
         theme: controlOptions.theme; store: controlOptions.store
         stylePath: controlOptions.entryPath + ".style"; readout: controlOptions.group === "readoutRings"
     }

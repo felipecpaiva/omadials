@@ -1,24 +1,30 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
-import qs.Ui as Ui
-import Quickshell
+import "../views" as Views
 import "../logic/Gesture.js" as Gesture
 
+// One row of the Rings or Toggles edit list. In the corner: handle, icon, name, value, Edit, Remove.
+// Not in the corner: icon, name, Add. Removing only sets shown to false, so icon and style stay.
 ColumnLayout {
     id: controlRow
-    required property var control
+    required property var modelData
+    readonly property var control: modelData
     required property var registry
     required property var store
     required property var theme
+    required property var host
+    required property bool inCorner
+    property bool full: false
     property string placementGroup: ""
-    property bool expanded: false
+    readonly property bool moveShown: host.moving === controlKey
+    Component.onCompleted: if (moveShown && !host.editing) handle.forceActiveFocus()
     readonly property string controlKey: (control.controlId || control.id)
     readonly property string group: placementGroup || (control.kind === "readout" ? "readoutRings"
         : (control.placements || []).indexOf("ring") >= 0 ? "dials" : "toggles")
     readonly property int entryIndex: store.config[group].findIndex(function(e) { return e.id === controlRow.controlKey; })
-    readonly property string entryPath: group + "." + (entryIndex < 0 ? store.config[group].length : entryIndex)
     readonly property var catalogEntry: (registry.catalog || []).find(function(c) { return c.id === controlRow.controlKey; }) || ({})
+    readonly property string iconName: { const i = store.config.controls[controlKey]?.icon; return i && i !== "default" ? i : control.icon; }
     readonly property string availabilityText: {
         switch (control.availability) {
         case "probing": return "Checking";
@@ -32,6 +38,7 @@ ColumnLayout {
         try { return JSON.parse(store.rawText)[key] || store.config[key]; }
         catch (e) { return store.config[key]; }
     }
+    function isShown(id) { return !!store.config.controls[id]?.shown; }
     function showControl(shown) {
         let changes = [{path:"controls." + controlKey + ".shown", value:shown}];
         if (shown && entryIndex < 0) {
@@ -46,20 +53,32 @@ ColumnLayout {
                 if (group === "readoutRings") { entry.source = "laptopBattery"; entry.style = {knob:"none"}; }
             }
             entries.push(entry); changes.push({path:group,value:entries});
+        } else if (shown) {
+            // A control added back goes to the end of the corner order, like a phone's control center editor.
+            if (group === "toggles") {
+                let entries = rawList(group).slice();
+                entries.push(entries.splice(entryIndex, 1)[0]); changes.push({path:group,value:entries});
+            } else changes.push({path:group + "." + entryIndex + ".order",
+                value:store.config.dials.concat(store.config.readoutRings).reduce(function(n,e) { return Math.max(n,e.order + 1); },0)});
         }
+        if (!shown && host.editing === controlKey) host.editing = "";
         store.setMany(changes);
     }
+    // Moves past controls that are not in the corner, so every press visibly moves the row.
     function move(delta) {
         if (entryIndex < 0) return;
         if (group === "toggles") {
             let entries = rawList(group).slice(), target = entryIndex + delta;
+            while (target >= 0 && target < entries.length && !isShown(entries[target].id)) target += delta;
             if (target < 0 || target >= entries.length) return;
             let tmp = entries[target]; entries[target] = entries[entryIndex]; entries[entryIndex] = tmp;
             store.set(group, entries); return;
         }
         let rings = [];
         ["dials","readoutRings"].forEach(function(g) {
-            controlRow.store.config[g].forEach(function(e,i) { rings.push({g:g,i:i,order:e.order,id:e.id}); });
+            controlRow.store.config[g].forEach(function(e,i) {
+                if (e.id === controlRow.controlKey || controlRow.isShown(e.id)) rings.push({g:g,i:i,order:e.order,id:e.id});
+            });
         });
         rings.sort(function(a,b) { return a.order-b.order; });
         let at = rings.findIndex(function(e) { return e.id === controlRow.controlKey; }), to = at + delta;
@@ -70,48 +89,52 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         Item {
-            Layout.preferredWidth: 24; Layout.preferredHeight: 40
-            Text { anchors.centerIn: parent; text: "⠿"; color: controlRow.theme.secondary; font.family: controlRow.theme.font }
+            id: handle
+            visible: controlRow.inCorner
+            Layout.preferredWidth: 24; Layout.preferredHeight: Gesture.TARGET
+            activeFocusOnTab: true
+            Accessible.role: Accessible.Button
+            Accessible.name: "Move " + controlRow.control.label + " with the up and down keys"
+            Keys.onUpPressed: controlRow.move(-1)
+            Keys.onDownPressed: controlRow.move(1)
+            onActiveFocusChanged: if (activeFocus) controlRow.host.moving = controlRow.controlKey
+            Text { anchors.centerIn: parent; text: "\u{F01DD}"; color: handle.activeFocus ? controlRow.theme.accent : controlRow.theme.secondary; font.family: controlRow.theme.font }
             MouseArea {
                 anchors.fill: parent
                 property real pressedY: 0
-                Accessible.name: "Drag to reorder " + controlRow.control.label
                 onPressed: mouse => pressedY = mouse.y
+                preventStealing: true
+                onPressAndHold: controlRow.host.moving = controlRow.moveShown ? "" : controlRow.controlKey
                 onReleased: mouse => { if (Math.abs(mouse.y-pressedY) >= Gesture.DRAG) controlRow.move(mouse.y > pressedY ? 1 : -1) }
             }
         }
-        Image { Layout.preferredWidth: 22; Layout.preferredHeight: 22; source: Quickshell.iconPath(controlRow.store.config.controls[controlRow.controlKey]?.icon === "default" ? controlRow.control.icon : controlRow.store.config.controls[controlRow.controlKey]?.icon || controlRow.control.icon) }
-        SettingsButton { theme: controlRow.theme; text: "Up"; onClicked: controlRow.move(-1) }
-        SettingsButton { theme: controlRow.theme; text: "Down"; onClicked: controlRow.move(1) }
-        SettingsButton {
-            Layout.fillWidth: true
-            theme: controlRow.theme; text: (controlRow.control.valueText ? controlRow.control.label + "  " + controlRow.control.valueText : controlRow.control.label) + (controlRow.expanded ? " ▴" : " ▾")
-            onClicked: controlRow.expanded = !controlRow.expanded
-        }
-        Ui.ToggleSwitch {
-            checked: controlRow.store.config.controls[controlRow.controlKey]?.shown || false
-            foreground: controlRow.theme.text; accent: controlRow.theme.accent
-            Accessible.name: "Show " + controlRow.control.label
-            onToggled: controlRow.showControl(!checked)
-        }
-    }
-    Text {
-        visible: text.length > 0; Layout.fillWidth: true
-        text: controlRow.availabilityText
-        textFormat: Text.PlainText; wrapMode: Text.WordWrap
-        color: controlRow.theme.secondary; font.family: controlRow.theme.font
-    }
-    ColumnLayout {
-        visible: controlRow.expanded
-        Layout.fillWidth: true
-        IconPicker { theme: controlRow.theme; store: controlRow.store; path: "controls." + controlRow.controlKey + ".icon" }
-        Loader {
-            Layout.fillWidth: true
-            active: controlRow.expanded && (controlRow.entryIndex >= 0 || controlRow.group === "readoutRings")
-            sourceComponent: ControlOptions {
-                theme: controlRow.theme; store: controlRow.store; control: controlRow.control
-                entryPath: controlRow.entryPath; group: controlRow.group; catalogEntry: controlRow.catalogEntry
+        Views.ControlIcon { Layout.preferredWidth: 22; Layout.preferredHeight: 22; theme: controlRow.theme; name: controlRow.iconName }
+        Text { Layout.fillWidth: true; text: controlRow.control.label; elide: Text.ElideRight; color: controlRow.theme.text; font.family: controlRow.theme.font }
+        Text { visible: controlRow.inCorner; text: controlRow.control.valueText || ""; color: controlRow.theme.secondary; font.family: controlRow.theme.font }
+        Repeater {
+            model: controlRow.inCorner && controlRow.moveShown ? [{text:"Up",delta:-1},{text:"Down",delta:1}] : []
+            SettingsButton {
+                required property var modelData
+                theme: controlRow.theme; text: modelData.text
+                onClicked: controlRow.move(modelData.delta)
             }
         }
+        RowIconButton {
+            visible: controlRow.inCorner
+            theme: controlRow.theme; iconText: "\u{F03EB}"; tooltipText: "Edit " + controlRow.control.label
+            selected: controlRow.host.editing === controlRow.controlKey
+            onClicked: controlRow.host.edit(controlRow.controlKey)
+        }
+        RowIconButton {
+            visible: controlRow.inCorner; warning: true
+            theme: controlRow.theme; iconText: "\u{F0377}"; tooltipText: "Remove " + controlRow.control.label
+            onClicked: controlRow.showControl(false)
+        }
+        RowIconButton {
+            visible: !controlRow.inCorner; enabled: !controlRow.full
+            theme: controlRow.theme; iconText: "\u{F0419}"; tooltipText: "Add " + controlRow.control.label
+            onClicked: controlRow.showControl(true)
+        }
     }
+    HelpText { visible: text.length > 0; theme: controlRow.theme; text: controlRow.availabilityText }
 }
