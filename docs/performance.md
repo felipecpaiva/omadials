@@ -36,3 +36,16 @@ about 40 s measures start-up probes, not use.
 1. Power profile from Quickshell's UPower PowerProfiles service, airplane from `/sys/class/rfkill/*/soft`, do not
    disturb from the notifications state file, night light from its state: no process on open.
 2. Measure memory per part (views, controls, settings) and load details and rarely used controls only when needed.
+
+## Settings (2026-11-17)
+
+**Panel freeze found and fixed.** Opening the shell panel took 1 to 5 s and blocked the whole shell (other commands
+answered "omarchy-shell is not responding"). Cause: on open it listed every installed icon file (about 33 000 on
+the Z13), then built an icon dropdown holding that whole list for every control, on the shell's main thread. Fix: no
+icon scan; pickers offer "Default" plus the built-in glyphs and accept any typed icon name, resolved when drawn.
+After the fix, five opens: visible in 75 to 111 ms, the shell answering other commands in 10 to 40 ms.
+
+**Standalone app**, three cold starts: window in 266 to 272 ms, 179 MB resident, 0 to 1 % CPU when idle.
+
+Rule kept for the future: never build a list from the file system or a service on the shell thread without a
+bound; anything that can be large is searched on demand.
