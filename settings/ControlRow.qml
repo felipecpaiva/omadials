@@ -1,6 +1,9 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
+import qs.Ui as Ui
+import Quickshell
+import "../logic/Gesture.js" as Gesture
 
 ColumnLayout {
     id: controlRow
@@ -8,10 +11,11 @@ ColumnLayout {
     required property var registry
     required property var store
     required property var theme
+    property string placementGroup: ""
     property bool expanded: false
     readonly property string controlKey: (control.controlId || control.id)
-    readonly property string group: control.kind === "readout" ? "readoutRings"
-        : (control.placements || []).indexOf("ring") >= 0 ? "dials" : "toggles"
+    readonly property string group: placementGroup || (control.kind === "readout" ? "readoutRings"
+        : (control.placements || []).indexOf("ring") >= 0 ? "dials" : "toggles")
     readonly property int entryIndex: store.config[group].findIndex(function(e) { return e.id === controlRow.controlKey; })
     readonly property string entryPath: group + "." + (entryIndex < 0 ? store.config[group].length : entryIndex)
     readonly property var catalogEntry: (registry.catalog || []).find(function(c) { return c.id === controlRow.controlKey; }) || ({})
@@ -65,17 +69,30 @@ ColumnLayout {
     }
     RowLayout {
         Layout.fillWidth: true
+        Item {
+            Layout.preferredWidth: 24; Layout.preferredHeight: 40
+            Text { anchors.centerIn: parent; text: "⠿"; color: controlRow.theme.secondary; font.family: controlRow.theme.font }
+            MouseArea {
+                anchors.fill: parent
+                property real pressedY: 0
+                Accessible.name: "Drag to reorder " + controlRow.control.label
+                onPressed: mouse => pressedY = mouse.y
+                onReleased: mouse => { if (Math.abs(mouse.y-pressedY) >= Gesture.DRAG) controlRow.move(mouse.y > pressedY ? 1 : -1) }
+            }
+        }
+        Image { Layout.preferredWidth: 22; Layout.preferredHeight: 22; source: Quickshell.iconPath(controlRow.store.config.controls[controlRow.controlKey]?.icon === "default" ? controlRow.control.icon : controlRow.store.config.controls[controlRow.controlKey]?.icon || controlRow.control.icon) }
         SettingsButton { theme: controlRow.theme; text: "Up"; onClicked: controlRow.move(-1) }
         SettingsButton { theme: controlRow.theme; text: "Down"; onClicked: controlRow.move(1) }
         SettingsButton {
             Layout.fillWidth: true
-            theme: controlRow.theme; text: controlRow.control.label + (controlRow.expanded ? " ▴" : " ▾")
+            theme: controlRow.theme; text: (controlRow.control.valueText ? controlRow.control.label + "  " + controlRow.control.valueText : controlRow.control.label) + (controlRow.expanded ? " ▴" : " ▾")
             onClicked: controlRow.expanded = !controlRow.expanded
         }
-        SettingsButton {
-            theme: controlRow.theme
-            text: controlRow.store.config.controls[controlRow.controlKey]?.shown ? "Shown" : "Hidden"
-            onClicked: controlRow.showControl(!controlRow.store.config.controls[controlRow.controlKey]?.shown)
+        Ui.ToggleSwitch {
+            checked: controlRow.store.config.controls[controlRow.controlKey]?.shown || false
+            foreground: controlRow.theme.text; accent: controlRow.theme.accent
+            Accessible.name: "Show " + controlRow.control.label
+            onToggled: controlRow.showControl(!checked)
         }
     }
     Text {
@@ -87,11 +104,7 @@ ColumnLayout {
     ColumnLayout {
         visible: controlRow.expanded
         Layout.fillWidth: true
-        SettingField {
-            theme: controlRow.theme; store: controlRow.store
-            path: "controls." + controlRow.controlKey + ".icon"; label: "Icon theme name"
-            kind: "editableChoice"; choices: ["default"].concat(controlRow.store.validationResources.icons || [])
-        }
+        IconPicker { theme: controlRow.theme; store: controlRow.store; path: "controls." + controlRow.controlKey + ".icon" }
         Loader {
             Layout.fillWidth: true
             active: controlRow.expanded && (controlRow.entryIndex >= 0 || controlRow.group === "readoutRings")

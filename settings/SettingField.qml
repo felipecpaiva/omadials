@@ -1,10 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
-import qs.Ui
+import qs.Ui as Ui
 import "../logic/Labels.js" as Labels
-
 RowLayout {
     id: field
     required property var theme
@@ -12,73 +10,52 @@ RowLayout {
     required property string path
     required property string label
     property var choices: []
-    property string kind: "text"
+    property var choiceLabels: []
+    property string kind: "choice"
     property string hint: ""
+    property real minimum: 0
+    property real maximum: 25
+    property bool inverted: false
     readonly property var current: store.value(path)
     Layout.fillWidth: true
-    Layout.minimumHeight: 48
+    Layout.minimumHeight: 52
     spacing: 12
-    Text {
-        Layout.preferredWidth: 150
+    ColumnLayout {
         Layout.fillWidth: true
-        text: field.label
-        textFormat: Text.PlainText
-        wrapMode: Text.WordWrap
-        color: field.theme.text
-        font.family: field.theme.font
+        Text { Layout.fillWidth: true; text: field.label; wrapMode: Text.WordWrap; color: field.theme.text; font.family: field.theme.font }
+        HelpText { theme: field.theme; text: field.hint; visible: text.length > 0 }
     }
-    CheckBox {
+    Ui.ToggleSwitch {
         visible: field.kind === "bool"
-        checked: field.current === true
+        checked: field.inverted ? !field.current : field.current === true
+        foreground: field.theme.text; accent: field.theme.accent
         Accessible.name: field.label
-        onClicked: field.store.set(field.path, checked)
-        palette.windowText: field.theme.text
-        palette.highlight: field.theme.accent
-        palette.base: field.theme.surface
-        palette.button: field.theme.off
+        activeFocusOnTab: true
+        function apply() { field.store.set(field.path, field.inverted ? checked : !checked) }
+        onToggled: apply()
+        Keys.onSpacePressed: apply()
     }
-    // Fixed choices use the stock themed dropdown and show words, not config keys.
-    Dropdown {
-        visible: field.kind === "choice"
-        Layout.preferredWidth: 175
+    Ui.Dropdown {
+        visible: field.kind === "choice" || field.kind === "editableChoice"
+        Layout.preferredWidth: 185
         showLabel: false
-        options: Labels.options(field.choices)
+        options: field.choices.map((v, i) => ({value:String(v), label:field.choiceLabels[i] || Labels.label(v)}))
         value: String(field.current ?? "")
         foreground: field.theme.text; background: field.theme.surface; accent: field.theme.accent; fontFamily: field.theme.font
-        onChanged: (v) => { const i = field.choices.map(String).indexOf(v); if (i >= 0) field.store.set(field.path, field.choices[i]) }
-    }
-    ComboBox {
-        visible: field.kind === "editableChoice"
-        editable: true
-        Layout.preferredWidth: 175
-        model: field.choices
-        currentIndex: field.choices.indexOf(field.current)
         Accessible.name: field.label
-        onActivated: field.store.set(field.path, field.choices[currentIndex])
-        onAccepted: if (editable) field.store.set(field.path, editText)
-        palette.buttonText: field.theme.text
-        palette.text: field.theme.text
-        palette.button: field.theme.off
-        palette.base: field.theme.surface
-        palette.window: field.theme.surface
-        palette.highlight: field.theme.accent
-        palette.highlightedText: field.theme.ink
-        font.family: field.theme.font
+        onChanged: v => { const i = field.choices.map(String).indexOf(v); if (i >= 0) field.store.set(field.path, field.choices[i]) }
     }
-    TextField {
-        visible: field.kind === "text" || field.kind === "number" || field.kind === "list"
-        Layout.preferredWidth: 175
-        text: field.kind === "list" ? (field.current || []).join(", ") : String(field.current ?? "")
-        placeholderText: field.hint
-        Accessible.name: field.label
-        color: field.theme.text
-        font.family: field.theme.font
-        selectByMouse: true
-        background: Rectangle { color: field.theme.off; border.color: field.theme.edge }
-        onEditingFinished: {
-            let v = field.kind === "number" ? Number(text) : field.kind === "list"
-                ? text.split(",").map(function(s) { return s.trim(); }).filter(function(s) { return s.length; }) : text;
-            field.store.set(field.path, v);
+    ColumnLayout {
+        visible: field.kind === "number"
+        Layout.preferredWidth: 170
+        HelpText { theme: field.theme; text: String(field.current ?? field.minimum) }
+        Ui.PanelSlider {
+            Layout.fillWidth: true
+            minimum: field.minimum; maximum: field.maximum; integer: true; step: 1
+            value: Number(field.current ?? field.minimum)
+            trackColor: field.theme.track; fillColor: field.theme.accent; knobColor: field.theme.text; tickColor: field.theme.surface
+            Accessible.name: field.label
+            onReleased: v => field.store.set(field.path, Math.round(v))
         }
     }
 }

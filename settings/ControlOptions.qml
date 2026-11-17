@@ -27,21 +27,30 @@ ColumnLayout {
             required property string modelData
             theme: controlOptions.theme; store: controlOptions.store
             path: controlOptions.entryPath + "." + modelData
-            label: modelData === "tapAction" ? "Tap action" : "Hold action"
+            label: modelData === "tapAction" ? "When tapped" : "When held"
             kind: "choice"
+            choiceLabels: choices.map(v => ({switchRadio:"Switch on or off",switchPower:"Switch on or off",switch:"Switch on or off",quickDetail:"Open the quick list",fullWindow:"Open the full window",nextStep:"Go to the next level",togglePair:"Switch light or dark"})[v] || v)
+            hint: "Choose what this gesture does."
             choices: controlOptions.catalogEntry[modelData === "tapAction" ? "tapActions" : "holdActions"] || controlOptions.fallbackActions
         }
     }
-    Repeater {
-        model: controlOptions.group !== "toggles" && controlOptions.entry.id ? ["track","knob","thickness"] : []
-        SettingField {
-            required property string modelData
-            theme: controlOptions.theme; store: controlOptions.store
-            path: controlOptions.entryPath + ".style." + modelData; label: "Ring " + modelData
-            kind: "choice"
-            choices: modelData === "track" ? ["solid","dashed","dotted","segmented"] : modelData === "knob"
-                ? (controlOptions.group === "readoutRings" ? ["none"] : ["round","bar","none"]) : ["thin","normal","bold"]
+    HelpText {
+        visible: controlOptions.group !== "toggles"
+        theme: controlOptions.theme
+        text: controlOptions.entry.style && ["track","knob","thickness"].some(k => !(controlOptions.group === "readoutRings" && k === "knob") && controlOptions.entry.style[k] !== controlOptions.store.config.ringStyle[k]) ? "Custom" : "Uses the common style"
+    }
+    SettingsButton {
+        visible: controlOptions.group !== "toggles" && !!controlOptions.entry.style
+        theme: controlOptions.theme; text: "Use the common style"
+        onClicked: {
+            let next = Object.assign({}, controlOptions.entry); delete next.style;
+            controlOptions.store.set(controlOptions.entryPath, next);
         }
+    }
+    RingStyleFields {
+        visible: controlOptions.group !== "toggles"
+        theme: controlOptions.theme; store: controlOptions.store
+        stylePath: controlOptions.entryPath + ".style"; readout: controlOptions.group === "readoutRings"
     }
     ReadoutSourceRow {
         visible: controlOptions.group === "readoutRings"
@@ -49,13 +58,13 @@ ColumnLayout {
         control: controlOptions.control; entryPath: controlOptions.entryPath
     }
     SettingField {
-        visible: controlOptions.group === "dials"
+        visible: controlOptions.group === "dials" && !!controlOptions.catalogEntry.options?.wheelStep
         theme: controlOptions.theme; store: controlOptions.store
-        path: "options." + (controlOptions.control.controlId || controlOptions.control.id) + ".wheelStep"; label: "Wheel step (%)"; kind: "number"
+        path: "options." + (controlOptions.control.controlId || controlOptions.control.id) + ".wheelStep"; label: "Wheel step"; hint: "Percentage points per wheel notch."; minimum: 1; kind: "number"
     }
     SettingField {
         visible: (controlOptions.control.controlId || controlOptions.control.id) === "brightness"
         theme: controlOptions.theme; store: controlOptions.store
-        path: "options.brightness.monitor"; label: "Brightness monitor"; hint: "auto"
+        path: "options.brightness.monitor"; label: "Brightness monitor"; choices: ["auto"]
     }
 }

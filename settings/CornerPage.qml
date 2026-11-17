@@ -1,41 +1,42 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
-
+import Quickshell
 ColumnLayout {
     id: cornerPage
     required property var store
     required property var theme
-    spacing: 12
-    Repeater {
-        model: [
-            {p:"corner", l:"Corner", c:["top-left","top-right","bottom-left","bottom-right"]},
-            {p:"size", l:"Size", c:["S","M","L"]},
-            {p:"tabStyle", l:"Corner tab", c:["rings2knob","rings3","rings3knob"]},
-            {p:"cornerIcon.mode", l:"Icon mode", c:["always","onApproach","never"]},
-            {p:"cornerIcon.source", l:"Corner icon", c:[]},
-            {p:"cornerIcon.aboveWindows", l:"Above windows", k:"bool"},
-            {p:"outputs.mode", l:"Trigger outputs", c:["all","focused","named"]},
-            {p:"outputs.names", l:"Output names (comma separated)", k:"list"},
-            {p:"trigger.pushDelayMs", l:"Pointer push delay (ms)", k:"number"},
-            {p:"trigger.tapZone", l:"Tap zone", k:"bool"}
-        ]
-        SettingField {
-            required property var modelData
-            theme: cornerPage.theme; store: cornerPage.store
-            path: modelData.p; label: modelData.l
-            choices: modelData.p === "cornerIcon.source" ? ["default"].concat(cornerPage.store.validationResources.icons || []) : modelData.c || []
-            kind: modelData.p === "cornerIcon.source" ? "editableChoice" : modelData.k || (choices.length ? "choice" : "text")
+    property QtObject screenModeStore: QtObject {
+        function value(path) { return cornerPage.store.value(path) }
+        function set(path, value) {
+            if (value === "named" && !cornerPage.store.config.outputs.names.length && Quickshell.screens.length)
+                return cornerPage.store.setMany([{path:path,value:value},{path:"outputs.names",value:[Quickshell.screens[0].name]}]);
+            return cornerPage.store.set(path,value);
         }
     }
-    Text {
-        Layout.fillWidth: true
-        text: "S fits 2 rings, M fits 3, L fits 4. The corner is capped at 45% of the shorter screen side; fewer controls may fit. Hide a ring before choosing a smaller size. The tap zone works in every icon mode when enabled."
-        textFormat: Text.PlainText; wrapMode: Text.WordWrap
-        color: cornerPage.theme.secondary; font.family: cornerPage.theme.font
+    spacing: 16
+    SettingsCard {
+        theme: cornerPage.theme; title: "Where"
+        PictureChoices { theme: cornerPage.theme; store: cornerPage.store; path: "corner"; label: "Corner"; choices: ["top-left","top-right","bottom-left","bottom-right"]; pictures: ["◜","◝","◟","◞"] }
+        SettingField { theme: cornerPage.theme; store: cornerPage.screenModeStore; path: "outputs.mode"; label: "Screens"; hint: "Choose where the corner appears."; choices: ["all","focused","named"]; choiceLabels: ["All screens","Focused screen","Choose screens"] }
+        Repeater {
+            model: cornerPage.store.config.outputs.mode === "named" ? Quickshell.screens : []
+            ScreenChoice { required property var modelData; theme: cornerPage.theme; store: cornerPage.store; screenName: modelData.name }
+        }
     }
-    SettingsButton {
-        theme: cornerPage.theme; text: "Reset Corner"
-        onClicked: cornerPage.store.reset(["corner","size","tabStyle","cornerIcon","outputs","trigger"])
+    SettingsCard {
+        theme: cornerPage.theme; title: "Size"
+        SizeChoices { theme: cornerPage.theme; store: cornerPage.store }
+    }
+    SettingsCard {
+        theme: cornerPage.theme; title: "Corner tab"
+        PictureChoices { theme: cornerPage.theme; store: cornerPage.store; path: "tabStyle"; label: "Style"; choices: ["rings2knob","rings3","rings3knob"]; pictures: ["◔ ◎","◎ ◎ ◎","◔ ◎ ◎"] }
+        IconPicker { theme: cornerPage.theme; store: cornerPage.store; path: "cornerIcon.source"; label: "Your own icon" }
+        SettingField { theme: cornerPage.theme; store: cornerPage.store; path: "cornerIcon.mode"; label: "Show the tab"; hint: "The corner can open even when the tab is hidden."; choices: ["always","onApproach","never"]; choiceLabels: ["Always","When the pointer is near","Never"] }
+        SettingField { theme: cornerPage.theme; store: cornerPage.store; path: "cornerIcon.aboveWindows"; label: "Above windows"; hint: "Off: the tab hides behind windows; the corner still opens"; kind: "bool" }
+    }
+    SettingsCard {
+        theme: cornerPage.theme; title: "Opening"
+        OpeningSettings { theme: cornerPage.theme; store: cornerPage.store }
     }
 }

@@ -54,48 +54,53 @@ PanelWindow {
                 anchors.fill: parent
                 RowLayout {
                     Text {
-                        Layout.fillWidth: true; text: "omadials Settings"; color: panelWindow.panelHost.theme.text; font.family: panelWindow.panelHost.theme.font
+                        Layout.fillWidth: true; text: "omadials settings"; color: panelWindow.panelHost.theme.text; font.family: panelWindow.panelHost.theme.font
                     }
-                    SettingsButton {
-                    theme: panelWindow.panelHost.theme; text: "Show on screen"
-                    onClicked: panelWindow.panelHost.showFanOnScreen()
-                }
                 SettingsButton {
                         theme: panelWindow.panelHost.theme; text: "Close"
                         onClicked: panelWindow.panelHost.dismiss()
                     }
                 }
                 RowLayout {
-                    Repeater {
-                        model: ["Corner", "Controls", "Behavior", "About"]
-                        SettingsButton {
-                            required property string modelData
-                            required property int index
-                            theme: panelWindow.panelHost.theme; text: modelData
-                            onClicked: panelWindow.panelHost.page = index
-                        }
-                    }
-                }
-                RowLayout {
                     Layout.fillWidth: true; Layout.fillHeight: true
-                    Flickable {
-                        id: pageScroll; Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: 650; clip: true; contentWidth: width
-                        contentHeight: pageColumn.implicitHeight; boundsBehavior: Flickable.StopAtBounds
-                        ColumnLayout {
-                            id: pageColumn; width: pageScroll.width; spacing: 16
-                            ProblemsBanner {
-                                Layout.fillWidth: true; theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry
-                            }
-                            Loader {
+                    ColumnLayout {
+                        Layout.alignment: Qt.AlignTop
+                        Layout.preferredWidth: 110
+                        Repeater {
+                            model: ["Corner", "Rings", "Toggles", "Behavior", "About"]
+                            SettingsButton {
+                                required property string modelData
+                                required property int index
                                 Layout.fillWidth: true
-                                sourceComponent: [cornerComponent, controlsComponent, behaviorComponent, aboutComponent][panelWindow.panelHost.page]
+                                theme: panelWindow.panelHost.theme; text: modelData
+                                selected: panelWindow.panelHost.page === index
+                                onClicked: panelWindow.panelHost.page = index
                             }
                         }
                     }
-                    PreviewPane {
-                        Layout.preferredWidth: 300; Layout.alignment: Qt.AlignTop; visible: panelWindow.width >= 850; theme: panelWindow.panelHost.theme
-                        store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry; fanComponent: panelWindow.panelHost.previewComponent
-                        onShowOnScreen: panelWindow.panelHost.showFanOnScreen()
+                    GridLayout {
+                        Layout.fillWidth: true; Layout.fillHeight: true
+                        columns: panelWindow.width >= 1000 ? 2 : 1
+                        PreviewPane {
+                            Layout.row: 0; Layout.column: panelWindow.width >= 1000 ? 1 : 0
+                            Layout.preferredWidth: 300; Layout.fillWidth: panelWindow.width < 1000
+                            Layout.alignment: Qt.AlignTop
+                            theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
+                            registry: panelWindow.panelHost.registry; fanComponent: panelWindow.panelHost.previewComponent
+                            onShowOnScreen: panelWindow.panelHost.showFanOnScreen()
+                        }
+                        Flickable {
+                            id: pageScroll
+                            Layout.row: panelWindow.width >= 1000 ? 0 : 1; Layout.column: 0
+                            Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: 580
+                            clip: true; contentWidth: width; contentHeight: pageColumn.implicitHeight
+                            boundsBehavior: Flickable.StopAtBounds
+                            ColumnLayout {
+                                id: pageColumn; width: pageScroll.width; spacing: 16
+                                ProblemsBanner { Layout.fillWidth: true; theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry; page: panelWindow.panelHost.page }
+                                Loader { Layout.fillWidth: true; sourceComponent: [cornerComponent,ringsComponent,togglesComponent,behaviorComponent,aboutComponent][panelWindow.panelHost.page] }
+                            }
+                        }
                     }
                 }
                 UndoBar {
@@ -111,15 +116,20 @@ PanelWindow {
         }
     }
     Component {
-        id: controlsComponent
+        id: ringsComponent
         ControlsPage {
             theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
             registry: panelWindow.panelHost.registry
         }
     }
     Component {
+        id: togglesComponent
+        ControlsPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry; togglesOnly: true }
+    }
+    Component {
         id: behaviorComponent
         BehaviorPage {
+            registry: panelWindow.panelHost.registry
             theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
         }
     }
@@ -127,6 +137,7 @@ PanelWindow {
         id: aboutComponent
         AboutPage {
             theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store
+            registry: panelWindow.panelHost.registry
         }
     }
 }

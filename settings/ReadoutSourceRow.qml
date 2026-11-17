@@ -1,8 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
-
+import Quickshell.Bluetooth
+import qs.Ui as Ui
 ColumnLayout {
     id: sourceRow
     required property var theme
@@ -10,52 +10,15 @@ ColumnLayout {
     required property var control
     required property string entryPath
     readonly property var entry: store.value(entryPath) || ({})
-    property string selectedSource: entry.source || (["bluetoothBattery","wifiSignal","laptopBattery","penBattery"].indexOf(control.controlId || control.id) >= 0 ? (control.controlId || control.id) : "laptopBattery")
-    property string identity: entry.deviceAddress || entry.devicePath || entry.interface || ""
-    readonly property string deviceKey: selectedSource === "bluetoothBattery" ? "deviceAddress"
-        : selectedSource === "penBattery" ? "devicePath" : "interface"
-    function apply() {
-        let next;
-        try { next = JSON.parse(JSON.stringify(entryPath.split(".").reduce(function(a,k) { return a[k]; }, JSON.parse(store.rawText)))); }
-        catch (e) { next = JSON.parse(JSON.stringify(entry)); }
-        next.id = next.id || control.controlId || control.id;
-        if (next.order === undefined) next.order = store.config.dials.concat(store.config.readoutRings)
-            .reduce(function(n,e) { return Math.max(n,e.order + 1); },0);
-        next.source = selectedSource;
-        delete next.deviceAddress; delete next.devicePath; delete next.interface;
-        if (selectedSource !== "laptopBattery") next[deviceKey] = identity || (deviceKey === "interface" ? "auto" : "");
-        next.style = Object.assign({}, next.style || {}, {knob:"none"});
-        store.set(entryPath, next);
-    }
-    RowLayout {
-        Text { text: "Readout source"; color: sourceRow.theme.text; font.family: sourceRow.theme.font }
-        ComboBox {
-            model: ["bluetoothBattery","wifiSignal","laptopBattery","penBattery"]
-            currentIndex: model.indexOf(sourceRow.selectedSource)
-            Accessible.name: "Readout source"
-            palette.button: sourceRow.theme.off; palette.buttonText: sourceRow.theme.text
-            palette.window: sourceRow.theme.surface; palette.text: sourceRow.theme.text
-            palette.highlight: sourceRow.theme.accent; palette.highlightedText: sourceRow.theme.ink
-            onActivated: { sourceRow.selectedSource = model[currentIndex]; sourceRow.identity = ""; }
-        }
-    }
-    TextField {
+    readonly property var devices: Bluetooth.devices.values
+    visible: entry.source === "bluetoothBattery"
+    HelpText { theme: sourceRow.theme; text: "Bluetooth device" }
+    Ui.Dropdown {
         Layout.fillWidth: true
-        visible: sourceRow.selectedSource !== "laptopBattery"
-        text: sourceRow.identity
-        placeholderText: sourceRow.deviceKey === "interface" ? "Interface, or auto" : sourceRow.deviceKey
-        Accessible.name: "Readout device identity"
-        color: sourceRow.theme.text; font.family: sourceRow.theme.font
-        background: Rectangle { color: sourceRow.theme.off; border.color: sourceRow.theme.edge }
-        onTextEdited: sourceRow.identity = text
+        showLabel: false
+        options: sourceRow.devices.map(d => ({value:d.address,label:d.name || d.address}))
+        value: sourceRow.entry.deviceAddress || ""
+        foreground: sourceRow.theme.text; background: sourceRow.theme.surface; accent: sourceRow.theme.accent; fontFamily: sourceRow.theme.font
+        onChanged: v => sourceRow.store.set(sourceRow.entryPath + ".deviceAddress", v)
     }
-    Repeater {
-        model: sourceRow.control.detailRows || []
-        SettingsButton {
-            required property var modelData
-            theme: sourceRow.theme; text: modelData.label
-            onClicked: sourceRow.identity = modelData.key
-        }
-    }
-    SettingsButton { theme: sourceRow.theme; text: "Apply source and device"; onClicked: sourceRow.apply() }
 }

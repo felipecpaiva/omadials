@@ -64,5 +64,9 @@ Item {
             SettingsWindow { panelHost: settingsPanel }
         }
     }
+    Loader {
+        active: settingsPanel.opened && !!settingsPanel.registry && !!settingsPanel.store
+        sourceComponent: SettingsResources { registry: settingsPanel.registry; store: settingsPanel.store }
+    }
     onPageChanged: scrollResetRequested()
 }

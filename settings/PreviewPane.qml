@@ -25,12 +25,13 @@ ColumnLayout {
     Text { text: "Live preview (60%)"; color: previewPane.theme.text; font.family: previewPane.theme.font }
     Item {
         Layout.fillWidth: true
-        Layout.preferredHeight: 300
+        Layout.preferredHeight: previewPane.previewRadius * 0.6
         clip: true
         Loader {
             id: previewLoader
             sourceComponent: previewPane.fanComponent || realFan
             scale: 0.6
+            width: previewPane.previewRadius; height: width
             transformOrigin: Item.TopLeft
         }
 
@@ -46,10 +47,10 @@ ColumnLayout {
             theme: previewPane.theme; model: previewModel
             corner: previewPane.store.config.corner
             fanRadius: previewPane.previewRadius
-            radii: Geometry.ringRadii(fanRadius, previewModel.rings.length)
+            radii: Geometry.ringRadii(fanRadius, Math.min(previewModel.rings.length, Geometry.capacity(size, Quickshell.screens.length ? Math.min(Quickshell.screens[0].width,Quickshell.screens[0].height) : 1080).rings))
             origin: Qt.point(corner.indexOf("right") >= 0 ? width : 0, corner.indexOf("top") >= 0 ? 0 : height)
             screenWidth: width; screenHeight: height
         }
     }
-    SettingsButton { theme: previewPane.theme; text: "Show on screen"; onClicked: previewPane.showOnScreen() }
+    SettingsButton { theme: previewPane.theme; text: "Show the corner"; onClicked: previewPane.showOnScreen() }
 }

@@ -1,23 +1,13 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Controls
-
-Button {
-    id: settingsButton
+import qs.Ui as Ui
+Ui.Button {
     required property var theme
-    implicitHeight: 48
+    foreground: theme.text
+    background: theme.off
+    accent: theme.accent
+    fontFamily: theme.font
+    focusable: true
+    bordered: true
     Accessible.name: text
-    font.family: theme.font
-    contentItem: Text {
-        text: settingsButton.text
-        textFormat: Text.PlainText
-        color: settingsButton.theme.text
-        font: settingsButton.font
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-    }
-    background: Rectangle {
-        color: settingsButton.down ? settingsButton.theme.track : settingsButton.theme.off
-        border.color: settingsButton.activeFocus ? settingsButton.theme.accent : settingsButton.theme.edge
-    }
 }
