@@ -74,25 +74,35 @@ private slots:
         auto window = qobject_cast<QQuickWindow*>(root); QVERIFY(window);
         QVERIFY(QTest::qWaitForWindowExposed(window)); QTest::qWait(100);
         std::function<QQuickItem*(QQuickItem*)> findTab = [&](QQuickItem *item) -> QQuickItem* {
-            if (item->property("text").toString() == "Controls" && item->inherits("QQuickAbstractButton")) return item;
+            if (item->property("text").toString() == "Rings" && item->inherits("QQuickAbstractButton")) return item;
             for (auto *child : item->childItems()) if (auto *found = findTab(child)) return found;
             return nullptr;
         };
         auto *tab = findTab(window->contentItem()); QVERIFY(tab);
         QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,tab->mapToScene(QPointF(tab->width()/2,tab->height()/2)).toPoint());
         QTest::qWait(100); QCOMPARE(pages->property("currentIndex").toInt(),1);
-        for (int i=0;i<4;++i) {
+        for (int i=0;i<5;++i) {
             pages->setProperty("currentIndex",i); QTest::qWait(100);
-            if (i == 1) {
-                std::function<void(QQuickItem*)> expand = [&](QQuickItem *item) {
-                    if (item->property("controlKey").isValid()) item->setProperty("expanded",true);
-                    for (auto *child : item->childItems()) expand(child);
+            auto *preview=root->findChild<QObject*>("livePreview"); QVERIFY(preview);
+            if (qEnvironmentVariableIsSet("OMADIALS_PAGE_SHOTS")) QVERIFY(window->grabWindow().save(QString("page-%1.png").arg(i)));
+            if (i==1 || i==2) {
+                std::function<QQuickItem*(QQuickItem*)> firstRow = [&](QQuickItem *item) -> QQuickItem* {
+                    if (item->property("controlKey").isValid()) return item;
+                    for (auto *child : item->childItems()) if(auto *found=firstRow(child)) return found;
+                    return nullptr;
                 };
-                auto *pageItem = qobject_cast<QQuickItem*>(pages->property("item").value<QObject*>());
-                QVERIFY(pageItem); expand(pageItem); QTest::qWait(100);
+                auto *pageItem=qobject_cast<QQuickItem*>(pages->property("item").value<QObject*>());
+                QVERIFY(pageItem); auto *row=firstRow(pageItem); QVERIFY(row);
+                row->setProperty("expanded",true); QTest::qWait(100);
+                QVERIFY(row->property("expanded").toBool());
+                if(qEnvironmentVariableIsSet("OMADIALS_PAGE_SHOTS")) {
+                    auto scroll=root->findChild<QObject*>("scroll");
+                    auto flick=scroll->property("contentItem").value<QObject*>();
+                    flick->setProperty("contentY",qMax(0.0,row->mapToItem(pageItem,QPointF()).y()-20));
+                    QTest::qWait(100);
+                    QVERIFY(window->grabWindow().save(i==1?"rings-expanded.png":"toggles-expanded.png"));
+                }
             }
-            // A picture of each page, for design review (tests/page-0.png ... page-3.png).
-            if (qEnvironmentVariableIsSet("OMADIALS_PAGE_SHOTS")) window->grabWindow().save(QString("page-%1.png").arg(i));
         }
         pages->setProperty("currentIndex",0); QTest::qWait(100);
         QVERIFY(window->grabWindow().save("preview.png"));

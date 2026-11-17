@@ -7,6 +7,14 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QIcon>
+#include <QGuiApplication>
+#include <QScreen>
+#include <QDesktopServices>
+#include <QClipboard>
+#include <QUrl>
+#include <QColor>
+#include <QBuffer>
+#include <QRegularExpression>
 
 Backend::Backend(QObject *parent) : QObject(parent) {
     connect(&m_watcher, &QFileSystemWatcher::fileChanged, this, [this] { watch(); emit fileChanged(); });
@@ -96,7 +104,26 @@ QVariantMap Backend::resources(const QString &text) const {
         referenced.append(it.value().toObject().value("icon").toString());
     for (const auto &name : referenced) if (QIcon::hasThemeIcon(name) && !icons.contains(name)) icons.append(name);
     themes.sort(); icons.sort();
-    return {{"themes",themes},{"icons",icons}};
+    QStringList screens;
+    for (auto *screen : QGuiApplication::screens()) screens.append(screen->name().isEmpty() ? tr("Unnamed screen") : screen->name());
+    QFile current(QDir::homePath()+"/.local/state/omarchy/current/theme.name");
+    QString currentName;
+    if (current.open(QIODevice::ReadOnly)) currentName=QString::fromUtf8(current.readAll()).trimmed();
+    QString light, dark;
+    for (const auto &name : themes) {
+        for (const auto &base : {QDir::homePath()+"/.config/omarchy/themes", qEnvironmentVariable("OMARCHY_PATH", "/usr/share/omarchy")+"/themes"}) {
+            QFile colors(base+"/"+name+"/colors.toml");
+            if (!colors.open(QIODevice::ReadOnly)) continue;
+            auto match=QRegularExpression(R"re(^\s*background\s*=\s*["'](#[a-fA-F0-9]{6})["'])re",QRegularExpression::MultilineOption).match(QString::fromUtf8(colors.readAll()));
+            if (!match.hasMatch()) continue;
+            QColor background(match.captured(1));
+            const bool isLight=background.lightnessF()>.5;
+            QString &candidate=isLight ? light : dark;
+            if (candidate.isEmpty() || name==currentName) candidate=name;
+            break;
+        }
+    }
+    return {{"themes",themes},{"icons",icons},{"screens",screens},{"devices",m_devices},{"lightTheme",light},{"darkTheme",dark}};
 }
 void Backend::run(bool open) {
     if (m_process.state() != QProcess::NotRunning) return;
@@ -106,3 +133,41 @@ void Backend::run(bool open) {
 }
 void Backend::refreshStatus() { run(false); }
 void Backend::showOnScreen() { run(true); }
+
+void Backend::openFolder() {
+    if (!QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(path()).absolutePath()))) fail(tr("Cannot open the settings folder."));
+}
+void Backend::openReadme() {
+    if (!QDesktopServices::openUrl(QUrl("https://github.com/felipecpaiva/omadials#readme"))) fail(tr("Cannot open the README."));
+}
+void Backend::copyDetails() { QGuiApplication::clipboard()->setText(m_status); }
+void Backend::refreshDevices() {
+    m_devices.clear();
+    // Discovery is explicit and bounded, and never evaluates a shell string.
+    auto output=[](const QString &program,const QStringList &args) {
+        QProcess process; process.start(program,args);
+        if (!process.waitForStarted(200) || !process.waitForFinished(500)) { process.kill(); process.waitForFinished(200); return QString(); }
+        return process.exitCode()==0 ? QString::fromUtf8(process.readAllStandardOutput()) : QString();
+    };
+    for (const auto &line : output("bluetoothctl",{"devices"}).split('\n')) {
+        auto match=QRegularExpression("^Device ([0-9A-Fa-f:]{17}) (.+)$").match(line);
+        if(match.hasMatch()) m_devices.append(QVariantMap{{"source","bluetoothBattery"},{"key",match.captured(1)},{"name",match.captured(2)}});
+    }
+    for (const auto &device : output("upower",{"-e"}).split('\n',Qt::SkipEmptyParts)) {
+        if (!device.startsWith("/org/freedesktop/UPower/devices/")) continue;
+        const auto details=output("upower",{"-i",device});
+        if (!QRegularExpression("type:\\s+(pen|tablet)").match(details).hasMatch()) continue;
+        auto model=QRegularExpression("model:\\s+([^\n]+)").match(details);
+        m_devices.append(QVariantMap{{"source","penBattery"},{"key",device},{"name",model.hasMatch()?model.captured(1).trimmed():tr("Pen battery")}});
+    }
+    for (const auto &name : QDir("/sys/class/net").entryList(QDir::Dirs|QDir::NoDotAndDotDot))
+        if (QFileInfo::exists("/sys/class/net/"+name+"/wireless")) m_devices.append(QVariantMap{{"source","wifiSignal"},{"key",name},{"name",name}});
+}
+
+QString Backend::iconUrl(const QString &name) const {
+    const auto icon=QIcon::fromTheme(name);
+    if (icon.isNull()) return {};
+    QByteArray bytes; QBuffer buffer(&bytes); buffer.open(QIODevice::WriteOnly);
+    icon.pixmap(32,32).save(&buffer,"PNG");
+    return "data:image/png;base64,"+QString::fromLatin1(bytes.toBase64());
+}

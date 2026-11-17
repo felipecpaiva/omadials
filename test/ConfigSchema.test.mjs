@@ -97,3 +97,7 @@ test('a readout ring is checked by its source against the real catalog', async()
     const r=C.validate({version:1,readoutRings:[{id:'signal',order:3,source:'wifiSignal',interface:'auto'}]},cat);
     assert.deepEqual(r.errors,[]);
 });
+test('default toggles start with Wi-Fi and keep hidden extras last (ux.md Defaults)',()=>{
+    const ids=C.DEFAULTS.toggles.map(t=>t.id);
+    assert.equal(ids[0],'wifi'); assert.deepEqual(ids.slice(-2),['touchpad','touchscreen']);
+});

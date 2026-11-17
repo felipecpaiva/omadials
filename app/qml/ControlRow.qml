@@ -1,19 +1,24 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
+import "../logic/Glyphs.js" as Glyphs
 
-ColumnLayout {
+Item {
     id: controlRow
+    implicitHeight: rowBody.implicitHeight
     required property var control
     required property var registry
     required property var store
     required property var theme
     property bool expanded: false
+    property string forcedGroup: ""
+    signal dropRequested(string id)
     readonly property string controlKey: (control.controlId || control.id)
-    readonly property string group: control.kind === "readout" ? "readoutRings"
+    readonly property string group: forcedGroup || (control.kind === "readout" ? "readoutRings"
         : store.config.toggles.some(function(e) { return e.id === controlRow.controlKey }) ? "toggles"
         : store.config.dials.some(function(e) { return e.id === controlRow.controlKey }) ? "dials"
-        : control.defaultPlacement === "arc" ? "toggles" : "dials"
+        : control.defaultPlacement === "arc" ? "toggles" : "dials")
     readonly property int entryIndex: store.config[group].findIndex(function(e) { return e.id === controlRow.controlKey; })
     readonly property string entryPath: group + "." + rawIndex(controlKey, group)
     readonly property var catalogEntry: (registry.catalog || []).find(function(c) { return c.id === controlRow.controlKey; }) || ({})
@@ -69,35 +74,49 @@ ColumnLayout {
         store.setMany([{path:rings[at].g+"."+rings[at].i+".order",value:rings[to].order},
             {path:rings[to].g+"."+rings[to].i+".order",value:rings[at].order}]);
     }
+    DropArea { anchors.fill: parent; onDropped: function(drop) { controlRow.dropRequested(drop.source.controlKey); drop.acceptProposedAction() } }
+    ColumnLayout {
+    id: rowBody; width: parent.width
     RowLayout {
-        Layout.fillWidth: true
-        SettingsButton { theme: controlRow.theme; text: "Up"; onClicked: controlRow.move(-1) }
-        SettingsButton { theme: controlRow.theme; text: "Down"; onClicked: controlRow.move(1) }
-        SettingsButton {
-            Layout.fillWidth: true
-            theme: controlRow.theme; text: controlRow.control.label + (controlRow.expanded ? " ▴" : " ▾")
-            onClicked: controlRow.expanded = !controlRow.expanded
+        Layout.fillWidth: true; spacing: 4
+        Item {
+            id: handle; implicitWidth: 24; implicitHeight: 42
+            property string controlKey: controlRow.controlKey
+            Label { anchors.centerIn: parent; text: "⠿"; color: controlRow.theme.secondary }
+            Item {
+                id: dragProxy; width: 1; height: 1
+                property string controlKey: controlRow.controlKey
+                Drag.active: drag.active; Drag.source: dragProxy
+                Drag.supportedActions: Qt.MoveAction
+            }
+            DragHandler { id: drag; target: dragProxy; onActiveChanged: if (!active) { dragProxy.Drag.drop(); dragProxy.x=0; dragProxy.y=0 } }
         }
-        SettingsButton {
-            theme: controlRow.theme
-            text: controlRow.store.config.controls[controlRow.controlKey]?.shown ? "Shown" : "Hidden"
-            onClicked: controlRow.showControl(!controlRow.store.config.controls[controlRow.controlKey]?.shown)
+        ToolButton { text: "↑"; Accessible.name: qsTr("Move %1 up").arg(controlRow.control.label); onClicked: controlRow.move(-1) }
+        ToolButton { text: "↓"; Accessible.name: qsTr("Move %1 down").arg(controlRow.control.label); onClicked: controlRow.move(1) }
+        Label { text: Glyphs.glyph(controlRow.control.icon || controlRow.controlKey); font.family: "Symbols Nerd Font"; font.pixelSize: 22; color: controlRow.theme.accent }
+        Button {
+            Layout.fillWidth: true
+            text: controlRow.control.label + (controlRow.expanded ? " ▴" : " ▾")
+            flat: true; onClicked: controlRow.expanded = !controlRow.expanded
+        }
+        Label { text: controlRow.control.value == null ? qsTr("Unknown") : typeof controlRow.control.value === "boolean" ? (controlRow.control.value ? qsTr("On") : qsTr("Off")) : qsTr("%1 %").arg(Math.round(Number(controlRow.control.value))); color: controlRow.theme.secondary; font.pixelSize: 12 }
+        Switch {
+            text: qsTr("Show"); checked: controlRow.store.config.controls[controlRow.controlKey]?.shown || false
+            Accessible.name: qsTr("Show %1").arg(controlRow.control.label)
+            onClicked: controlRow.showControl(checked)
         }
     }
-    Text {
-        visible: text.length > 0; Layout.fillWidth: true
-        text: controlRow.availabilityText
-        textFormat: Text.PlainText; wrapMode: Text.WordWrap
-        color: controlRow.theme.secondary; font.family: controlRow.theme.font
+    Label {
+        visible: controlRow.group !== "toggles"
+        text: {
+            let style=controlRow.store.value(controlRow.entryPath + ".style");
+            return !style || Object.keys(style).every(function(k) { return style[k]===controlRow.store.config.ringStyle[k] || controlRow.group==="readoutRings" && k==="knob" }) ? qsTr("Uses the common style") : qsTr("Custom");
+        }
+        color: controlRow.theme.secondary; font.pixelSize: 12
     }
     ColumnLayout {
-        visible: controlRow.expanded
-        Layout.fillWidth: true
-        SettingField {
-            theme: controlRow.theme; store: controlRow.store
-            path: "controls." + controlRow.controlKey + ".icon"; label: "Icon theme name"
-            kind: "editableChoice"; choices: ["default"].concat(controlRow.store.validationResources.icons || [])
-        }
+        visible: controlRow.expanded; Layout.fillWidth: true; spacing: 12
+        IconPicker { theme: controlRow.theme; store: controlRow.store; path: "controls." + controlRow.controlKey + ".icon"; controlId: controlRow.controlKey }
         Loader {
             Layout.fillWidth: true
             active: controlRow.expanded && (controlRow.entryIndex >= 0 || controlRow.group === "readoutRings")
@@ -107,4 +126,5 @@ ColumnLayout {
             }
         }
     }
+}
 }

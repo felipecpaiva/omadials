@@ -1,9 +1,8 @@
-pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
-
 ColumnLayout {
-    id: controlOptions
+    id: options
     required property var theme
     required property var store
     required property var control
@@ -11,51 +10,32 @@ ColumnLayout {
     required property string group
     property var catalogEntry: ({})
     readonly property var entry: store.value(entryPath) || ({})
-    readonly property var fallbackActions: {
-        switch ((control.controlId || control.id)) {
-        case "wifi": return ["switchRadio","quickDetail","fullWindow"];
-        case "bluetooth": return ["switchPower","quickDetail","fullWindow"];
-        case "kbdlight": return ["nextStep","quickDetail"];
-        case "theme": return ["togglePair","quickDetail"];
-        case "media": return ["quickDetail"];
-        default: return ["switch","quickDetail"];
-        }
-    }
+    Layout.fillWidth: true
     Repeater {
-        model: controlOptions.group === "toggles" ? ["tapAction","holdAction"] : []
+        model: options.group === "toggles" ? ["tapAction","holdAction"] : []
         SettingField {
             required property string modelData
-            theme: controlOptions.theme; store: controlOptions.store
-            path: controlOptions.entryPath + "." + modelData
-            label: modelData === "tapAction" ? "Tap action" : "Hold action"
+            theme: options.theme; store: options.store; path: options.entryPath + "." + modelData
+            label: modelData === "tapAction" ? qsTr("When tapped") : qsTr("When held")
+            help: modelData === "tapAction" ? qsTr("A quick press on this toggle.") : qsTr("Press and hold for more options.")
             kind: "choice"
-            choices: controlOptions.catalogEntry[modelData === "tapAction" ? "tapActions" : "holdActions"] || controlOptions.fallbackActions
+            choices: options.catalogEntry[modelData === "tapAction" ? "tapActions" : "holdActions"] || ["switch","quickDetail"]
+            words: choices.map(function(v) { return ({switchRadio:qsTr("Switch on or off"),switchPower:qsTr("Switch on or off"),switch:qsTr("Switch on or off"),quickDetail:qsTr("Open the quick list"),fullWindow:qsTr("Open the full window"),nextStep:qsTr("Choose the next level"),togglePair:qsTr("Switch light or dark theme")})[v] })
         }
     }
-    Repeater {
-        model: controlOptions.group !== "toggles" && controlOptions.entry.id ? ["track","knob","thickness"] : []
-        SettingField {
-            required property string modelData
-            theme: controlOptions.theme; store: controlOptions.store
-            path: controlOptions.entryPath + ".style." + modelData; label: "Ring " + modelData
-            kind: "choice"
-            choices: modelData === "track" ? ["solid","dashed","dotted","segmented"] : modelData === "knob"
-                ? (controlOptions.group === "readoutRings" ? ["none"] : ["round","bar","none"]) : ["thin","normal","bold"]
+    RingStyle { visible: options.group !== "toggles"; theme: options.theme; store: options.store; path: options.entryPath + ".style"; readout: options.group === "readoutRings" }
+    Button {
+        visible: options.group !== "toggles"; text: qsTr("Use the common style")
+        onClicked: {
+            let entry=JSON.parse(JSON.stringify(options.entry)); delete entry.style;
+            if(options.group === "readoutRings") entry.style={knob:"none"};
+            options.store.set(options.entryPath,entry);
         }
     }
-    ReadoutSourceRow {
-        visible: controlOptions.group === "readoutRings"
-        theme: controlOptions.theme; store: controlOptions.store
-        control: controlOptions.control; entryPath: controlOptions.entryPath
-    }
+    ReadoutSourceRow { visible: options.group === "readoutRings"; theme: options.theme; store: options.store; control: options.control; entryPath: options.entryPath }
     SettingField {
-        visible: controlOptions.group === "dials"
-        theme: controlOptions.theme; store: controlOptions.store
-        path: "options." + (controlOptions.control.controlId || controlOptions.control.id) + ".wheelStep"; label: "Wheel step (%)"; kind: "number"
-    }
-    SettingField {
-        visible: (controlOptions.control.controlId || controlOptions.control.id) === "brightness"
-        theme: controlOptions.theme; store: controlOptions.store
-        path: "options.brightness.monitor"; label: "Brightness monitor"; hint: "auto"
+        visible: options.group === "dials" && options.control.id !== "chargeLimit"
+        theme: options.theme; store: options.store; path: "options." + options.control.id + ".wheelStep"
+        label: qsTr("Wheel step"); help: qsTr("Percentage points per wheel tick, from 1 to 25."); kind: "number"
     }
 }

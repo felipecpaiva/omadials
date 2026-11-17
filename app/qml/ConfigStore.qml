@@ -41,6 +41,11 @@ Item {
     function setMany(changes) {
         if (!reload() || readOnly) { problem("Config is read only. Fix the file or Reset all."); return false }
         try {
+            changes = changes.slice();
+            ["light","dark"].forEach(function(k) {
+                let suggested=validationResources[k+"Theme"];
+                if (!config.themePair[k] && suggested && !changes.some(function(c) { return c.path==="themePair."+k })) changes.push({path:"themePair."+k,value:suggested});
+            });
             let next = rawText;
             changes.forEach(function(c) { next = Schema.patch(next,c.path,c.value) });
             validationResources = io.resources(next);
@@ -51,6 +56,24 @@ Item {
             if (added.length) { errors = errors.concat(added); return false }
             return write(next,false);
         } catch (e) { problem(String(e)); return false }
+    }
+    function useDefault(key) {
+        let keys=key.split("."), fallback=keys.reduce(function(a,k) { return a == null ? undefined : a[k] },Schema.DEFAULTS);
+        return set(key,fallback);
+    }
+    function setCommonStyle(key,value) {
+        if (!reload() || readOnly) return false;
+        let field=key.split(".")[1], changes=[{path:key,value:value}], raw=JSON.parse(rawText);
+        ["dials","readoutRings"].forEach(function(group) {
+            let entries=raw[group];
+            if (!Array.isArray(entries)) return;
+            entries.forEach(function(entry,index) {
+                if (!entry.style || entry.style[field]!==config.ringStyle[field] || group==="readoutRings" && field==="knob") return;
+                let style=Schema.clone(entry.style); delete style[field];
+                changes.push({path:group+"."+index+".style",value:style});
+            });
+        });
+        return setMany(changes);
     }
     function write(text,isUndo) {
         let before = rawText;

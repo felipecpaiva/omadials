@@ -9,3 +9,10 @@ test('known values read as words, unknown values are spaced and capitalised',()=
     assert.equal(L.label('someNewAction'),'Some new action');
     assert.deepEqual(L.options(['S']),[{value:'S',label:'Compact'}]);
 });
+test('status rows read as words',()=>{
+    assert.equal(L.statusText({availability:'probing',hidden:true}),'Hidden');
+    assert.equal(L.statusText({availability:'probing'}),'Checked when the corner opens');
+    assert.equal(L.statusText({availability:'available'}),'Working');
+    assert.equal(L.statusText({availability:'unavailable',reason:'No media player'}),'Not on this machine (No media player)');
+    assert.equal(L.statusText({availability:'error',reason:'Busy'}),'Problem: Busy');
+});

@@ -18,3 +18,15 @@ function label(value) {
     return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
 }
 function options(values) { return (values || []).map(function(v) { return {value: String(v), label: label(v)}; }); }
+// One status row in words, for the settings status lists (app and panel).
+function statusText(entry) {
+    if (!entry) return 'Unknown';
+    if (entry.hidden) return 'Hidden';
+    switch (entry.availability) {
+    case 'available': return 'Working';
+    case 'probing': return 'Checked when the corner opens';
+    case 'unavailable': return 'Not on this machine' + (entry.reason ? ' (' + entry.reason + ')' : '');
+    case 'error': return 'Problem' + (entry.reason ? ': ' + entry.reason : '');
+    default: return 'Unknown';
+    }
+}

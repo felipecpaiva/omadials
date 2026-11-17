@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../logic/Labels.js" as Labels
 import QtQuick.Layouts
 import Quickshell
 ColumnLayout {
@@ -23,7 +24,7 @@ ColumnLayout {
                 required property var modelData
                 Layout.fillWidth: true
                 Text { text: statusRow.modelData.label; color: aboutPage.theme.text; font.family: aboutPage.theme.font }
-                HelpText { theme: aboutPage.theme; text: statusRow.modelData.availability === "available" ? "Working" : statusRow.modelData.availability === "probing" ? "Checking" : (statusRow.modelData.availability === "unavailable" ? "Not on this machine" : "Problem") + (statusRow.modelData.reason ? " (" + statusRow.modelData.reason + ")" : "") }
+                HelpText { theme: aboutPage.theme; text: Labels.statusText(statusRow.modelData) }
             }
         }
         SettingsButton { theme: aboutPage.theme; text: "Copy details"; onClicked: Quickshell.clipboardText = aboutPage.registry.status() }

@@ -21,6 +21,11 @@ public:
     Q_INVOKABLE bool write(const QString &text, const QString &expected, bool expectedExists);
     Q_INVOKABLE QString asset(const QString &path);
     Q_INVOKABLE void refreshStatus();
+    Q_INVOKABLE void refreshDevices();
+    Q_INVOKABLE void openFolder();
+    Q_INVOKABLE void openReadme();
+    Q_INVOKABLE void copyDetails();
+    Q_INVOKABLE QString iconUrl(const QString &name) const;
     Q_INVOKABLE void showOnScreen();
 signals:
     void fileChanged();
@@ -39,5 +44,6 @@ private:
     bool m_exists = false;
     bool m_open = false;
     bool m_timedOut = false;
+    QVariantList m_devices;
     QString m_error, m_status = QStringLiteral("Plugin status has not been checked.");
 };

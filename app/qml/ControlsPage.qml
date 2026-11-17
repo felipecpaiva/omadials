@@ -1,47 +1,61 @@
-pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
-
+import QtQuick.Window
+import "../logic/Geometry.js" as Geometry
+import "../logic/Labels.js" as Labels
 ColumnLayout {
-    id: controlsPage
+    id: page
     required property var store
     required property var registry
     required property var theme
-    readonly property int ringCount: store.config.dials.concat(store.config.readoutRings).filter(function(e) {
-        return controlsPage.store.config.controls[e.id]?.shown;
-    }).length
-    readonly property int ringCap: ({S:2,M:3,L:4})[store.config.size]
-    readonly property int arcCount: store.config.toggles.filter(function(e) {
-        return controlsPage.store.config.controls[e.id]?.shown;
-    }).length
+    required property bool toggles
+    readonly property var capacity: Geometry.capacity(store.config.size,Math.min(Screen.width,Screen.height))
+    readonly property var entries: toggles ? store.config.toggles : store.config.dials.concat(store.config.readoutRings).slice().sort(function(a,b) { return a.order-b.order })
     readonly property var orderedControls: {
-        let cfg = store.config;
-        let ringIds = cfg.dials.concat(cfg.readoutRings).slice().sort(function(a,b) { return a.order-b.order; }).map(function(e) { return e.id; });
-        let ids = ringIds.concat(cfg.toggles.map(function(e) { return e.id; }));
-        return (registry.controls || []).slice().sort(function(a,b) {
-            let ai = ids.indexOf(a.controlId || a.id), bi = ids.indexOf(b.controlId || b.id);
-            return (ai < 0 ? ids.length : ai) - (bi < 0 ? ids.length : bi);
-        });
+        let ids=entries.map(function(e) { return e.id });
+        let available=registry.controls.filter(function(c) { return page.toggles ? c.placements.indexOf("arc")>=0 : c.kind!=="readout" && c.defaultPlacement==="ring" || ids.indexOf(c.id)>=0 });
+        return available.sort(function(a,b) { let ai=ids.indexOf(a.id),bi=ids.indexOf(b.id); return (ai<0?999:ai)-(bi<0?999:bi) });
     }
-    Text {
-        Layout.fillWidth: true
-        text: controlsPage.ringCount + " of " + controlsPage.ringCap + " rings fit at " + controlsPage.store.config.size
-            + ". Toggles: " + Math.min(controlsPage.arcCount, ({S:5,M:6,L:7})[controlsPage.store.config.size])
-            + " visible, " + controlsPage.arcCount + " total (scrollable). Order changes only here; scroll resets on open."
-        textFormat: Text.PlainText; wrapMode: Text.WordWrap
-        color: controlsPage.theme.text; font.family: controlsPage.theme.font
+    readonly property int count: entries.filter(function(e) { return page.store.config.controls[e.id]?.shown }).length
+    spacing: 16
+    Label {
+        Layout.fillWidth: true; wrapMode: Text.WordWrap; color: page.theme.secondary
+        text: page.toggles ? qsTr("%1 visible without scrolling at this size").arg(Math.min(page.count,page.capacity.toggles))
+            : qsTr("%1 of %2 rings fit at %3").arg(page.count).arg(page.capacity.rings).arg(Labels.label(page.store.config.size))
     }
-    Repeater {
-        model: controlsPage.orderedControls
-        ControlRow {
-            required property var modelData
-            Layout.fillWidth: true
-            control: modelData
-            store: controlsPage.store; registry: controlsPage.registry; theme: controlsPage.theme
+    SettingsCard {
+        visible: !page.toggles
+        theme: page.theme; title: qsTr("All rings")
+        Label { text: qsTr("The common style for rings without custom choices."); color: page.theme.secondary; font.pixelSize: 12; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+        RingStyle { theme: page.theme; store: page.store; path: "ringStyle"; compact: true }
+    }
+    SettingsCard {
+        theme: page.theme; title: page.toggles ? qsTr("Toggle controls") : qsTr("Ring controls")
+        Repeater {
+            model: page.orderedControls
+            ControlRow {
+                required property var modelData
+                Layout.fillWidth: true
+                control: modelData; store: page.store; registry: page.registry; theme: page.theme
+                forcedGroup: page.toggles ? "toggles" : ""
+                onDropRequested: function(id) {
+                    let from=page.entries.findIndex(function(e) { return e.id===id });
+                    let to=page.entries.findIndex(function(e) { return e.id===controlKey });
+                    if(from<0||to<0) return;
+                    let row=pageRow(id);
+                    if(row) row.move(to-from);
+                }
+                function pageRow(id) {
+                    for(let i=0;i<parent.children.length;i++) if(parent.children[i].controlKey===id) return parent.children[i];
+                    return null;
+                }
+            }
         }
     }
-    SettingsButton {
-        theme: controlsPage.theme; text: "Reset Controls"
-        onClicked: controlsPage.store.reset(["controls","dials","toggles","readoutRings","ringStyle","readout"])
+    SettingsCard {
+        visible: !page.toggles
+        theme: page.theme; title: qsTr("Add a display ring")
+        ReadoutSourceRow { theme: page.theme; store: page.store; control: ({}); entryPath: "readoutRings." + page.store.config.readoutRings.length; adding: true }
     }
 }

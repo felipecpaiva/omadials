@@ -83,7 +83,7 @@ QtObject {
             controls: entries().map(e => {
                 const c = byId(e.id), meta = catalog.find(m => m.id === e.source)
                 return {id: e.id, kind: meta ? meta.kind : "readout", availability: c ? c.availability : "probing",
-                    reason: c ? c.reason : "Not instantiated while hidden", value: c ? c.value : null}
+                    reason: c ? c.reason : "", hidden: !c, value: c ? c.value : null}
             }), errors: store.errors || []})
     }
 }
