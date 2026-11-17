@@ -1,0 +1,362 @@
+[
+  {
+    "id": "brightness",
+    "folder": "brightness",
+    "kind": "dial",
+    "placements": [
+      "ring"
+    ],
+    "label": "Brightness",
+    "icon": "brightness",
+    "defaultPlacement": "ring",
+    "options": {
+      "wheelStep": {
+        "type": "number",
+        "min": 1,
+        "max": 25,
+        "default": 5
+      },
+      "monitor": {
+        "type": "string",
+        "default": "auto"
+      },
+      "device": {
+        "type": "string",
+        "default": "amdgpu_bl1"
+      }
+    }
+  },
+  {
+    "id": "volume",
+    "folder": "volume",
+    "kind": "dial",
+    "placements": [
+      "ring"
+    ],
+    "label": "Volume",
+    "icon": "volume",
+    "defaultPlacement": "ring",
+    "options": {
+      "wheelStep": {
+        "type": "number",
+        "min": 1,
+        "max": 25,
+        "default": 5
+      },
+      "maxPercent": {
+        "type": "number",
+        "enum": [
+          100,
+          150
+        ],
+        "default": 100
+      }
+    }
+  },
+  {
+    "id": "mic",
+    "folder": "mic",
+    "kind": "dial",
+    "placements": [
+      "ring"
+    ],
+    "label": "Microphone",
+    "icon": "mic",
+    "defaultPlacement": "ring",
+    "options": {
+      "wheelStep": {
+        "type": "number",
+        "min": 1,
+        "max": 25,
+        "default": 5
+      }
+    }
+  },
+  {
+    "id": "wifi",
+    "folder": "wifi",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Wi-Fi",
+    "icon": "wifi",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "switchRadio",
+      "quickDetail",
+      "fullWindow"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "switchRadio",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "bluetooth",
+    "folder": "bluetooth",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Bluetooth",
+    "icon": "bluetooth",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "switchPower",
+      "quickDetail",
+      "fullWindow"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "switchPower",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "nightlight",
+    "folder": "nightlight",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Night light",
+    "icon": "nightlight",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "switch",
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "switch",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "dnd",
+    "folder": "dnd",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Do not disturb",
+    "icon": "dnd",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "switch",
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "switch",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "keepawake",
+    "folder": "keepawake",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Keep awake",
+    "icon": "keepawake",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "switch",
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "switch",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "kbdlight",
+    "folder": "keyboardlight",
+    "kind": "stepped",
+    "placements": [
+      "arc",
+      "ring"
+    ],
+    "label": "Keyboard light",
+    "icon": "kbdlight",
+    "defaultPlacement": "arc",
+    "options": {
+      "device": {
+        "type": "string",
+        "default": "asus::kbd_backlight"
+      },
+      "maxLevel": {
+        "type": "number",
+        "min": 1,
+        "max": 10,
+        "default": 3
+      }
+    },
+    "tapActions": [
+      "nextStep",
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "nextStep",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "airplane",
+    "folder": "airplane",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Airplane mode",
+    "icon": "airplane",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "switch",
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "switch",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "powerprofile",
+    "folder": "powerprofile",
+    "kind": "picker",
+    "placements": [
+      "chip"
+    ],
+    "label": "Power profile",
+    "icon": "powerprofile",
+    "defaultPlacement": "chip",
+    "options": {}
+  },
+  {
+    "id": "gameMode",
+    "folder": "gamemode",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Game mode",
+    "icon": "gameMode",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "switch",
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "switch",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "theme",
+    "folder": "theme",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Theme",
+    "icon": "theme",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "togglePair",
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "togglePair",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "media",
+    "folder": "media",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Media",
+    "icon": "media",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ],
+    "defaultTapAction": "quickDetail",
+    "defaultHoldAction": "quickDetail"
+  },
+  {
+    "id": "bluetoothBattery",
+    "folder": "bluetoothBattery",
+    "kind": "readout",
+    "placements": [
+      "ring",
+      "readout"
+    ],
+    "label": "Bluetooth battery",
+    "icon": "bluetoothBattery",
+    "defaultPlacement": "ring",
+    "options": {}
+  },
+  {
+    "id": "wifiSignal",
+    "folder": "wifiSignal",
+    "kind": "readout",
+    "placements": [
+      "ring",
+      "readout"
+    ],
+    "label": "Wi-Fi signal",
+    "icon": "wifiSignal",
+    "defaultPlacement": "ring",
+    "options": {}
+  },
+  {
+    "id": "laptopBattery",
+    "folder": "laptopBattery",
+    "kind": "readout",
+    "placements": [
+      "ring",
+      "readout"
+    ],
+    "label": "Laptop battery",
+    "icon": "laptopBattery",
+    "defaultPlacement": "ring",
+    "options": {}
+  },
+  {
+    "id": "penBattery",
+    "folder": "penBattery",
+    "kind": "readout",
+    "placements": [
+      "ring",
+      "readout"
+    ],
+    "label": "Pen battery",
+    "icon": "penBattery",
+    "defaultPlacement": "ring",
+    "options": {}
+  }
+]

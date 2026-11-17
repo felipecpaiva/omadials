@@ -30,7 +30,7 @@ const DEFAULTS = {
     "ringStyle": {"track":"solid","knob":"round","thickness":"normal"},
     "readoutRings": [],
     "dials": [{"id":"brightness","order":0,"style":{"track":"solid","knob":"round","thickness":"normal"}},{"id":"volume","order":1,"style":{"track":"solid","knob":"round","thickness":"normal"}},{"id":"mic","order":2,"style":{"track":"solid","knob":"round","thickness":"normal"}}],
-    "toggles": [{"id":"wifi","tapAction":"switchRadio","holdAction":"quickDetail"},{"id":"bluetooth","tapAction":"switchPower","holdAction":"quickDetail"},{"id":"nightlight","tapAction":"switch","holdAction":"quickDetail"},{"id":"dnd","tapAction":"switch","holdAction":"quickDetail"},{"id":"keepawake","tapAction":"switch","holdAction":"quickDetail"},{"id":"kbdlight","tapAction":"nextStep","holdAction":"quickDetail"},{"id":"airplane","tapAction":"switch","holdAction":"quickDetail"},{"id":"gameMode","tapAction":"switch","holdAction":"quickDetail"},{"id":"theme","tapAction":"togglePair","holdAction":"quickDetail"},{"id":"media","tapAction":"quickDetail","holdAction":"quickDetail"},{"id":"touchpad","tapAction":"switch","holdAction":"quickDetail"},{"id":"touchscreen","tapAction":"switch","holdAction":"quickDetail"},{"id":"recording","tapAction":"switch","holdAction":"quickDetail"}],
+    "toggles": [{"id":"wifi","tapAction":"switchRadio","holdAction":"quickDetail"},{"id":"bluetooth","tapAction":"switchPower","holdAction":"quickDetail"},{"id":"nightlight","tapAction":"switch","holdAction":"quickDetail"},{"id":"dnd","tapAction":"switch","holdAction":"quickDetail"},{"id":"keepawake","tapAction":"switch","holdAction":"quickDetail"},{"id":"kbdlight","tapAction":"nextStep","holdAction":"quickDetail"},{"id":"airplane","tapAction":"switch","holdAction":"quickDetail"},{"id":"gameMode","tapAction":"switch","holdAction":"quickDetail"},{"id":"theme","tapAction":"togglePair","holdAction":"quickDetail"},{"id":"media","tapAction":"quickDetail","holdAction":"quickDetail"}],
     "readout": {"battery":true,"powerProfile":true,"penBattery":true},
     "options": {"brightness":{"wheelStep":5,"monitor":"auto"},"volume":{"wheelStep":5,"maxPercent":100},"mic":{"wheelStep":5}},
     "tabStyle": "rings2knob",
@@ -87,7 +87,8 @@ function validate(obj,catalog,resources) {
     ['controls','dials','toggles','readoutRings','options','gameMode'].forEach(function(k){delete base[k];});
     const top={};Object.keys(input).forEach(function(k){if(SAFE_KEYS.indexOf(k)>=0||!Object.prototype.hasOwnProperty.call(DEFAULTS,k))error(k,'unknown_value');else if(k in base)top[k]=input[k];});
     Object.assign(config,fields(top,base,''));
-    if(input.version===undefined)error('version','wrong_type');
+    // A missing or empty file means defaults, not an error. A file with settings must say its version.
+    if(input.version===undefined){if(Object.keys(input).length)error('version','wrong_type');}
     else if(input.version>VERSION)error('version','newer_version');
     else if(input.version!==VERSION)error('version','unknown_value');
     const controls=catalog||Object.keys(DEFAULTS.controls).map(function(id){

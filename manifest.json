@@ -5,7 +5,13 @@
   "version": "0.1.0",
   "author": "Felipe Paiva",
   "license": "MIT",
-  "description": "Quick settings in a screen corner: tap or drag from the corner for brightness, volume and toggles.",
-  "kinds": ["service"],
-  "entryPoints": { "service": "Service.qml" }
+  "description": "Quick settings in a screen corner: tap or drag from the corner for brightness, volume and toggles. Settings: omarchy-shell omadials settings",
+  "kinds": [
+    "service",
+    "panel"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "panel": "settings/SettingsPanel.qml"
+  }
 }

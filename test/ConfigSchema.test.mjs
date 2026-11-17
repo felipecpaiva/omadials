@@ -46,7 +46,8 @@ test('bounds, typed fields, fine settings and cap enum',()=>{
 });
 test('parse protection, required version, newer version and preserved unknown keys',()=>{
     assert.equal(validate('{').readOnly,true);assert.equal(validate('{').errors[0].code,'parse_error');
-    assert.ok(validate({}).errors.some(e=>e.path==='version'));
+    assert.ok(!validate({}).errors.some(e=>e.path==='version'),'an empty file means defaults');
+    assert.ok(validate({size:'S'}).errors.some(e=>e.path==='version'),'settings without a version are reported');
     assert.equal(validate({version:2}).readOnly,true);
     const original={version:1,future:{x:42},controls:{futureControl:{shown:true}}};
     const text=C.patch(JSON.stringify(original),'size','L');
@@ -77,4 +78,11 @@ test('partial control objects retain defaults and malformed containers report er
     const bad=validate(JSON.parse('{"version":1,"__proto__":{"polluted":true},"options":{"volume":{"constructor":1}}}'));
     assert.ok(bad.errors.length>=2);assert.equal({}.polluted,undefined);
     assert.ok(validate({version:1,readoutRings:[{id:'headphones',order:4}]}).errors.some(e=>e.path.endsWith('source')));
+});
+// The shipped defaults validate cleanly against the shipped catalog.
+test('defaults validate against the catalog', async()=>{
+    const fs=await import('node:fs');
+    const cat=JSON.parse(fs.readFileSync(new URL('../controls/catalog.json',import.meta.url),'utf8'));
+    const r=C.validate({},cat.controls||cat);
+    assert.deepEqual(r.errors,[]);
 });

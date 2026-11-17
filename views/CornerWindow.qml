@@ -1,43 +1,77 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "../logic/Geometry.js" as Geometry
+import "../logic/Gesture.js" as Gesture
 
+// Quickshell creates PanelWindow through its engine despite its uncreatable qmltypes metadata.
+// qmllint disable uncreatable-type
 // One output's corner: a small tap zone while closed, a full-output click catcher while open (spike S3).
 PanelWindow {
+  // qmllint enable uncreatable-type
   id: win
   required property var theme
   required property var model          // FanModel: rings, battery, open state
   property string corner: "bottom-left"
+  property real detailRadius: 12
   property string size: "M"
+  readonly property bool selected: !model.output || model.output === screen
+  property bool suppressed: false
+  property string iconMode: "always"
+  readonly property bool fanPresenting: selected && fan.presenting
+  readonly property bool approaching: fan.approaching || trigger.approaching
 
+  property bool ready: false
+  Component.onCompleted: ready = true
+  function cancelForGeometry() { if (ready && selected && model.captured) { model.commitDial(false,true); model.preview = -1 } }
+  onWidthChanged: cancelForGeometry()
+  onHeightChanged: cancelForGeometry()
+  onCornerChanged: cancelForGeometry()
+  onSuppressedChanged: if (suppressed && selected) model.forceHide()
   readonly property real outW: width
   readonly property real outH: height
   readonly property var cap: Geometry.capacity(size, Math.min(outW, outH))
   readonly property real fanRadius: cap.R
   readonly property var origin: Geometry.fromCanonical({ x: 0, y: outH }, outW, outH, corner)
-  readonly property var radii: Geometry.ringRadii(fanRadius, model.rings.length)
+  readonly property var radii: Geometry.ringRadii(fanRadius, Math.min(cap.rings, model.rings.length))
 
   WlrLayershell.namespace: "omadials"
   WlrLayershell.layer: WlrLayer.Top
-  WlrLayershell.keyboardFocus: model.open && model.wantsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+  WlrLayershell.keyboardFocus: selected && model.open && model.wantsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
   exclusionMode: ExclusionMode.Ignore
   anchors { top: true; bottom: true; left: true; right: true }
   color: "transparent"
-  mask: Region { item: win.model.open ? catcher : zone }
+  mask: Region {
+    item: win.selected && !win.suppressed && (win.model.open || fan.presenting) ? catcher : (!win.suppressed && !win.model.open ? zone : emptyZone)
+    shape: win.selected && (win.model.open || fan.presenting) ? RegionShape.Rect : RegionShape.Ellipse
+  }
 
+  Item { id: emptyZone }
   Item { id: catcher; anchors.fill: parent }
-  Item { id: zone; width: 32; height: 32; x: win.corner.indexOf("right") >= 0 ? win.outW - 32 : 0; y: win.corner.indexOf("top") >= 0 ? 0 : win.outH - 32 }
+  Item { id: zone; width: Gesture.TRIGGER*2; height: width; x: win.origin.x-Gesture.TRIGGER; y: win.origin.y-Gesture.TRIGGER }
 
   Fan {
     id: fan
     anchors.fill: parent
     theme: win.theme; model: win.model; corner: win.corner
+    visible: win.selected && !win.suppressed && presenting
+    forceHidden: win.suppressed || !win.selected; detailRadius: win.detailRadius; size: win.cap.size; toggleRadius: win.cap.toggleRadius; iconMode: win.iconMode
     fanRadius: win.fanRadius; radii: win.radii; origin: win.origin; screenWidth: win.outW; screenHeight: win.outH
   }
 
   FanInput {
+    id: trigger
+    targetScreen: win.screen
     anchors.fill: parent
-    model: win.model; corner: win.corner; fanRadius: win.fanRadius; radii: win.radii; screenWidth: win.outW; screenHeight: win.outH
+    enabled: !win.suppressed && !win.model.open
+    visible: enabled
+    model: win.model; corner: win.corner; fanRadius: win.fanRadius; radii: []
+    screenWidth: win.outW; screenHeight: win.outH; iconMode: win.iconMode
+  }
+  Item {
+    anchors.fill: parent; focus: win.selected && win.model.open && win.model.wantsKeyboard
+    Keys.onEscapePressed: { if (win.model.detail) win.model.closeDetail(); else win.model.close() }
+    Keys.onBackPressed: { if (win.model.detail) win.model.closeDetail(); else win.model.close() }
   }
 }

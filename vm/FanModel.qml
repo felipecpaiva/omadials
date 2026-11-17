@@ -1,14 +1,110 @@
+pragma ComponentBehavior: Bound
 import QtQuick
+import "../logic/Gesture.js" as Gesture
+import "../logic/ValueMap.js" as ValueMap
+import "../logic/Motion.js" as Motion
+import "../logic/Layout.js" as Layout
 
-// Session state for the corner: open or closed, idle close, and the ring list the views draw.
 QtObject {
-  id: model
-  property bool open: false
-  property bool wantsKeyboard: false
-  property var rings: []
-  property Timer idle: Timer { interval: 10000; onTriggered: model.close() }   // never stays open by itself
-  function activity() { if (open) idle.restart() }
-  function show(keyboard) { wantsKeyboard = keyboard === true; open = true; idle.restart() }
-  function close() { open = false; wantsKeyboard = false; idle.stop() }
-  function toggle() { if (open) close(); else show(false) }
+    id: session
+    property var registry: null
+    property var output: null
+    property var config: ({})
+    property var frozenRings: []
+    property var frozenToggles: []
+    property var rings: registry ? (captured ? frozenRings : registry.rings) : []
+    readonly property var toggles: registry ? (captured ? frozenToggles : registry.toggles) : []
+    property bool open: false
+    property real preview: -1
+    property bool pointerSession: false
+    property int tickSerial: 0
+    property var tickControl: null
+    property bool wantsKeyboard: false
+    property bool captured: false
+    onCapturedChanged: { if (captured && registry) { frozenRings = registry.rings.slice(); frozenToggles = registry.toggles.slice() } }
+    property bool deferredClose: false
+    property string status: ""
+    property bool statusError: false
+    property double statusAt: 0
+    property string detail: ""
+    property var detailControl: null
+    property real arcOffset: 0
+    property var draftControl: null
+    property var gesture: null
+    property real draft: 0
+    property bool fine: false
+    property bool bubbleVisible: false
+    property point contact: Qt.point(0, 0)
+    property string bubbleText: ""
+    property var battery: null
+    property string batteryLine: battery ? battery.label : ""
+    property var profile: null
+    signal settingsRequested()
+    signal actionRequested(var control)
+    property Timer idle: Timer {
+        interval: session.config.behavior ? session.config.behavior.idleTimeoutS * 1000 : Gesture.IDLE
+        onTriggered: { if (!session.captured) session.close() }
+    }
+    property Timer bubbleTimer: Timer { interval: Motion.TIMES.bubbleHold; onTriggered: session.bubbleVisible = false }
+    function textLayout(size, measure, screen, corner, radius, elapsed) { return Layout.textLayout(size,status,measure,screen,corner,radius,statusError,elapsed) }
+    function activity() { if (open && idle.interval > 0) idle.restart() }
+    function show(keyboard) { preview = -1; wantsKeyboard = keyboard === true; arcOffset = 0; open = true; activity() }
+    function close() {
+        if (captured) { deferredClose = true; return }
+        preview = -1; open = false; wantsKeyboard = false; detail = ""; detailControl = null
+        bubbleVisible = false; idle.stop()
+    }
+    function toggle() { if (open) close(); else show(false) }
+    function say(text, error, user) { status = text; statusError = !!error; statusAt = Date.now(); if (user !== false) activity() }
+    function report(control) {
+        say(control.label + ": " + (control.writeState === "failed" ? control.lastError : control.writeState === "pending" ? "changing…" : control.valueText), control.writeState === "failed", false)
+    }
+    function action(control, hold) {
+        if (!control || control.availability !== "available" || control.writeState === "pending") return
+        const entry = (config.toggles || []).find(function(e) { return e.id === control.controlId })
+        const name = entry ? (hold ? entry.holdAction : entry.tapAction) : (hold || control.kind === "readout" ? "quickDetail" : "tap")
+        if (name === "quickDetail") openDetail(control)
+        else { actionRequested(control); control.activate(name) }
+        report(control); activity()
+    }
+    function openDetail(control) {
+        const c = typeof control === "string" ? (registry ? registry.byId(control) : null) : control
+        if (!c || c.detailKind === "none") return
+        detailControl = c; detail = c.controlId; activity()
+        if (c.detailKind === "external") { c.activate("quickDetail"); closeDetail() }
+    }
+    function forceHide() { captured = false; deferredClose = false; draftControl = null; gesture = null; close() }
+    function closeDetail() { detail = ""; detailControl = null; activity() }
+    function releaseCapture() {
+        captured = false; draftControl = null; gesture = null; fine = false
+        bubbleTimer.restart(); activity()
+        if (deferredClose) { deferredClose = false; close() }
+    }
+    function bubble(control, point, value) {
+        contact = point; bubbleText = value === undefined ? control.valueText : Math.round(value) + (control.range.unit || "")
+        bubbleVisible = true; bubbleTimer.stop()
+    }
+    function beginDial(control, point) {
+        if (control.kind === "readout" || control.value === null || control.availability !== "available") return
+        captured = true; draftControl = control; draft = control.value
+        gesture = Gesture.begin("ring", control.controlId, point, Date.now(), ValueMap.fraction(control.value, control.range) * 100)
+        bubble(control, point)
+    }
+    function moveDial(angle, distance, point) {
+        if (!draftControl || !gesture) return
+        const opts = config.dialInteraction || {snap:true, fineEnabled:true}
+        const result = Gesture.dial(gesture, angle, distance, {startAngle:ValueMap.START, snap:opts.snap, fineEnabled:opts.fineEnabled})
+        if (result.tick) { tickControl = draftControl; tickSerial++ }
+        gesture = result.state; draft = ValueMap.nativeValue(result.value / 100, draftControl.range)
+        fine = gesture.gain < 1; bubble(draftControl, point, draft)
+    }
+    function commitDial(moved, cancel) {
+        if (draftControl && draftControl.kind !== "readout" && moved && !cancel && draftControl.availability === "available") { draftControl.set(draft); report(draftControl) }
+        releaseCapture()
+    }
+    function ringStyle(control) {
+        const entries = (config.dials || []).concat(config.readoutRings || [])
+        const e = entries.find(function(entry) { return entry.id === control.controlId })
+        return Object.assign({track:"solid", knob:"round", thickness:"normal"}, config.ringStyle || {}, e ? e.style || {} : {})
+    }
 }
