@@ -114,7 +114,8 @@ function validate(obj,catalog,resources) {
         entries.forEach(function(e,i){
             const p=key+'.'+i;
             if(!object(e)||typeof e.id!=='string'){error(p,'wrong_type');return;}
-            const c=by[e.id];if(!c){error(p+'.id','unknown_control');return;}
+            // A readout ring has its own id (for example headphones); its catalog control is its source.
+            const c=key==='readoutRings' ? (by[e.source]||by[e.id]) : by[e.id];if(!c){error(p+(key==='readoutRings' ? '.source' : '.id'),'unknown_control');return;}
             if(seen[e.id]){error(p+'.id','duplicate_control');return;}
             const placement=key==='toggles' ? 'arc' : 'ring';
             if((c.placements&&c.placements.indexOf(placement)<0)||(key==='readoutRings'&&c.kind!=='readout')||(key==='dials'&&c.kind==='readout')){error(p,'wrong_placement');return;}

@@ -91,3 +91,9 @@ test('the shipped defaults validate cleanly as a whole file', async()=>{
     const cat=JSON.parse(fs.readFileSync(new URL('../controls/catalog.json',import.meta.url),'utf8'));
     assert.deepEqual(C.validate(C.DEFAULTS,cat).errors,[]);
 });
+test('a readout ring is checked by its source against the real catalog', async()=>{
+    const fs=await import('node:fs');
+    const cat=JSON.parse(fs.readFileSync(new URL('../controls/catalog.json',import.meta.url),'utf8'));
+    const r=C.validate({version:1,readoutRings:[{id:'signal',order:3,source:'wifiSignal',interface:'auto'}]},cat);
+    assert.deepEqual(r.errors,[]);
+});
