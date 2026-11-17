@@ -31,7 +31,10 @@ function lua(values) {
     function g(k) {
         const s = String(values[k]);
         if (!/^\d+(?:\.\d+)?(?:\s+\d+(?:\.\d+)?){0,3}$/.test(s)) throw new Error('Invalid gaps');
-        return '"' + s + '"';
+        // Hyprland 0.56 takes a css gap as an integer or a {top,right,bottom,left} table, never as text.
+        const n = s.split(/\s+/).map(Number), q = [n[0], n[1] ?? n[0], n[2] ?? n[0], n[3] ?? n[1] ?? n[0]];
+        if (q.every(v => v === q[0])) return String(Math.round(q[0]));
+        return '{top=' + q[0] + ',right=' + q[1] + ',bottom=' + q[2] + ',left=' + q[3] + '}';
     }
     return 'hl.config({animations={enabled=' + b('animations') + '},decoration={blur={enabled=' + b('blur') +
         '},shadow={enabled=' + b('shadows') + '}},general={gaps_in=' + g('gapsIn') + ',gaps_out=' + g('gapsOut') + '}})';

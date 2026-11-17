@@ -22,3 +22,10 @@ assert.equal(S.processStart('123 (a tricky ) name) S ' + Array(18).fill('0').joi
 assert.throws(()=>S.processStart('invalid'));
 // Read-back from Hyprland 0.56 (spike S8): gaps arrive as css text.
 assert.equal(loadLocal('map.js').parse('{"option": "general:gaps_in", "css": "0 0 0 0", "set": true }',{key:'gapsIn',type:'gaps'}),'0 0 0 0');
+// Hyprland 0.56 css gaps: an integer when all sides match, a table otherwise, never quoted text.
+{ const M=loadLocal('./map.js');
+  const base={animations:true,blur:false,shadows:true,gapsIn:'0 0 0 0',gapsOut:'5 10'};
+  const lua=M.lua(base);
+  assert.ok(lua.includes('gaps_in=0'), lua);
+  assert.ok(lua.includes('gaps_out={top=5,right=10,bottom=5,left=10}'), lua);
+  assert.ok(!/gaps_(in|out)="/.test(lua), lua); }
