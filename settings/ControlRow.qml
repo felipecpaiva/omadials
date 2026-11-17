@@ -27,7 +27,7 @@ ColumnLayout {
     readonly property string iconName: { const i = store.config.controls[controlKey]?.icon; return i && i !== "default" ? i : control.icon; }
     readonly property string availabilityText: {
         switch (control.availability) {
-        case "probing": return "Checking";
+        case "probing": return "";   // read when the corner opens; no noise in the list
         case "available": return "";
         case "unavailable": return "Not found on this machine: " + control.reason;
         case "error": return "Error: " + control.reason;
@@ -110,7 +110,7 @@ ColumnLayout {
         }
         Views.ControlIcon { Layout.preferredWidth: 22; Layout.preferredHeight: 22; theme: controlRow.theme; name: controlRow.iconName }
         Text { Layout.fillWidth: true; text: controlRow.control.label; elide: Text.ElideRight; color: controlRow.theme.text; font.family: controlRow.theme.font }
-        Text { visible: controlRow.inCorner; text: controlRow.control.valueText || ""; color: controlRow.theme.secondary; font.family: controlRow.theme.font }
+        Text { visible: controlRow.inCorner; text: controlRow.control.availability === "available" && controlRow.control.value !== null ? controlRow.control.valueText : ""; color: controlRow.theme.secondary; font.family: controlRow.theme.font }
         Repeater {
             model: controlRow.inCorner && controlRow.moveShown ? [{text:"Up",delta:-1},{text:"Down",delta:1}] : []
             SettingsButton {
