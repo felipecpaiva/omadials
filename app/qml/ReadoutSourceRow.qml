@@ -8,6 +8,7 @@ ColumnLayout {
     required property var control
     required property string entryPath
     property bool adding: false
+    signal addRequested(var fields)
     readonly property var entry: store.value(entryPath) || ({})
     property string source: entry.source || "laptopBattery"
     property int deviceIndex: 0
@@ -35,20 +36,10 @@ ColumnLayout {
         enabled: row.source === "laptopBattery" || row.devices.length > 0
         onClicked: {
             let next=JSON.parse(JSON.stringify(row.entry));
-            if(row.adding) {
-                next.id="display" + Date.now();
-                next.order=row.store.config.dials.concat(row.store.config.readoutRings).reduce(function(n,e) { return Math.max(n,e.order+1) },0);
-            }
             next.source=row.source; next.style=Object.assign({},next.style || {},{knob:"none"});
             delete next.deviceAddress; delete next.devicePath; delete next.interface;
             if(row.source!=="laptopBattery") next[({bluetoothBattery:"deviceAddress",penBattery:"devicePath",wifiSignal:"interface"})[row.source]]=row.devices[row.deviceIndex].key;
-            let changes=[{path:row.entryPath,value:next}];
-            if(row.adding) {
-                let list=JSON.parse(row.store.rawText).readoutRings || [];
-                changes=[{path:"readoutRings",value:list.concat([next])}];
-            }
-            if(row.adding) changes.push({path:"controls."+next.id,value:{shown:false,icon:"default"}});
-            row.store.setMany(changes);
+            if(row.adding) row.addRequested(next); else row.store.set(row.entryPath,next);
         }
     }
 }

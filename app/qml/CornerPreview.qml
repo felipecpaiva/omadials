@@ -12,6 +12,27 @@ ColumnLayout {
     implicitWidth: capacity.R*0.6
     readonly property var config: store.config
     readonly property var capacity: Geometry.capacity(config.size, Math.min(Screen.width,Screen.height))
+    property string editingId: ""
+    property bool compact: false
+    signal editRequested(string id, bool toggle)
+    // One list for drawing and for clicks, so a click always finds the ring or toggle drawn there.
+    readonly property var shapes: {
+        let cfg = config, rings = cfg.dials.concat(cfg.readoutRings).filter(function(e) { return cfg.controls[e.id]?.shown })
+            .sort(function(a,b) { return a.order - b.order }).slice(0,capacity.rings);
+        let toggles = cfg.toggles.filter(function(e) { return cfg.controls[e.id]?.shown });
+        return {rings:rings, radii:Geometry.ringRadii(capacity.R,rings.length),
+            toggles:toggles.slice(0,Geometry.arcSlots(capacity.toggleRadius).count), angles:Geometry.arcSlots(capacity.toggleRadius).angles};
+    }
+    function hit(x, y) {
+        let R = capacity.R, p = Geometry.toCanonical({x:x/0.6,y:y/0.6},R,R,config.corner), polar = Geometry.polar(p.x,p.y,R);
+        let toggle = shapes.toggles.findIndex(function(e,i) {
+            let t = Geometry.knobPos(preview.capacity.toggleRadius,shapes.angles[i],R);
+            return Math.hypot(t.x - p.x, t.y - p.y) <= 30;
+        });
+        if (toggle >= 0) return {id:shapes.toggles[toggle].id, toggle:true};
+        let ring = Geometry.hitRing(polar.d, shapes.radii);
+        return ring >= 0 ? {id:shapes.rings[ring].id, toggle:false} : null;
+    }
     LabelText {
         Layout.fillWidth: true
         text: qsTr("Live preview at 60 %")
@@ -36,10 +57,10 @@ ColumnLayout {
                 }
                 ctx.strokeStyle=color;ctx.lineWidth=width*scale;ctx.stroke();
             }
-            let rings=cfg.dials.concat(cfg.readoutRings).filter(function(e) { return cfg.controls[e.id]?.shown }).sort(function(a,b) { return a.order-b.order }).slice(0,preview.capacity.rings);
-            let radii=Geometry.ringRadii(R,rings.length);
+            let rings=preview.shapes.rings, radii=preview.shapes.radii;
             rings.forEach(function(entry,i) {
                 let style=Object.assign({},cfg.ringStyle,entry.style || {});
+                if (entry.id === preview.editingId) { ctx.globalAlpha=.3; arc(radii[i],3,87,preview.theme.accent,30); ctx.globalAlpha=1 }
                 ctx.setLineDash(style.track === "solid" ? [] : style.track === "dotted" ? [2,4] : [8,4]);
                 let width=({thin:2,normal:4,bold:6})[style.thickness];
                 arc(radii[i],3,87,preview.theme.track,width);
@@ -53,24 +74,35 @@ ColumnLayout {
                     else {ctx.beginPath();ctx.arc(p.x*scale,p.y*scale,5,0,2*Math.PI);ctx.fill()}
                 }
             });
-            let toggles=cfg.toggles.filter(function(e) { return cfg.controls[e.id]?.shown }), count=toggles.length;
-            Geometry.arcSlots(preview.capacity.toggleRadius).angles.slice(0,count).forEach(function(a,i) {
-                let p=point(preview.capacity.toggleRadius,a);ctx.beginPath();ctx.arc(p.x*scale,p.y*scale,10,0,2*Math.PI);
-                ctx.fillStyle=preview.theme.off;ctx.fill();ctx.strokeStyle=preview.theme.edge;ctx.lineWidth=1;ctx.stroke();
+            let toggles=preview.shapes.toggles;
+            preview.shapes.angles.slice(0,toggles.length).forEach(function(a,i) {
+                let p=point(preview.capacity.toggleRadius,a), edited=toggles[i].id===preview.editingId;
+                ctx.beginPath();ctx.arc(p.x*scale,p.y*scale,edited?13:10,0,2*Math.PI);
+                ctx.fillStyle=preview.theme.off;ctx.fill();ctx.strokeStyle=edited?preview.theme.accent:preview.theme.edge;ctx.lineWidth=edited?3:1;ctx.stroke();
                 ctx.fillStyle=preview.theme.text; ctx.font="12px Symbols Nerd Font"; ctx.textAlign="center"; ctx.textBaseline="middle";
                 ctx.fillText(Glyphs.glyph(toggles[i].id),p.x*scale,p.y*scale);
             });
         }
+        MouseArea {
+            anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+            onClicked: function(mouse) { let found = preview.hit(mouse.x, mouse.y); if (found) preview.editRequested(found.id, found.toggle) }
+        }
     }
     LabelText {
-        visible: preview.capacity.capped
+        Layout.fillWidth: true
+        text: qsTr("Click a ring or toggle to edit it.")
+        color: preview.theme.secondary; font.pixelSize: 11
+    }
+    LabelText {
+        visible: preview.capacity.capped && !preview.compact
         text: qsTr("Limited to %1 px on this screen").arg(Math.round(preview.capacity.R))
         color: preview.theme.secondary
     }
-    TabPreview { store: preview.store; theme: preview.theme; Layout.fillWidth: true }
-    LabelText { text: qsTr("Values are examples until the plugin reports them."); color: preview.theme.secondary; font.pixelSize: 11; Layout.fillWidth: true }
+    TabPreview { visible: !preview.compact; store: preview.store; theme: preview.theme; Layout.fillWidth: true }
+    LabelText { visible: !preview.compact; text: qsTr("Values are examples until the plugin reports them."); color: preview.theme.secondary; font.pixelSize: 11; Layout.fillWidth: true }
     onControlsChanged: canvas.requestPaint()
     onConfigChanged: canvas.requestPaint()
+    onEditingIdChanged: canvas.requestPaint()
     onCapacityChanged: canvas.requestPaint()
     Connections { target: preview.theme; function onAccentChanged() { canvas.requestPaint() } }
     component LabelText: Text {

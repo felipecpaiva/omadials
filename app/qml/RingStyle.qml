@@ -32,6 +32,7 @@ ColumnLayout {
             Label { text: ({track:qsTr("The line around the ring."),knob:qsTr("The marker at the current value."),thickness:qsTr("How bold the ring looks.")})[modelData]; color: ringStyleEditor.theme.secondary; font.pixelSize: 12 }
             PictureChoices {
                 theme: ringStyleEditor.theme; store: ringStyleEditor.store; path: ringStyleEditor.path + "." + modelData
+                fallback: ringStyleEditor.store.value("ringStyle." + modelData)
                 values: modelData === "track" ? ["solid","dashed","dotted","segmented"] : modelData === "knob" ? (ringStyleEditor.readout ? ["none"] : ["round","bar","none"]) : ["thin","normal","bold"]
             }
         }

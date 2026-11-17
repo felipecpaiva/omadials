@@ -11,6 +11,7 @@ ColumnLayout {
     property var words: []
     property var descriptions: []
     property string drawing: "ring"
+    property var fallback: undefined
     signal chosen(var value)
     Layout.fillWidth: true
     RowLayout {
@@ -24,7 +25,7 @@ ColumnLayout {
                 Layout.fillWidth: true; Layout.preferredWidth: 1
                 implicitHeight: choices.descriptions.length ? 124 : 98
                 Accessible.name: choices.words[index] || Labels.label(modelData)
-                highlighted: choices.store.value(choices.path) === modelData
+                highlighted: (choices.store.value(choices.path) ?? choices.fallback) === modelData
                 onClicked: { if (choices.path.indexOf("ringStyle.")===0) choices.store.setCommonStyle(choices.path,modelData); else choices.store.set(choices.path,modelData); choices.chosen(modelData) }
                 background: Rectangle { color: button.highlighted ? choices.theme.off : choices.theme.clear; border.width: button.highlighted ? 2 : 1; border.color: button.highlighted ? choices.theme.accent : choices.theme.edge; radius: choices.theme.radius }
                 contentItem: ColumnLayout {

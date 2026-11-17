@@ -10,6 +10,12 @@ ApplicationWindow {
     Material.accent: desktopTheme.accent
     Material.roundedScale: desktopTheme.radius
     AppTheme { id: uiTheme }
+    readonly property bool narrow: width < 1060
+    // The control in the Edit sheet, by id: pages and rows are rebuilt, the edited control is not.
+    property string editingId: ""
+    readonly property bool editing: editingId !== "" && configStore.config.controls[editingId]?.shown === true
+        && controlRegistry.controls.some(function(c) { return (c.controlId || c.id) === win.editingId })
+    function openEditor(id, toggle) { pages.currentIndex = toggle ? 2 : 1; editingId = id }
     ConfigStore { id: configStore; objectName: "configStore"; io: backend }
     QtObject {
         id: controlRegistry
@@ -42,7 +48,7 @@ ApplicationWindow {
         LayoutMirroring.enabled: Qt.application.layoutDirection === Qt.RightToLeft
         LayoutMirroring.childrenInherit: true
         ColumnLayout {
-            Layout.preferredWidth: 150; Layout.fillHeight: true; spacing: 8
+            Layout.preferredWidth: 150; Layout.fillWidth: false; Layout.fillHeight: true; spacing: 8
             Label { text: qsTr("omadials"); font.pixelSize: 22; font.bold: true; Layout.bottomMargin: 20 }
             Repeater {
                 model: [qsTr("Corner"),qsTr("Rings"),qsTr("Toggles"),qsTr("Behavior"),qsTr("About")]
@@ -52,7 +58,7 @@ ApplicationWindow {
                     highlighted: pages.currentIndex === index
                     contentItem: Label { text: parent.text; color: parent.highlighted ? uiTheme.ink : uiTheme.text; horizontalAlignment: Text.AlignLeft; verticalAlignment: Text.AlignVCenter; leftPadding: 14 }
                     background: Rectangle { color: parent.highlighted ? uiTheme.accent : uiTheme.clear; radius: uiTheme.radius }
-                    onClicked: pages.currentIndex = index
+                    onClicked: { win.editingId = ""; pages.currentIndex = index }
                 }
             }
             Item { Layout.fillHeight: true }
@@ -63,18 +69,33 @@ ApplicationWindow {
             Layout.fillWidth: true; Layout.fillHeight: true
             GridLayout {
                 Layout.fillWidth: true; Layout.fillHeight: true
-                columns: win.width < 1060 ? 1 : 2; columnSpacing: 20; rowSpacing: 14
+                columns: win.narrow ? 1 : 2; columnSpacing: 20; rowSpacing: 14
                 Pane {
-                    Layout.row: 0; Layout.column: win.width < 1060 ? 0 : 1
-                    Layout.fillWidth: win.width < 1060; Layout.preferredWidth: Math.max(280,liveDrawing.implicitWidth+24)
+                    Layout.row: 0; Layout.column: win.narrow ? 0 : 1
+                    Layout.fillWidth: win.narrow; Layout.preferredWidth: win.editing ? 440 : Math.max(280,liveDrawing.implicitWidth+24)
                     Layout.alignment: Qt.AlignTop
                     padding: 12
                     background: Rectangle { color: uiTheme.surface; radius: uiTheme.radius }
-                    CornerPreview { id: liveDrawing; registry: controlRegistry; objectName: "livePreview"; width: parent.width; store: configStore; theme: uiTheme }
+                    CornerPreview {
+                        id: liveDrawing; registry: controlRegistry; objectName: "livePreview"; width: parent.width; store: configStore; theme: uiTheme
+                        editingId: win.editing ? win.editingId : ""; compact: win.editing
+                        onEditRequested: function(id, toggle) { win.openEditor(id, toggle) }
+                    }
+                }
+                Loader {
+                    id: sheetLoader; objectName: "sheetLoader"
+                    active: win.editing; visible: active
+                    Layout.row: 1; Layout.column: win.narrow ? 0 : 1
+                    Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: 440
+                    sourceComponent: EditSheet {
+                        store: configStore; registry: controlRegistry; theme: uiTheme; controlId: win.editingId; showProblems: win.narrow
+                        onCloseRequested: win.editingId = ""
+                    }
                 }
                 ScrollView {
                     id: scroll; objectName: "scroll"
-                    Layout.row: win.width < 1060 ? 1 : 0; Layout.column: 0
+                    Layout.row: win.narrow ? 1 : 0; Layout.column: 0; Layout.rowSpan: win.narrow ? 1 : 2
+                    visible: !(win.narrow && win.editing)
                     Layout.fillWidth: true; Layout.fillHeight: true; clip: true; contentWidth: availableWidth
                     ColumnLayout {
                         width: scroll.availableWidth; spacing: 16
@@ -93,8 +114,8 @@ ApplicationWindow {
         }
     }
     Component { id: cornerPage; CornerPage { store: configStore; theme: uiTheme } }
-    Component { id: ringsPage; ControlsPage { store: configStore; registry: controlRegistry; theme: uiTheme; toggles: false } }
-    Component { id: togglesPage; ControlsPage { store: configStore; registry: controlRegistry; theme: uiTheme; toggles: true } }
+    Component { id: ringsPage; ControlsPage { store: configStore; registry: controlRegistry; theme: uiTheme; toggles: false; editingId: win.editingId; onEditRequested: function(id) { win.editingId = id } } }
+    Component { id: togglesPage; ControlsPage { store: configStore; registry: controlRegistry; theme: uiTheme; toggles: true; editingId: win.editingId; onEditRequested: function(id) { win.editingId = id } } }
     Component { id: behaviorPage; BehaviorPage { store: configStore; theme: uiTheme } }
     Component { id: aboutPage; AboutPage { store: configStore; theme: uiTheme; registry: controlRegistry } }
     Component.onCompleted: backend.refreshStatus()
