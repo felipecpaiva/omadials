@@ -160,8 +160,8 @@ Done when (each): contract tests for the detail, plus a hand check on the Z13.
 - [~] **P7.1 Readout rings.** (Wi-Fi signal ring live; Bluetooth device and pen need the devices) Bluetooth device battery (pick the device), Wi-Fi signal, laptop and pen battery; not
   connected shown truthfully.
 - [x] **P7.2 Game mode toggle** (2026-11-17, on and off verified live, docs/spikes.md) with exact revert (P1.7).
-- [ ] **P7.3 Hardware extras.** Keyboard light, charge limit, touchpad, touchscreen guard, airplane restore.
-- [ ] **P7.4 Schema v1 freeze.** `docs/file-contract.md`, migration rule for later versions.
+- [~] **P7.3 Hardware extras.** (2026-11-17: touchpad, touchscreen and charge limit read live; writes and the touchscreen guard need hands) Keyboard light, charge limit, touchpad, touchscreen guard, airplane restore.
+- [x] **P7.4 Schema v1 freeze.** (2026-11-17, docs/file-contract.md) `docs/file-contract.md`, migration rule for later versions.
 - [ ] **P7.5 Release v0.5** with GIF.
 
 ## P8. Release and listing (v0.6)
