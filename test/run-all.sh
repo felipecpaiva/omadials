@@ -17,3 +17,4 @@ if command -v shellcheck >/dev/null 2>&1; then
 else
     echo 'SKIP shellcheck'
 fi
+bash "$(dirname "$0")/isolation.sh"
