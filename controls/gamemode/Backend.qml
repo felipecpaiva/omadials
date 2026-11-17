@@ -4,136 +4,84 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import "../../core"
 import "map.js" as Map
+
+// Game mode: runtime Hyprland writes only (spike S8), never config files or a reload. Before writing it saves the values
+// it read to a small journal, and turning off restores exactly those and checks them. The journal survives a shell
+// restart, so game mode can still be turned off; a Hyprland reload drops runtime values, so the journal then clears itself.
 ControlBase {
     id: backend
-    property string instance: Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
-    property string stateDir: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omadials"
-    property var afterSave: null
-    property var saved: null
-    property bool ready: false
-    property bool recoverySupervised: false
-    property bool waitingRecovery: false
-    property string ownerStart: ""
-    property bool rollingBack: false
-    property var supervisorDone: null
-    property int supervisorAttempts: 0
-    property Timer supervisorRetry: Timer {
-        interval: Map.SUPERVISOR_RETRY_MS
-        onTriggered: backend.checkSupervisor()
-    }
-    property FileView ownerIdentity: FileView {
-        path: "/proc/" + Quickshell.processId + "/stat"
-        onLoaded: backend.ownerStart = Map.processStart(text())
-        onLoadFailed: backend.fail("Cannot identify the shell process")
-    }
-    availability: ready && !!instance && !!ownerStart ? "available" : "error"
-    reason: lastError || (!ready ? "Checking game recovery" : !instance || !ownerStart ? "Unknown compositor or shell instance" : "")
+    readonly property string instance: Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
+    readonly property string journalPath: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omadials/game-mode.json"
+    property var saved: null      // {version, instance, baseline, intended} while game mode is on
+    availability: instance ? "available" : "unavailable"
+    reason: instance ? "" : "Not running under Hyprland"
     value: false
+
     property FileView journal: FileView {
-        path: backend.stateDir + "/game-restore.json"
-        atomicWrites: true; printErrors: false
-        watchChanges: backend.waitingRecovery
-        onFileChanged: reload()
-        onSaved: { const next = backend.afterSave; backend.afterSave = null; if (next) next() }
-        onSaveFailed: { backend.afterSave = null; backend.fail("Cannot save game restore journal") }
+        path: backend.journalPath
+        printErrors: false
         onLoaded: {
             try {
-                backend.saved = JSON.parse(text())
-                if (!Map.validJournal(backend.saved)) throw new Error("Invalid game restore journal")
-                if (!backend.instance) throw new Error("Unknown compositor instance")
-                if (backend.saved.ownerPid === Quickshell.processId && backend.saved.ownerStart === backend.ownerStart && backend.saved.instance === backend.instance) backend.restore()
-                else { backend.waitingRecovery = true; backend.supervise(() => {}) }
-            } catch (error) { backend.fail(String(error)) }
+                const j = JSON.parse(text())
+                backend.saved = j.version === 1 && j.instance === backend.instance ? j : null
+            } catch (e) { backend.saved = null }
+            backend.refresh()
         }
-        onLoadFailed: error => {
-            if (error === FileViewError.FileNotFound) {
-                backend.saved = null; backend.waitingRecovery = false; backend.supervisorRetry.stop()
-                backend.ready = true; backend.value = false
-            }
-            else backend.fail("Cannot read game restore journal")
-        }
+        onLoadFailed: { backend.saved = null; backend.refresh() }
+        onSaveFailed: backend.fail("Cannot save the game mode journal")
     }
     property Connections events: Connections {
         target: backend.active || backend.saved ? Hyprland : null
         function onRawEvent(event) { if (event.name === "configreloaded") backend.refresh() }
     }
-    function fail(message) { lastError = message; writeState = "failed"; ready = false; changed(message) }
-    function helperPath() { return decodeURIComponent(Qt.resolvedUrl("Recovery.qml").toString().replace(/^file:\/\//, "")) }
-    function supervise(done) {
-        supervisorDone = done; supervisorAttempts = 0
-        command(["qs", "-d", "-n", "-p", helperPath()], () => checkSupervisor())
-    }
-    function checkSupervisor() {
-        if (!saved) return
-        runner.run(controlId, ["qs", "ipc", "-p", helperPath(), "call", "recovery", "ready"], 10000, (out, code) => {
-            if (!code && out.trim() === "ready") {
-                recoverySupervised = true
-                const next = supervisorDone; supervisorDone = null
-                if (next) next()
-            } else if (++supervisorAttempts < Map.SUPERVISOR_ATTEMPTS) supervisorRetry.restart()
-            else if (!waitingRecovery && saved) { lastError = "Recovery supervisor did not become ready"; restore() }
-            else fail("Recovery supervisor did not become ready")
-        })
-    }
-    function command(argv, done) {
-        if (!runner.run(controlId, argv, 10000, (out, code, error) => {
-            if (code) {
-                if (saved && saved.ownerPid === Quickshell.processId && !rollingBack && !waitingRecovery) restore()
-                else fail(error || "Game runtime command failed; journal retained")
-            }
-            else done(out)
-        })) fail("Game runtime command is busy")
+
+    function fail(message) { lastError = message; writeState = "failed"; changed(message) }
+    function run(argv, done) {
+        if (!runner.run(controlId, argv, 10000, (out, code, error) => { if (code) fail(error || "Hyprland refused the game mode change"); else done(out) }))
+            fail("Game mode is busy")
     }
     function readOptions(done, index, result) {
         const i = index || 0, data = result || {}
         if (i === Map.OPTIONS.length) { done(data); return }
         const option = Map.OPTIONS[i]
-        command(["hyprctl", "-j", "getoption", option.read], out => {
+        run(["hyprctl", "-j", "getoption", option.read], out => {
             try { data[option.key] = Map.parse(out, option); readOptions(done, i + 1, data) }
-            catch (error) {
-                if (saved && !rollingBack && !waitingRecovery) restore()
-                else fail(String(error))
-            }
+            catch (e) { fail(String(e)) }
         })
     }
-    function removeJournal() {
-        command(["rm", "--", journal.path], () => command(["rmdir", stateDir + "/game-restore.lock"], () => {
-            saved = null; ready = true; value = false; writeState = "idle"; rollingBack = false
-        }))
-    }
-    function restore() {
-        if (!saved || !Map.validJournal(saved) || saved.instance !== instance) { fail("Cannot restore unknown game session"); return }
-        writeState = "pending"; rollingBack = true
-        command(["hyprctl", "eval", Map.lua(saved.baseline)], () => readOptions(current => {
-            if (!Map.equal(current, saved.baseline)) { fail("Game baseline restore did not verify"); return }
-            removeJournal()
-        }))
-    }
+    function clearJournal() { run(["rm", "-f", "--", journalPath], () => { saved = null; value = false; writeState = "idle" }) }
     function refresh() {
-        if (writeState === "pending" || waitingRecovery || !ready) return
+        if (writeState === "pending" || !instance) return
         readOptions(current => {
             value = !!saved && Map.equal(current, saved.intended)
-            if (saved && !value && Map.equal(current, saved.baseline)) removeJournal()
+            if (saved && !value) clearJournal()   // a reload or a manual change already put things back
         })
     }
     function set(v) {
-        if (typeof v !== "boolean" || !ready || writeState === "pending") return
-        if (!v) { if (saved) restore(); return }
-        if (saved || !instance || !ownerStart) return
+        if (typeof v !== "boolean" || writeState === "pending" || !instance) return
+        lastError = ""
+        if (!v) {
+            if (!saved) { value = false; return }
+            writeState = "pending"
+            run(["hyprctl", "eval", Map.lua(saved.baseline)], () => readOptions(current => {
+                if (!Map.equal(current, saved.baseline)) { fail("Game mode restore did not verify"); return }
+                clearJournal()
+            }))
+            return
+        }
         writeState = "pending"
         readOptions(baseline => {
-            const data = {version: 1, instance: instance, ownerPid: Quickshell.processId,
-                ownerStart: ownerStart, baseline: baseline, intended: Map.intended(configuration.gameMode || {})}
-            command(["mkdir", "-p", stateDir], () => command(["mkdir", stateDir + "/game-restore.lock"], () => {
-                afterSave = () => {
-                    saved = data
-                    supervise(() => command(["hyprctl", "eval", Map.lua(data.intended)], () => readOptions(current => {
-                        if (!Map.equal(current, data.intended)) { restore(); return }
-                        value = true; writeState = "idle"
-                    })))
-                }
+            let intended
+            try { intended = Map.intended(configuration.gameMode || {}) } catch (e) { fail(String(e)); return }
+            const data = { version: 1, instance: instance, baseline: baseline, intended: intended }
+            run(["mkdir", "-p", journalPath.replace(/\/[^/]*$/, "")], () => {
+                saved = data
                 journal.setText(JSON.stringify(data))
-            }))
+                run(["hyprctl", "eval", Map.lua(intended)], () => readOptions(current => {
+                    if (!Map.equal(current, intended)) { set(false); fail("Game mode did not apply"); return }
+                    value = true; writeState = "idle"; changed("on")
+                }))
+            })
         })
     }
 }
