@@ -78,7 +78,7 @@ const S={iconReveal:0,state:'closed',corner:'bl',opacity:0,scale:C.scaleStart,hi
 let width=0,height=0,R=C.radius,ratio=1,frame=0,drag=null,holdTimer=0,holdStartTimer=0,
  bubbleTimer=0,idleTimer=0,leaveTimer=0,dwellTimer=0,playToken=0,lastPending=0;
 const tracks=new Map();
-const config={size:'M',icons:{},ringShown:[true,true,true],tabStyle:'rings2knob',iconMode:'always',iconAbove:true,demoWindow:false,toggles:[0,1,2,3,4,5,6,7,8,9,10],enabled:new Set([0,1,2,3,4,5,6,7,8,9,10]),wifiTap:'switchRadio',styles:Array.from({length:C.maxRings},()=>({track:'solid',knob:'round',thickness:'normal'})),readouts:[null,null,null],snap:true,fine:true,lightTheme:"Paper Light",darkTheme:"Midnight",game:{animations:true,blur:true,shadows:true,gaps:true},apps:[...C.demoApps],keyboard:true};
+const config={size:'M',icons:{},ringShown:[true,true,true],tabStyle:'rings2knob',iconMode:'always',iconAbove:true,demoWindow:false,toggles:[0,1,2,3,4,5,6,7,8,9,10],enabled:new Set([0,1,2,3,4,5,6,8,9,10]),wifiTap:'switchRadio',styles:Array.from({length:C.maxRings},()=>({track:'solid',knob:'round',thickness:'normal'})),readouts:[null,null,null],snap:true,fine:true,lightTheme:"Paper Light",darkTheme:"Midnight",game:{animations:true,blur:true,shadows:true,gaps:true},apps:[...C.demoApps],keyboard:true};
 S.arcOffset=0;
 const copy=document.createElement('div');copy.className='fan-copy';stage.append(copy);
 const statusBox=document.createElement('div');statusBox.className='status-box';stage.append(statusBox);
@@ -236,8 +236,8 @@ function render(){
   const right=S.corner.includes('r'),top=S.corner.includes('t');
   copy.style.display=S.opacity>0&&S.fanAlpha>0?'block':'none';copy.style.opacity=S.opacity*S.fanAlpha;
   placeBox(copy,C.textInset,C.textInset,C.readoutWidth,C.readoutDepth);
-  copy.innerHTML=`<div style="font-size:${size().batteryFont}px;line-height:1">72%</div><p class="battery-line"${size().batteryLine?"":" hidden"}>On battery, 2 h 50 m</p><button style="min-height:${C.target}px;width:100%" id="profile-chip">Balanced</button>`;
-  copy.style.pointerEvents='auto';$('profile-chip').onclick=()=>enterDetail('Power profile');
+  copy.innerHTML=`<div style="font-size:${size().batteryFont}px;line-height:1">72%</div><p class="battery-line"${size().batteryLine?"":" hidden"}>On battery, 2 h 50 m</p><div style="display:flex;gap:${C.textGap}px"><button style="min-height:${C.target}px;flex:1;min-width:0" id="profile-chip">Balanced</button><button style="min-height:${C.target}px;width:${C.target}px;flex:none" id="gear-btn" aria-label="Settings">⚙</button></div>`;
+  copy.style.pointerEvents='auto';$('profile-chip').onclick=()=>enterDetail('Power profile');$('gear-btn').onclick=()=>{$('settings-panel').hidden=false;say('Settings opened from the corner gear')};
   // Compact shows the status only briefly, as a notice beside the fan.
   statusBox.style.display=S.opacity>0&&S.fanAlpha>0&&(size().statusInside||performance.now()-(S.statusAt||0)<C.noticeHold)?'block':'none';statusBox.style.opacity=S.opacity*S.fanAlpha;
   placeBox(statusBox,C.textInset,C.statusDepth,C.statusShortWidth,C.textLine*2);

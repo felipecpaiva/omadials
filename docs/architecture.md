@@ -350,17 +350,21 @@ No live input automation by default. A live test runs only after asking whether 
 
 Moved to [plan.md](plan.md) on 2026-11-17: phases P0 to P10 with day goals and exit checks. That file is the only plan.
 
-## 14. Open decisions for the maintainer
+## 14. Decisions (closed 2026-11-17, plan P0.1)
 
-| # | Question | Recommendation |
+| # | Question | Decision |
 |---|---|---|
-| 1 | Settings app timing | Panel at v0.3, app at v0.7 after the schema freeze (section 9). |
-| 2 | Replace the bar's audio, network and power widgets, or sit beside them (open since research.md) | Sit beside. Removing stock widgets is the user's choice and OmaBar already does it. |
-| 3 | Volume above 100% | Default cap 100, setting up to 150, truthful display above the cap (section 2). |
-| 4 | `bar-widget` kind | Leave out. With it, install prompts for a bar section and places an entry (OmaBar section 6), which breaks "installing changes nothing you can see". Tap, keybind and IPC cover it; revisit on request. |
-| 6 | Thinner readout bands for more rings? | Keep 44 px bands, 48 px targets and S 2 / M 3 / L 4 cap. Thin strokes do not make more touch room. |
-| 5 | Default toggle set at M | Wi-Fi, Bluetooth, night light, DND, keep awake, keyboard light (research.md step 1). Airplane, touchpad, touchscreen and recording are available but off by default. |
-
+| 1 | Settings app timing | Panel at v0.3, standalone app at v0.7 after the schema freeze (section 9). |
+| 2 | Bar widgets: replace or sit beside | Sit beside; omadials never edits the bar. Later (plan, Later): when both omadials and OmaBar are installed, offer to hide a control in one app when it is enabled in the other. Always ask, never change the other app silently. Needs a small shared contract between the two. |
+| 3 | Volume above 100% | Default cap 100, a setting allows up to 150, the number always shows the real value (section 2). |
+| 4 | `bar-widget` kind | Left out. Tap, mouse push, keybind and IPC cover opening. Installing changes nothing you can see. |
+| 5 | Default toggle set at M | Wi-Fi, Bluetooth, night light, DND, keep awake, keyboard light. Others available but off by default. |
+| 6 | Thinner readout bands for more rings | No. Keep 44 px bands, 48 px targets and the per-size ring cap. |
+| 7 | Custom corner icons | A local SVG or PNG file, or an icon theme name. Read only, size limited, validated; a bad icon falls back to the default tab and is reported (ux.md section 5). |
+| 8 | Early release of a drag-open | Returns closed in 120 ms on the shared curve, no overshoot (experience.md). |
+| 9 | Ring radii | Band centres at R - 22 - 44 x i, as in the prototype. A Geometry test in P2.2 checks labels at every size; only a failing size changes. |
+| 10 | Size L on a screen below its radius | Shrinks to the 45% cap; Settings shows "capped at N px". |
+| 11 | Very small screens | Below the minimum for the chosen size, fall back to Compact and say why. Below Compact's minimum, show fewer rings; never shrink touch targets below 48 px or bands below 44 px. |
 
 ### Round 2 contract additions (sections 4 and 6)
 

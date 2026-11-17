@@ -108,6 +108,13 @@ Still open: replace the bar's audio, network and power widgets, or sit beside th
 - `Accessible.name` and role on every control: "Volume, 40 percent" (Slider), "Wi-Fi, on" (CheckBox).
 - Never color alone: on is filled, off is outlined, muted has a slashed icon. Text follows `Style.font`.
 
+## Defaults (decided 2026-11-17, plan P0.2)
+
+- **Corner tab:** two rings and a knob. Three rings stays available in Settings.
+- **Size:** Normal (M, 420 px).
+- **Settings from the corner:** a 48 px gear button beside the power profile chip, in the corner readout. The chip shrinks to make room. Keybind and the app launcher also open Settings.
+- **Toggles, in order:** Wi-Fi, Bluetooth, night light, do not disturb, keep awake, keyboard light; then by scrolling: airplane, game mode, theme, media. Touchpad, touchscreen and recording are available but off. Compact shows the first 5 without scrolling, Normal 6, Large 7.
+
 ## 5. Corners, monitors, rotation
 
 - **Corner choice.** Settings pick the corner (bottom-left default) with a live preview.

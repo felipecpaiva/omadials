@@ -41,10 +41,10 @@ Days are working sessions, not calendar days, and they are estimates.
 
 Goal: answer every open question so code never waits on a decision. Source: the "Your call" lines on the review page.
 
-- [ ] **P0.1 Answer the 9 open calls.** Custom corner icons, no bounce on early release, volume above 100%, ring radii,
+- [x] **P0.1 Answer the 9 open calls.** (2026-11-17, all recommendations taken; see `architecture.md` section 14) Custom corner icons, no bounce on early release, volume above 100%, ring radii,
   size L on the Z13, very small screens, bar widgets, bar button, settings app timing. Each has a recommendation.
   Done when: each answer is written in `ux.md`, `experience.md` or `architecture.md`, and the board shows 0 "Your call".
-- [ ] **P0.2 Pick the defaults.** Corner tab (2 rings and a knob, or 3 rings), default size (Normal), default toggles at
+- [x] **P0.2 Pick the defaults.** (2026-11-17: 2 rings and a knob, Normal, gear beside the chip, hardware-first toggles; `ux.md` Defaults) Corner tab (2 rings and a knob, or 3 rings), default size (Normal), default toggles at
   each size. Done when: written in `ux.md` and set as the prototype defaults.
 - [ ] **P0.3 Docs pass.** Read the round 2 and 3 doc changes end to end, merge "Round 3 contract" into the main sections
   of `experience.md`, renumber acceptance criteria into one list, remove stale text. Done when: one reading order works
@@ -186,5 +186,6 @@ Done when (each): contract tests for the detail, plus a hand check on the Z13.
 
 - VPN toggle (needs a VPN client).
 - On-screen keyboard toggle (needs an on-screen keyboard installed; also unblocks inline Wi-Fi passwords in tablet mode).
+- omadials and OmaBar coordination: when a control is enabled in one, offer to hide it in the other. Always ask.
 - A small documented hook for the future Shortcuts plugin (user-made toggles and actions). omadials itself never runs
   commands from its config.

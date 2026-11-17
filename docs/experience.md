@@ -204,16 +204,14 @@ Continue `ux.md` acceptance numbering.
 39. Closed and resting open views have no visual frame callbacks. Pending-only motion is confined to pending controls. Dismissal never waits for a command.
 40. All dismissal paths retain the outside catcher through close and release it on completion. Forced hide is immediate. Verify layer focus and first-map compositor timing by hand.
 
-## Open questions and recommendations
+## Decisions on earlier open questions
 
-| Question | Recommendation |
-|---|---|
-| M has six 48 px toggle slots on radius 216, plus a gear at the end. Seven targets need 336 px while the sweep offers about 294 px. Where does gear fit? | Reserve a distinct 48 px readout target for gear. Keep six scrollable arc slots. Round 2 adopts the separate gear target; prototype settings are outside the stage. |
-| What exact radii and label rectangles does Geometry return? The UX fixes bands but not their centre offsets. | Adopt R-22-44*i after checking labels and toggle clearance for every size. Prototype uses that proposed formula. No new radius should be buried in a view. |
-| At tiny output sizes, R capped at 45% can be too small for ring bands and 48 px targets. | Define a minimum supported logical output size and a compact fallback in a later UX decision. Prototype keeps a minimum 850 px demo stage with horizontal scrolling on phones. It is not a proposed desktop size rule. |
-| Does the installed layer lifecycle add compositor fade to our content fade? | Keep mapped and use content visibility plus masks if S3 passes. Profile first mapping separately. Avoid a global animation override. |
-| Can theme interpolation maintain contrast on every installed theme? | Gate intermediate colour pairs and snap failing text/glyph pairs as specified. Validate White, Tokyo Night and Flexoki Light on hardware. |
-| UX wording says the early corner release "springs closed". Is overshoot intended? | Use the 120 ms shared ease-out return with no overshoot. If a physical spring is wanted, approve a UX change with exact damping and settling time first. |
+Closed 2026-11-17 (plan P0.1); the full list is in `architecture.md` section 14.
+
+- Early drag-open release: 120 ms return on E, no overshoot. "Springs closed" in older text means this.
+- Ring radii: R - 22 - 44 x i, checked per size in the Geometry tests.
+- Small outputs: fall back to Compact, then fewer rings; targets never shrink.
+- Compositor fade stacking and theme contrast during a cross-fade stay open as Z13 checks (plan P1.3 and P2.6).
 
 ## Prototype scope and verification
 
