@@ -104,6 +104,9 @@ function validate(obj,catalog,resources) {
     }
     function icon(value,path) {
         if(value==='default')return value;
+        // No icon list is needed: a plain icon name (resolved when drawn, unknown ones draw the default) or a local
+        // svg/png file. Scanning every installed icon froze the shell (33k files on the Z13).
+        if(typeof value==='string'&&(/^[A-Za-z0-9._-]{1,64}$/.test(value)||/^\/[^\0]{1,255}\.(svg|png)$/.test(value)))return value;
         if(resources&&resources.icons&&resources.icons.indexOf(value)>=0)return value;
         error(path,'unknown_value');return 'default';
     }

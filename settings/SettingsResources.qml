@@ -13,10 +13,6 @@ Item {
     onThemesChanged: if (themes.length) store.validationResources = Object.assign({},store.validationResources,{themes:themes})
     function discover() {
         if (loadIcons && themeBackend) themeBackend.refresh();
-        if (loadIcons) registry.runner.run("settings:icons", ["find", "/usr/share/icons", Quickshell.env("HOME") + "/.local/share/icons", "-type", "f"], 10000, (out, code, error) => {
-            const icons = Array.from(new Set(out.split("\n").filter(n => /\.(svg|png|xpm)$/.test(n)).map(n => n.slice(n.lastIndexOf("/")+1).replace(/\.(svg|png|xpm)$/, "")))).sort();
-            if (icons.length) store.validationResources = Object.assign({}, store.validationResources, {icons:icons});
-        });
         if (loadPens) registry.runner.run("settings:pens", ["upower", "-e"], 5000, (out, code, error) => {
             if (code) return;
             out.trim().split("\n").filter(path => /\/org\/freedesktop\/UPower\/devices\//.test(path)).forEach(path => {

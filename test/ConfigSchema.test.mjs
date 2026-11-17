@@ -60,7 +60,7 @@ test('catalog options and resource validation',()=>{
     const custom=catalog.concat([{id:'extra',placements:['arc'],options:{mode:{default:'auto',enum:['auto','manual']}}}]);
     assert.equal(C.validate({version:1,options:{extra:{mode:'bad'}}},custom).errors[0].code,'unknown_value');
     assert.equal(validate({version:1,cornerIcon:{source:'custom-icon'},themePair:{light:'white',dark:'tokyo-night'}}).errors.length,0);
-    assert.ok(validate({version:1,cornerIcon:{source:'missing'}}).errors.some(e=>e.path==='cornerIcon.source'));
+    assert.ok(validate({version:1,cornerIcon:{source:'bad name'}}).errors.some(e=>e.path==='cornerIcon.source'));
     assert.ok(validate({version:1,themePair:{dark:'missing'}}).errors.some(e=>e.path==='themePair.dark'));
 });
 
@@ -68,7 +68,7 @@ test('readout style inheritance, incompatible fields and icon runtime fallback',
     const r=validate({version:1,readoutRings:[{id:'headphones',order:4,source:'laptopBattery',style:{thickness:'bold'}}]});
     assert.equal(r.errors.length,0);assert.equal(r.config.readoutRings[0].style.knob,'none');
     assert.ok(validate({version:1,readoutRings:[{id:'headphones',order:4,source:'laptopBattery',interface:'auto'}]}).errors.some(e=>e.code==='wrong_placement'));
-    const icon=validate({version:1,cornerIcon:{source:'missing'}});assert.equal(icon.config.cornerIcon.source,'default');assert.ok(icon.errors.length);
+    const icon=validate({version:1,cornerIcon:{source:'bad name'}});assert.equal(icon.config.cornerIcon.source,'default');assert.ok(icon.errors.length);
 });
 test('partial control objects retain defaults and malformed containers report errors',()=>{
     assert.equal(validate({version:1,controls:{wifi:{icon:'custom-icon'}}}).config.controls.wifi.shown,true);
@@ -100,4 +100,8 @@ test('a readout ring is checked by its source against the real catalog', async()
 test('default toggles start with Wi-Fi and keep hidden extras last (ux.md Defaults)',()=>{
     const ids=C.DEFAULTS.toggles.map(t=>t.id);
     assert.equal(ids[0],'wifi'); assert.deepEqual(ids.slice(-2),['touchpad','touchscreen']);
+});
+test('icons need no installed-icon list: plain names and local svg or png files pass, junk is reported', ()=>{
+    for (const ok of ['default','audio-volume-high','wifi','/home/u/icons/x.svg']) assert.equal(C.validate({version:1,cornerIcon:{source:ok}},catalog).errors.length,0,ok);
+    for (const bad of ['a b','../x.svg','$(rm)','x'.repeat(65)]) assert.ok(C.validate({version:1,cornerIcon:{source:bad}},catalog).errors.some(e=>e.path==='cornerIcon.source'),bad);
 });

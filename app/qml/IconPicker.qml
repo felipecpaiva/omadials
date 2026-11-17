@@ -19,7 +19,7 @@ RowLayout {
     Image { visible: picker.store.value(picker.path)!=="default"; source: visible ? picker.store.io.iconUrl(picker.store.value(picker.path)) : ""; Layout.preferredWidth: 24; Layout.preferredHeight: 24 }
     ComboBox {
         Layout.preferredWidth: 170
-        property var names: ["default"].concat(picker.store.validationResources.icons || [])
+        property var names: ["default"].concat(Object.keys(Glyphs.GLYPHS))
         model: names; currentIndex: names.indexOf(picker.store.value(picker.path))
         displayText: currentIndex === 0 ? qsTr("Default") : currentText
         Accessible.name: picker.label
