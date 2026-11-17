@@ -43,11 +43,11 @@ Item {
   }
 
   Text {   // corner readout: battery number (more readout pieces arrive with the layout pass)
-    readonly property bool right: fan.corner.indexOf("right") >= 0
-    readonly property bool top: fan.corner.indexOf("top") >= 0
+    readonly property bool onRight: fan.corner.indexOf("right") >= 0
+    readonly property bool onTop: fan.corner.indexOf("top") >= 0
     text: UPower.displayDevice.ready ? Math.round(UPower.displayDevice.percentage * 100) + "%" : ""
     color: fan.theme.text; font.family: fan.theme.font; font.pixelSize: 40
-    x: right ? fan.screenWidth - 12 - width : 12
-    y: top ? 12 : fan.screenHeight - 12 - height - 60
+    x: onRight ? fan.screenWidth - 12 - width : 12
+    y: onTop ? 12 : fan.screenHeight - 12 - height - 60
   }
 }
