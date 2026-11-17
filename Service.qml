@@ -76,6 +76,14 @@ Item {
     function close(): string { fanModel.close(); return "ok" }
     function toggle(): string { if (fanModel.open) fanModel.close(); else { fanModel.output = root.focusedScreen(); fanModel.show(true) } return "ok" }
     function settings(): string { root.openSettings(); return "ok" }
+    // Run one control action, as a tap would: `omarchy-shell omadials activate gameMode switch`. For keybinds and scripts.
+    function activate(id: string, action: string): string {
+      const c = controlRegistry.byId(id)
+      if (!c) return "unknown control: " + id
+      if (c.availability !== "available") return "unavailable: " + c.reason
+      c.activate(action || "tap")
+      return "ok"
+    }
     function status(): string {
       const s = JSON.parse(controlRegistry.status())
       s.open = fanModel.open
