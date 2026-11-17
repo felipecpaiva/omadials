@@ -133,6 +133,9 @@ Goal: open the corner on the Z13 and change real values.
 
 ## P5. Settings panel (v0.3)
 
+> 2026-11-17: superseded. The maintainer chose one settings surface, the app (P9); the panel was removed and the
+> corner gear opens the app. P5's settings content now lives in the app.
+
 - [x] **P5.1 Panel shell** with live preview and the problems banner. Done when: opens from IPC and the corner.
 - [x] **P5.2 Layout settings.** Corner, size (Compact, Normal, Large, with the cap message), corner tab and icon modes,
   above or behind windows. Done when: each change applies live within 1 s.

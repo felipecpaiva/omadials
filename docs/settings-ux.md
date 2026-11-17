@@ -1,5 +1,8 @@
 # Settings experience
 
+> 2026-11-17: there is one settings surface, the standalone app (`app/`). The shell panel described in early rounds
+> was removed at the maintainer's request; the corner gear opens the app.
+
 The settings app (`app/`) and the shell panel (`settings/`) share one information design. Review of v0.7 on
 2026-11-17 (maintainer: "it works but looks a bit confusing"): a long flat form, config-key labels, a controls wall
 with per-control style blocks, backwards game mode wording, empty theme pair, raw JSON on About, Reset at the top,

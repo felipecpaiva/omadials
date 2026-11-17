@@ -464,7 +464,7 @@ Moved to [plan.md](plan.md) on 2026-11-17: phases P0 to P10 with day goals and e
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | Settings app timing | Panel at v0.3, standalone app at v0.7 after the schema freeze (section 9). |
+| 1 | Settings app timing | Changed 2026-11-17 (maintainer): one settings surface only, the standalone app `omadials-settings` (`app/`). The shell panel was removed; the corner gear and `omarchy-shell omadials settings` launch the app (focus it if open). |
 | 2 | Bar widgets: replace or sit beside | Sit beside; omadials never edits the bar. Later (plan, Later): when both omadials and OmaBar are installed, offer to hide a control in one app when it is enabled in the other. Always ask, never change the other app silently. Needs a small shared contract between the two. |
 | 3 | Volume above 100% | Default cap 100, a setting allows up to 150, the number always shows the real value (section 2). |
 | 4 | `bar-widget` kind | Left out. Tap, mouse push, keybind and IPC cover opening. Installing changes nothing you can see; enabling shows only the corner tab (see Activation). |

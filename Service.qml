@@ -8,7 +8,7 @@ import "vm"
 import "views"
 
 // Root: builds the theme, the config store, the control registry and the model, puts one corner and one tab window
-// on every output, and answers `omarchy-shell omadials ...`. The settings panel reads registry, configStore and theme.
+// on every output, and answers `omarchy-shell omadials ...`. Settings live in the omadials-settings app (app/).
 Item {
   id: root
   property string omarchyPath: ""
@@ -46,7 +46,18 @@ Item {
     }
   }
 
-  function openSettings() { if (root.shell) root.shell.summon("io.github.felipecpaiva.omadials", "{}") }
+  // One settings surface: the standalone app (maintainer, 2026-11-17). Installed copy first, else the one built in
+  // this plugin's app/ folder; focus it if it is already open.
+  readonly property string localApp: decodeURIComponent(Qt.resolvedUrl("app/omadials-settings").toString().replace(/^file:\/\//, ""))
+  function openSettings() {
+    controlRegistry.runner.run("settings:which", ["which", "omadials-settings"], 3000, (out, code) => {
+      const launch = code === 0 ? "uwsm-app -- omadials-settings" : "uwsm-app -- " + root.localApp
+      controlRegistry.runner.run("settings:open", ["omarchy-launch-or-focus", "omadials-settings", launch], 10000, (o, c) => {
+        if (c !== 0) fanModel.say("Settings app not found. Install omadials-settings (see the README).", true, false)
+      })
+      fanModel.close()
+    })
+  }
   function showFan() { fanModel.show(false) }
   function focusedScreen() {
     const name = Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""

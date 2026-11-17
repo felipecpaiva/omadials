@@ -19,7 +19,7 @@ A corner panel for [Omarchy](https://omarchy.org), with rings for brightness, vo
 - Tap toggles for Wi-Fi, Bluetooth, night light, do not disturb, keep awake and keyboard light. Scroll the arc for airplane mode, game mode, theme and media controls.
 - Hold a control to open its details. Details include Wi-Fi networks, Bluetooth devices, mute, power profiles, installed themes and media playback. Some detail actions are still incomplete; see Known limits.
 - A small corner tab marks where to open it. Choose two rings and a knob, three rings, or your own icon. The colours follow your Omarchy theme.
-- Open Settings from the gear to choose the corner, layout and controls. Changes are saved as you make them. Reset offers Undo for 10 seconds.
+- Open Settings from the gear in the corner, or run `omarchy-shell omadials settings`. Both open the omadials-settings app (install it from `app/`, see below).
 
 <!-- TODO: Maintainer adds a real screenshot of the open corner. -->
 ![The open corner](docs/screenshots/corner.png)
