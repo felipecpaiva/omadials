@@ -219,7 +219,7 @@ Continue `ux.md` acceptance numbering.
 
 Open `docs/prototype/motion.html` locally. It has no dependencies or network requests. Play storyboard drives entry, values, tick, slow confirmation, failure, arc scrolling, detail, external update and close. Manual controls cover corner choice, detail kind, unavailable hardware, light/dark, reduced motion and quarter speed. Pointer and touch use the same capture path. A browser cannot emulate Hyprland focus, layer input masks, real backends or physical haptics. It demonstrates a visual tick only.
 
-The round 2 extracted script passed `node --check`. A Node DOM stub exercised four-corner rendering, arc bounds, disconnected readouts, styles, quick Wi-Fi detail, reduced motion and close. This checks logic, not browser rendering. Headless browser capture is blocked in this environment. Browser appearance, touch hardware, Qt shader fallback, first-map behaviour, real theme contrast and Z13 frame pacing still require hand verification.
+The round 2 extracted script passed `node --check`. A Node DOM stub exercised four-corner rendering, arc bounds, disconnected readouts, styles, quick Wi-Fi detail, reduced motion and close. This checks logic, not browser rendering. Since round 3, `docs/prototype/shoot.sh` takes headless Chromium screenshots of all 4 corners with a long status, and each round is checked from those images. Headless Chromium does not run animation frames reliably, so motion checks replace the frame clock with a 16 ms timer; they prove the animation logic, not real frame pacing. Touch, Qt shaders, first-map behaviour and Z13 frame pacing still need the device.
 
 Round 2 text, styles and readout acceptance is in ux.md 41 to 45. Track thickness is configurable 2, 4 or 6 px. Dash patterns are shader uniforms, never per-frame path rebuilds. Readouts have no knob and flat caps.
 
@@ -234,10 +234,27 @@ Marks stay visible at 0, 25, 50, 75 and 100. Snap attracts the displayed value w
 
 Order changes only in settings, never from usage. Toggle scrolling resets to the first slot on each open so the same initial controls are easy to find.
 
-All fan text stays inside the quarter circle. Labels occupy the side-edge start of each band. The corner readout has a 40 px battery number and a 48 px profile chip. A 196 px wide status box, at least 12 px text with 18 px lines, stays inside the toggle arc. Long status expands toward the corner and hides the battery line, then the large number if needed. It wraps to two lines. If two lines cannot hold the full message, the fan yields to a scrollable detail with the full message. No ellipsis. Right corners right-align upright text.
+All fan text stays inside the quarter circle. Labels occupy the side-edge start of each band. The corner readout has a 40 px battery number and a 48 px profile chip. The status box is 100 px wide for one line above the battery number. A longer status hides the battery number and battery line and takes their room above the profile chip: 124 px wide, up to 4 lines of 12 px text on 18 px lines, inside the toggle arc. Longer still, it shows whole as a notice beside the fan along the same screen edge (260 px wide, theme surface and border). Text is never cut and never overlaps.
 
 ### Media fit study
 
 At M the three 44 px bands use 132 px. A progress readout would replace brightness, volume or mic under the three-ring cap. It also cannot fit track title and three 48 px transport targets. The R by R detail can fit a 48 px header, two title lines, a 48 px progress row and three 48 px transport controls with room to scroll. Choose a media detail, reached by holding the volume label or tapping Media. Volume detail includes the Media button. No progress ring.
 
 Storyboard: open, normal drag, outward fine clutch, detent escape, toggle scroll, app sliders and output picker, media transport, theme picker, return and close. Prototype data and commands are fake.
+
+## Corner icon
+
+Closed is no longer an empty corner when the icon is on. `cornerIcon.mode` (ux.md section 5) decides:
+
+| Mode | Closed look | Pointer enters the 32 px zone | Opens by |
+|---|---|---|---|
+| `always` | Icon at 70% opacity | No change; push dwell and hint arc as before | Tap, click, push dwell, keybind, IPC |
+| `onApproach` | Nothing | Icon fades 0 to 70% in 80 ms, E; fades out in 80 ms on leave. Replaces the hint arc. Push dwell is off | Tap, click, keybind, IPC |
+| `never` | Nothing | Hint arc and push dwell as before | Tap, click, push dwell, keybind, IPC |
+
+On open the icon fades out with the hint timing (80 ms) while the fan enters; on close it returns after the close completes. `aboveWindows: false` moves only the icon behind windows; the tap zone stays above them. Reduced motion shows and hides the icon instantly.
+
+53. In each icon mode a tap in the 32 px zone opens, also with a window covering the corner and the icon behind it.
+54. In `onApproach`, a pointer that rests in the zone for 2 s shows the icon and never opens the fan by itself.
+55. The icon never appears over a fullscreen window or on the lock screen.
+56. An invalid custom icon falls back to the default icon and is reported in settings, never silently.

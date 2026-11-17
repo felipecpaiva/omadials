@@ -225,7 +225,8 @@ function render(){
   placeBox(statusBox,C.textInset,C.statusDepth,C.statusShortWidth,C.textLine*2);
   statusBox.style.padding='0';statusBox.style.border='0';statusBox.style.background='transparent';statusBox.textContent=S.status;
   // Measure before choosing the readout priority. No clipping or ellipsis.
-  let long=statusBox.scrollHeight>C.textLine;
+  // scrollHeight never drops below the box height, so measure the text with an auto height.
+  statusBox.style.height='auto';let long=statusBox.scrollHeight>C.textLine;statusBox.style.height=C.textLine*2+'px';
   statusBox.style.pointerEvents='none';statusBox.onclick=null;
   // Long status: the battery lines give way and the status takes their room above the chip.
   if(long){placeBox(copy,C.textInset,C.textInset,C.readoutWidth,C.target);copy.querySelector('.battery-line').hidden=true;copy.firstElementChild.hidden=true;

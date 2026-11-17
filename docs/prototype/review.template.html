@@ -73,20 +73,22 @@ code { font:13px var(--display) }
 .area { margin-top:28px }
 .area > p { color:var(--dim); font-size:14px }
 .rows { margin-top:10px; border-top:1px solid var(--line) }
-.row { display:grid; grid-template-columns:110px minmax(0,1fr); gap:6px 16px; padding:12px 0; border-bottom:1px solid var(--line) }
-.row .what { min-width:0 }
-.row .what strong { font-weight:600 }
-.row .why { color:var(--dim); font-size:14px; margin-top:2px }
-.row .rec { font-size:14px; margin-top:4px }
-.row .rec::before { content:"Recommend: "; font-weight:600; color:var(--call) }
-.row .src { font:12px var(--display); color:var(--dim); margin-top:4px }
-.row[hidden] { display:none }
+.rows .row { display:grid; grid-template-columns:110px minmax(0,1fr); gap:6px 16px; padding:12px 0; border-bottom:1px solid var(--line) }
+.rows .row .what { min-width:0 }
+.rows .row .what strong { font-weight:600 }
+.rows .row .why { color:var(--dim); font-size:14px; margin-top:2px }
+.rows .row .rec { font-size:14px; margin-top:4px }
+.rows .row .rec::before { content:"Recommend: "; font-weight:600; color:var(--call) }
+.rows .row .src { font:12px var(--display); color:var(--dim); margin-top:4px }
+.rows .row[hidden] { display:none }
 .limits { margin-top:16px; padding:16px; border:1px dashed var(--line); border-radius:10px }
 .limits ul, .loop ol { margin:8px 0 0; padding-left:20px }
 .loop li, .limits li { margin:4px 0 }
-@media (max-width:600px) { .row { grid-template-columns:1fr } }
+@media (max-width:600px) { .rows .row { grid-template-columns:1fr } }
 @media (prefers-reduced-motion: reduce) { * { transition:none !important } }
-#settings-panel {color:var(--fg);background:var(--panel);padding:16px;border:1px solid var(--line);border-radius:10px;margin-top:4px;flex-basis:100%;max-height:300px;overflow:auto} #settings-panel fieldset {border:1px solid var(--line);margin:12px 0;display:flex;flex-wrap:wrap;gap:8px} #settings-panel .config-row {display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%} #settings-panel input:not([type="checkbox"]) {font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);min-height:40px;max-width:100%} #detail input {width:100%;min-height:48px;font:inherit;background:var(--off);color:var(--text)} #detail button,#detail h2 {overflow-wrap:anywhere;white-space:normal} #stage .fan-copy {position:absolute;pointer-events:none;font-size:12px;line-height:18px;overflow-wrap:anywhere;color:var(--text)} #stage .fan-copy p {margin:0;color:inherit} #stage .status-box {position:absolute;pointer-events:none;box-sizing:border-box;padding:8px 12px;background:var(--surface);border:1px solid var(--edge);font:12px/18px system-ui;overflow-wrap:anywhere;color:var(--text)}
+#settings-panel {color:var(--fg);background:var(--panel);padding:16px;border:1px solid var(--line);border-radius:10px;margin-top:4px;flex-basis:100%;max-height:300px;overflow:auto}
+#detail input[type=checkbox] {width:auto;min-height:0}
+#profile-chip {background:var(--off);color:var(--text);border:1px solid var(--edge);border-radius:10px;font:500 13px var(--body)} #settings-panel fieldset {border:1px solid var(--line);margin:12px 0;display:flex;flex-wrap:wrap;gap:8px} #settings-panel .config-row {display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%} #settings-panel input:not([type="checkbox"]) {font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);min-height:40px;max-width:100%} #detail input {width:100%;min-height:48px;font:inherit;background:var(--off);color:var(--text)} #detail button,#detail h2 {overflow-wrap:anywhere;white-space:normal} #stage .fan-copy {position:absolute;pointer-events:none;font-size:12px;line-height:18px;overflow-wrap:anywhere;color:var(--text)} #stage .fan-copy p {margin:0;color:inherit} #stage .status-box {position:absolute;pointer-events:none;box-sizing:border-box;padding:8px 12px;background:var(--surface);border:1px solid var(--edge);font:12px/18px system-ui;overflow-wrap:anywhere;color:var(--text)}
 </style>
 
 <div class="wrap">
