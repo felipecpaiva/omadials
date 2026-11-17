@@ -42,13 +42,13 @@ canvas { display:block; width:100%; height:auto; background:var(--desk); touch-a
 
 <div class="wrap">
   <h1>oma<span>dials</span> motion lab</h1>
-  <p class="lede">Seven ways for the corner to open and close, on identical desktops. Tap a corner to open or close it, or press in the corner and drag outward: the radius styles follow your finger and finish from your flick. Tune speed and bounce, then pick the one that feels right.</p>
+  <p class="lede">Six ways for the corner to open and close, on identical desktops. Every style opens out of the tab and closes back into it. Tap a corner, or press in it and drag outward: each style follows your finger and finishes from your flick. Tune speed and bounce, then pick the one that feels right.</p>
   <div class="bar">
     <button class="primary" id="all">Open all</button>
     <button id="none">Close all</button>
     <button id="loop">Loop all</button>
     <label><input type="checkbox" id="slow"> Slow motion x0.25</label>
-    <label><input type="checkbox" id="values" checked> Show live values on the tab</label>
+    
   </div>
   <div class="grid" id="grid"></div>
   <p class="note">Pick a favourite with its "Pick this" button; tell me the name and your speed and bounce, and that motion goes into the plugin. Numbers come from docs/motion-research.md. Springs use mass 1, stiffness (2π / duration)² and damping ratio 1 − bounce, as Apple describes them.</p>
@@ -83,45 +83,49 @@ const tween = (t, ms, ease) => ease(clamp(t / ms));
 const W = 360, H = 250, R = 205, TAB = 21, RINGS = [R - 11, R - 33, R - 55], MINI = [16, 11, 6];
 const VALUES = [.79, .88, 1], TOGGLE_R = 118, TOGGLES = 6, A0 = 3, A1 = 87;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const C = { surface: css('--surface'), edge: css('--edge'), track: css('--track'), accent: css('--accent'), ink: css('--ink'), off: css('--off'), fg: css('--fg'), dim: css('--dim'), desk: css('--desk') };
+const C = { surface: css('--surface'), edge: css('--edge'), track: css('--track'), accent: css('--accent'), ink: css('--ink'), off: css('--off'), fg: css('--fg'), dim: css('--dim') };
 const rad = a => a * Math.PI / 180;
+const angle = f => A0 + (A1 - A0) * f;
 function arc(ctx, r, a0, a1, color, width) {   // angles from the left screen edge, corner at bottom-left
   ctx.beginPath(); ctx.arc(0, H, r, rad(a0 - 90), rad(a1 - 90)); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.stroke();
 }
-function knob(ctx, r, a, alpha) {
+function knob(ctx, r, a, size, alpha) {
+  if (alpha <= 0) return;
   const x = r * Math.sin(rad(a)), y = H - r * Math.cos(rad(a));
-  ctx.globalAlpha *= alpha; ctx.beginPath(); ctx.arc(x, y, 5.5, 0, 7); ctx.fillStyle = C.accent; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.stroke();
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.beginPath(); ctx.arc(x, y, size, 0, 7); ctx.fillStyle = C.accent; ctx.fill();
+  ctx.lineWidth = 1.5; ctx.strokeStyle = C.ink; ctx.stroke(); ctx.restore();
 }
-// s: {alpha, scale, dx, dy, surfR, clipR, ring:[{r,sweep,value,alpha}], toggles:[{alpha,scale}], tab, labels}
-function draw(ctx, s, liveTab) {
-  ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.clearRect(0, 0, W, H);   // canvas is 2x for sharp lines
-  ctx.save();
-  if (s.tab > 0) {                                  // the closed tab with its live mini rings
-    ctx.globalAlpha = s.tab;
-    ctx.beginPath(); ctx.moveTo(0, H); ctx.arc(0, H, TAB, rad(-90), 0); ctx.closePath(); ctx.fillStyle = C.surface; ctx.fill(); ctx.strokeStyle = C.edge; ctx.lineWidth = 1; ctx.stroke();
-    MINI.forEach((r, i) => { arc(ctx, r, A0, A1, C.track, 2); arc(ctx, r, A0, A0 + (A1 - A0) * (liveTab ? VALUES[i] : .6), C.accent, 2); });
-    knob(ctx, MINI[0], A0 + (A1 - A0) * (liveTab ? VALUES[0] : .6), .9);
-  }
-  ctx.restore();
-  if (s.alpha <= 0.001) return;
-  ctx.save();
-  ctx.globalAlpha = s.alpha;
-  ctx.translate(s.dx || 0, s.dy || 0);
-  ctx.translate(0, H); ctx.scale(s.scale, s.scale); ctx.translate(0, -H);
-  if (s.clipR !== null) { ctx.beginPath(); ctx.moveTo(0, H); ctx.arc(0, H, Math.max(0, s.clipR), rad(-90), 0); ctx.closePath(); ctx.clip(); }
-  const wedge = s.surfSweep === undefined ? 1 : clamp(s.surfSweep, 0, 1.05);   // the fan unfolds its background too
-  ctx.beginPath(); ctx.moveTo(0, H); ctx.arc(0, H, Math.max(0, s.surfR), rad(-90), rad(-90 + 90 * wedge)); ctx.closePath();
+function disc(ctx, r, wedge) {
+  ctx.beginPath(); ctx.moveTo(0, H); ctx.arc(0, H, Math.max(0, r), rad(-90), rad(-90 + 90 * clamp(wedge, 0, 1.05))); ctx.closePath();
   ctx.fillStyle = C.surface; ctx.fill(); ctx.strokeStyle = C.edge; ctx.lineWidth = 1; ctx.stroke();
+}
+// The closed tab: exactly what every style starts from and ends on.
+function tab(ctx, alpha) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha; disc(ctx, TAB, 1);
+  MINI.forEach((r, i) => { arc(ctx, r, A0, A1, C.track, 2); arc(ctx, r, A0, angle(VALUES[i]), C.accent, 2); });
+  knob(ctx, MINI[0], angle(VALUES[0]), 3, 1); ctx.restore();
+}
+// s: {surfR, wedge, clipR, alpha, tab, ring:[{r, sweep, width, knob, knobSize, alpha}], toggles:[{alpha, scale}], labels}
+function draw(ctx, s) {
+  ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.clearRect(0, 0, W, H);   // canvas is 2x for sharp lines
+  if (s.alpha <= 0.001) { tab(ctx, s.tab); return; }
+  ctx.save(); ctx.globalAlpha = s.alpha;
+  if (s.clipR !== null) { ctx.beginPath(); ctx.moveTo(0, H); ctx.arc(0, H, Math.max(0, s.clipR), rad(-90), 0); ctx.closePath(); ctx.clip(); }
+  disc(ctx, s.surfR, s.wedge);
   s.ring.forEach((g, i) => {
-    if (g.alpha <= 0 || g.r <= 2) return;
+    if (g.alpha <= 0 || g.r <= 1) return;
     ctx.save(); ctx.globalAlpha *= g.alpha;
-    const end = A0 + (A1 - A0) * clamp(g.sweep, 0, 1.08);
-    arc(ctx, g.r, A0, Math.max(A0 + .01, end), C.track, 3);
-    arc(ctx, g.r, A0, Math.max(A0 + .01, Math.min(end, A0 + (A1 - A0) * g.value)), C.accent, 3);
-    if (g.knob !== false) knob(ctx, g.r, A0 + (A1 - A0) * Math.min(g.value, clamp(g.sweep, 0, 1.08)), 1);
+    const end = angle(clamp(g.sweep, 0, 1.06));
+    arc(ctx, g.r, A0, Math.max(A0 + .01, end), C.track, g.width);
+    arc(ctx, g.r, A0, Math.max(A0 + .01, Math.min(end, angle(VALUES[i] * g.value))), C.accent, g.width);
     ctx.restore();
     if (s.labels > 0) { ctx.save(); ctx.globalAlpha *= g.alpha * s.labels; ctx.fillStyle = C.dim; ctx.font = '9px Inter, sans-serif';
       ctx.fillText(['Brightness 79%', 'Volume 88%', 'Mic 100%'][i], 8, H - g.r + 14); ctx.restore(); }
+  });
+  s.ring.forEach((g, i) => {   // knobs after every ring, as the tab draws them, so nothing covers a knob
+    if (g.alpha <= 0 || g.r <= 1) return;
+    ctx.save(); ctx.globalAlpha *= g.alpha; knob(ctx, g.r, Math.min(angle(VALUES[i] * g.value), angle(clamp(g.sweep, 0, 1.06))), g.knobSize, g.knob); ctx.restore();
   });
   s.toggles.forEach((t, j) => {
     if (t.alpha <= 0) return;
@@ -132,68 +136,70 @@ function draw(ctx, s, liveTab) {
   if (s.labels > 0) { ctx.save(); ctx.globalAlpha *= s.labels; ctx.fillStyle = C.fg; ctx.font = '600 22px Inter, sans-serif'; ctx.fillText('85%', 10, H - 34);
     ctx.fillStyle = C.dim; ctx.font = '9px Inter, sans-serif'; ctx.fillText('Balanced', 12, H - 14); ctx.restore(); }
   ctx.restore();
+  tab(ctx, s.tab);   // the tab lies on top while it fades, so the first and last frames are the tab itself
 }
-const fullRings = (alpha = 1) => RINGS.map((r, i) => ({ r, sweep: 1, value: VALUES[i], alpha }));
-const fullToggles = (alpha = 1, scale = 1) => Array.from({ length: TOGGLES }, () => ({ alpha, scale }));
-const CLOSED = { alpha: 0, scale: 1, surfR: 0, clipR: null, ring: [], toggles: [], tab: 1, labels: 0 };
+const after = (p, from, span) => clamp((p - from) / span);   // a part that starts once the corner is `from` open
+const rings = (fn) => RINGS.map((r, i) => Object.assign({ r, sweep: 1, value: 1, width: 3, knob: 1, knobSize: 5.5, alpha: 1 }, fn ? fn(r, i) : {}));
+const toggles = (fn) => Array.from({ length: TOGGLES }, (_, j) => Object.assign({ alpha: 1, scale: 1 }, fn ? fn(j) : {}));
+// The full corner's content fades in over the grown disc while the tab's own mini rings fade out early, so the first
+// and last frames of every style are exactly the closed tab: no jump.
+const tabFade = p => 1 - after(p, 0, .18);
 
-// ---- the seven candidates: each turns (open?, time since change, springs) into a drawing -----------------------
+// ---- the candidates: each maps one "open amount" p (0 = tab, 1 = full corner) to a drawing -----------------------
+// open/close: how p moves. spring {dur, bounce} or tween {ms, ease}. Every style opens out of the tab and closes into it.
 const CANDIDATES = [
-  { key: 'current', name: 'Current', tag: 'baseline', desc: 'What omadials does today: the disc zooms from 60 % and fades in, rings sweep in 20 ms apart. Close zooms to 80 % and fades.',
-    speed: 1, frame(o, t, k) {
-      if (o) { const e = tween(t, 180*k, EASE.omarchy); return { alpha: e, scale: lerp(.6, 1, e), surfR: R, clipR: null, tab: 1 - e,
-        ring: RINGS.map((r, i) => ({ r, value: VALUES[i], alpha: 1, sweep: tween(t - i*20*k, 180*k, EASE.omarchy) })), toggles: fullToggles(e), labels: e }; }
-      const e = tween(t, 120*k, EASE.omarchy); return { alpha: 1 - e, scale: lerp(1, .8, e), surfR: R, clipR: null, tab: e, ring: fullRings(), toggles: fullToggles(1 - e), labels: 1 - e }; } },
-  { key: 'morph', name: 'Tab morph', tag: 'container transform', springs: true, bounce: .08, desc: 'The tab grows into the disc and its mini rings fly out to become the full rings. Nothing is stretched. Toggles fade in once the disc is 60 % open.',
-    speed: 1, radius: true, frame(o, t, k, sp) {
-      const p = sp.p.x, surfR = lerp(TAB, R, p), tog = clamp((p - .6) / .4);
-      return { alpha: 1, scale: 1, surfR, clipR: null, tab: p < .02 ? 1 : 0,
-        ring: RINGS.map((r, i) => { const q = sp.rings[i].x; return { r: lerp(MINI[i], r, q), value: VALUES[i], sweep: 1, alpha: 1 }; }),
-        toggles: Array.from({ length: TOGGLES }, (_, j) => ({ alpha: clamp(tog * 1.6 - j * .1), scale: 1 })), labels: clamp((p - .7) / .3) }; } },
-  { key: 'clip', name: 'Lens reveal', tag: 'radial clip', desc: 'The full disc is already in place; a circle opens from the corner like a camera lens and reveals it, nearest content first. No stretching, no bounce.',
-    speed: 1, frame(o, t, k) {
-      if (o) { const e = tween(t, 280*k, EASE.decel); return { alpha: lerp(.6, 1, tween(t, 100*k, EASE.win)), scale: lerp(.97, 1, e), surfR: R, clipR: lerp(TAB, R + 8, e), tab: t < 30*k ? 1 : 0, ring: fullRings(), toggles: fullToggles(), labels: 1 }; }
-      const e = tween(t, 160*k, EASE.accel), f = tween(t - 100*k, 60*k, x => x); return { alpha: 1 - f, scale: 1, surfR: R, clipR: lerp(R + 8, TAB, e), tab: e > .9 ? 1 : 0, ring: fullRings(), toggles: fullToggles(), labels: 1 }; } },
-  { key: 'cascade', name: 'Spring cascade', tag: 'iOS-like', springs: true, bounce: .12, desc: 'A soft spring grows the disc from 88 %, rings follow 30 ms apart, and each knob sweeps to its value with a little life. Close is one calm spring with no bounce.',
-    speed: 1, frame(o, t, k, sp) {
-      const p = sp.p.x;
-      return { alpha: clamp(sp.fade.x), scale: lerp(o ? .88 : .92, 1, p), surfR: R, clipR: null, tab: clamp(1 - sp.fade.x),
-        ring: RINGS.map((r, i) => ({ r, value: VALUES[i] * clamp(sp.knobs[i].x, 0, 1.1), sweep: 1, alpha: clamp(sp.rings[i].x) })),
-        toggles: fullToggles(clamp(sp.fade.x)), labels: clamp(sp.fade.x) }; } },
-  { key: 'minimal', name: 'Minimal fast', tag: 'Windows-like', desc: 'A quick fade with a small slide out of the corner. Close is a short fade with no movement. Also the basis for reduced motion.',
-    speed: 1, frame(o, t, k) {
-      if (o) { const f = tween(t, 120*k, EASE.win), m = tween(t, 160*k, EASE.win); return { alpha: f, scale: 1, dx: lerp(-5, 0, m), dy: lerp(5, 0, m), surfR: R, clipR: null, tab: 1 - f, ring: fullRings(), toggles: fullToggles(), labels: 1 }; }
-      const f = tween(t, 83*k, x => x); return { alpha: 1 - f, scale: 1, surfR: R, clipR: null, tab: f, ring: fullRings(), toggles: fullToggles(), labels: 1 }; } },
-  { key: 'fan', name: 'Fan unfold', tag: 'radial menu', desc: 'The rings unfold from the screen edge like a fan, outer ones leading, with a small snap. Toggles pop in along the arc. Playful and game-like.',
-    speed: 1, frame(o, t, k) {
-      if (o) { const s = RINGS.map((r, i) => tween(t - i*25*k, 240*k, EASE.snap)), d = tween(t, 240*k, EASE.snap);
-        return { alpha: 1, scale: 1, surfR: R, clipR: null, tab: t < 20*k ? 1 : 0, surfSweep: d,
-          ring: RINGS.map((r, i) => ({ r, value: VALUES[i], sweep: s[i], alpha: clamp(s[i] * 3) })),
-          toggles: Array.from({ length: TOGGLES }, (_, j) => { const q = tween(t - 90*k - j*20*k, 250*k, EASE.snap); return { alpha: clamp(q * 2), scale: lerp(.6, 1, q) }; }), labels: tween(t - 150*k, 120*k, EASE.decel) }; }
-      const e = tween(t, 140*k, EASE.accel); return { alpha: 1 - tween(t - 90*k, 50*k, x => x), scale: 1, surfR: R, clipR: null, tab: e > .9 ? 1 : 0, surfSweep: 1 - e,
-        ring: RINGS.map((r, i) => ({ r, value: VALUES[i], sweep: 1 - e, alpha: 1 })), toggles: fullToggles(1 - clamp(e * 3)), labels: 1 - clamp(e * 3) }; } },
-  { key: 'hybrid', name: 'Hybrid', tag: 'recommended to try first', springs: true, bounce: .08, desc: 'One spring grows the disc out of the tab and opens the lens at the same time: the shape and the reveal move as one. Usable after about 150 ms.',
-    speed: 1, radius: true, frame(o, t, k, sp) {
-      const p = sp.p.x, r = lerp(TAB, R, p);
-      return { alpha: 1, scale: 1, surfR: r, clipR: r + 6, tab: p < .02 ? 1 : 0, ring: fullRings(), toggles: fullToggles(clamp((p - .55) / .45)), labels: clamp((p - .6) / .4) }; } },
+  { key: 'morph', name: 'Tab morph', tag: 'container transform', bounce: .06,
+    desc: 'The tab grows into the disc and its mini rings fly out to become the full rings; closing reverses it exactly into the tab.',
+    open: { spring: .30 }, close: { spring: .22 },
+    frame: p => ({ surfR: lerp(TAB, R, p), wedge: 1, clipR: lerp(TAB, R, p), alpha: 1, tab: tabFade(p),
+      ring: rings((r, i) => { const q = after(p, i * .05, .9);   // rings leave a little apart, outer first
+        return { r: lerp(MINI[i], r, q), width: lerp(2, 3, q), knob: i === 0 ? 1 : q, knobSize: lerp(3, 5.5, q), value: 1 }; }),
+      toggles: toggles(j => ({ alpha: after(p, .6 + j * .04, .3) })), labels: after(p, .72, .28) }) },
+  { key: 'hybrid', name: 'Hybrid', tag: 'shape and reveal in one', bounce: .06,
+    desc: 'One spring grows the disc out of the tab and reveals the full rings as it passes them, like a lens opening from the icon.',
+    open: { spring: .30 }, close: { spring: .20 },
+    frame: p => { const r = lerp(TAB, R, p); return { surfR: r, wedge: 1, clipR: r, alpha: 1, tab: tabFade(p),
+      ring: rings(), toggles: toggles(j => ({ alpha: after(p, .5, .4) })), labels: after(p, .6, .4) }; } },
+  { key: 'lens', name: 'Lens', tag: 'crisp, no spring',
+    desc: 'The same reveal from the tab on a fixed curve: fast start, soft landing, no bounce. Closing accelerates back into the tab.',
+    open: { ms: 260, ease: EASE.decel }, close: { ms: 170, ease: EASE.accel },
+    frame: p => { const r = lerp(TAB, R + 6, p); return { surfR: R, wedge: 1, clipR: r, alpha: 1, tab: tabFade(p),
+      ring: rings(), toggles: toggles(), labels: 1 }; } },
+  { key: 'cascade', name: 'Spring cascade', tag: 'lively', bounce: .14,
+    desc: 'The disc springs out of the tab, rings arrive one by one and each knob sweeps up to its value. Closing folds them back into the tab.',
+    open: { spring: .34 }, close: { spring: .22 },
+    frame: p => ({ surfR: lerp(TAB, R, p), wedge: 1, clipR: lerp(TAB, R, p), alpha: 1, tab: tabFade(p),
+      ring: rings((r, i) => ({ alpha: after(p, .25 + i * .1, .25), value: after(p, .35 + i * .1, .5) })),
+      toggles: toggles(j => ({ alpha: after(p, .55 + j * .05, .2), scale: lerp(.7, 1, after(p, .55 + j * .05, .3)) })), labels: after(p, .7, .3) }) },
+  { key: 'minimal', name: 'Minimal', tag: 'fast and quiet',
+    desc: 'A short grow out of the tab with a fade. Closing is shorter still. Least motion; also the reduced-motion look.',
+    open: { ms: 160, ease: EASE.win }, close: { ms: 110, ease: EASE.accel },
+    frame: p => ({ surfR: lerp(TAB, R, p), wedge: 1, clipR: lerp(TAB, R, p), alpha: clamp(p * 2.2), tab: tabFade(p),
+      ring: rings(), toggles: toggles(), labels: 1 }) },
+  { key: 'fan', name: 'Fan', tag: 'playful',
+    desc: 'The disc grows out of the tab and the rings unfold from the screen edge like a fan, outer rings leading. Folds back into the tab on close.',
+    open: { ms: 300, ease: EASE.snap }, close: { ms: 170, ease: EASE.accel },
+    frame: p => ({ surfR: lerp(TAB, R, clamp(p * 1.4)), wedge: 1, clipR: lerp(TAB, R, clamp(p * 1.4)), alpha: 1, tab: tabFade(p),
+      ring: rings((r, i) => ({ sweep: after(p, .15 + i * .08, .7), alpha: after(p, .1, .2) })),
+      toggles: toggles(j => ({ alpha: after(p, .5 + j * .05, .2), scale: lerp(.6, 1, clamp(after(p, .5 + j * .05, .35), 0, 1.1)) })), labels: after(p, .7, .3) }) },
 ];
 
 // ---- one card per candidate --------------------------------------------------------------------------------
 const grid = document.getElementById('grid');
 const cards = CANDIDATES.map(c => {
   const el = document.createElement('section'); el.className = 'card'; el.setAttribute('aria-label', c.name);
+  const spring = !!c.open.spring;
   el.innerHTML = `<div class="head"><h2>${c.name}</h2><span class="tag">${c.tag}</span></div><p class="desc">${c.desc}</p>
-    <canvas width="${W*2}" height="${H*2}" aria-label="${c.name} corner. Tap the corner to open or close."></canvas>
+    <canvas width="${W*2}" height="${H*2}" aria-label="${c.name} corner. Tap the corner to open or close, or drag out of it."></canvas>
     <div class="ctl"><button data-act="toggle">Open</button>
       <label>Speed <input type="range" min="0.5" max="2" step="0.05" value="1" data-k="speed"><span class="num" data-n="speed">1.00x</span></label>
-      ${c.springs ? `<label>Bounce <input type="range" min="0" max="0.4" step="0.01" value="${c.bounce}" data-k="bounce"><span class="num" data-n="bounce">${c.bounce.toFixed(2)}</span></label>` : ''}
+      ${spring ? `<label>Bounce <input type="range" min="0" max="0.35" step="0.01" value="${c.bounce}" data-k="bounce"><span class="num" data-n="bounce">${c.bounce.toFixed(2)}</span></label>` : ''}
       <button data-act="pick">Pick this</button></div>`;
   grid.append(el);
-  const canvas = el.querySelector('canvas'), ctx = canvas.getContext('2d'); ctx.scale(2, 2);
-  const card = { c, el, canvas, ctx, open: false, since: 1e9, speed: 1, bounce: c.bounce || 0,
-    sp: { p: new Spring(0), fade: new Spring(0), rings: RINGS.map(() => new Spring(0)), knobs: RINGS.map(() => new Spring(0)), timers: [] } };
+  const canvas = el.querySelector('canvas'), ctx = canvas.getContext('2d');
+  const card = { c, el, canvas, ctx, open: false, speed: 1, bounce: c.bounce || 0, spring: new Spring(0), tw: null };
   el.querySelector('[data-act=toggle]').onclick = () => setOpen(card, !card.open);
-  el.querySelector('[data-act=pick]').onclick = () => { cards.forEach(x => x.el.classList.toggle('picked', x === card)); };
+  el.querySelector('[data-act=pick]').onclick = () => cards.forEach(x => x.el.classList.toggle('picked', x === card));
   el.querySelectorAll('input[type=range]').forEach(input => input.oninput = () => {
     card[input.dataset.k] = Number(input.value);
     el.querySelector(`[data-n=${input.dataset.k}]`).textContent = input.dataset.k === 'speed' ? Number(input.value).toFixed(2) + 'x' : Number(input.value).toFixed(2);
@@ -204,32 +210,26 @@ const cards = CANDIDATES.map(c => {
 
 const slow = () => document.getElementById('slow').checked ? 4 : 1;
 const k = card => slow() / card.speed;                     // >1 means slower
+const progress = card => card.tw ? card.tw.value : card.spring.x;
 function setOpen(card, open, velocity) {
-  card.open = open; card.since = 0;
+  card.open = open;
   card.el.querySelector('[data-act=toggle]').textContent = open ? 'Close' : 'Open';
-  const sp = card.sp, kk = k(card), b = card.bounce;
-  sp.timers.forEach(clearTimeout); sp.timers = [];
-  if (card.c.key === 'morph' || card.c.key === 'hybrid') {
-    const dur = (open ? .30 : (card.c.key === 'hybrid' ? .18 : .20)) * kk, bb = open ? (velocity && velocity > 0.5 ? Math.max(b, .15) : b) : 0;
-    const go = () => sp.p.set(open ? 1 : 0, dur, bb, velocity !== undefined ? velocity : undefined);
-    if (!open && card.c.key === 'morph') sp.timers.push(setTimeout(go, 80 * kk)); else go();
-    sp.rings.forEach((s, i) => sp.timers.push(setTimeout(() => s.set(open ? 1 : 0, dur, bb), (open ? i * 25 : (card.c.key === 'morph' ? 80 : 0)) * kk)));
-  }
-  if (card.c.key === 'cascade') {
-    sp.p.set(open ? 1 : 0, (open ? .35 : .22) * kk, open ? b : 0);
-    sp.fade.set(open ? 1 : 0, (open ? .18 : .22) * kk, 0);
-    sp.rings.forEach((s, i) => { if (open) { s.x = 0; sp.timers.push(setTimeout(() => s.set(1, .25 * kk, 0), i * 30 * kk)); } else s.set(1, .1, 0); });
-    sp.knobs.forEach((s, i) => { if (open) { s.x = 0; s.v = 0; sp.timers.push(setTimeout(() => s.set(1, .45 * kk, Math.min(.4, b + .08)), (60 + i * 30) * kk)); } else s.set(1, .1, 0); });
+  const how = open ? card.c.open : card.c.close, from = progress(card);
+  if (how.spring) {                                        // springs keep any velocity, and a flick out adds a little life
+    card.tw = null; card.spring.x = from;
+    const bounce = open ? (velocity > 1.5 ? Math.max(card.bounce, .15) : card.bounce) : 0;
+    card.spring.set(open ? 1 : 0, how.spring * k(card), bounce, velocity !== undefined ? velocity : card.spring.v);
+  } else {                                                 // curves start from where the corner is now, never jump
+    card.tw = { from, to: open ? 1 : 0, ms: how.ms * k(card) * Math.max(.25, Math.abs((open ? 1 : 0) - from)), ease: how.ease, t: 0, value: from };
   }
 }
 function attachDrag(card) {
-  if (!card.c.radius) { card.canvas.onclick = e => { const p = local(card, e); if (Math.hypot(p.x, H - p.y) < 50 || card.open) setOpen(card, !card.open); }; return; }
   let drag = null;
   card.canvas.onpointerdown = e => {
     const p = local(card, e), d = Math.hypot(p.x, H - p.y);
     if (!card.open && d > 50) return;
     card.canvas.setPointerCapture(e.pointerId);
-    drag = { start: d, last: d, lastT: performance.now(), v: 0, moved: false, wasOpen: card.open };
+    drag = { start: d, last: d, lastT: performance.now(), v: 0, moved: false };
   };
   card.canvas.onpointermove = e => {
     if (!drag) return;
@@ -237,17 +237,15 @@ function attachDrag(card) {
     if (Math.abs(d - drag.start) > 6) drag.moved = true;
     if (!drag.moved) return;
     let q = (d - TAB) / (R - TAB);
-    if (q > 1) q = 1 + (1 - 1 / ((q - 1) * .55 + 1));                 // rubber band past the full radius
+    if (q > 1) q = 1 + (1 - 1 / ((q - 1) * .55 + 1)) * .3;          // rubber band past the full radius
     const dt = Math.max(1, now - drag.lastT) / 1000; drag.v = lerp(drag.v, (d - drag.last) / (R - TAB) / dt, .4); drag.last = d; drag.lastT = now;
-    card.sp.p.x = Math.max(0, q); card.sp.p.v = 0; card.sp.p.target = card.sp.p.x;
-    card.sp.rings.forEach(s => { s.x = card.sp.p.x; s.v = 0; s.target = s.x; });
+    card.tw = null; card.spring.x = Math.max(0, q); card.spring.v = 0; card.spring.target = card.spring.x;
   };
   card.canvas.onpointerup = card.canvas.onpointercancel = () => {
     if (!drag) return;
     const d = drag; drag = null;
     if (!d.moved) { setOpen(card, !card.open); return; }
-    const projected = card.sp.p.x + d.v * .12;                        // end state from where the flick would carry it
-    setOpen(card, projected > .4, d.v);
+    setOpen(card, progress(card) + d.v * .12 > .4, d.v);          // the flick's destination decides, not the lift point
   };
 }
 function local(card, e) { const b = card.canvas.getBoundingClientRect(); return { x: (e.clientX - b.left) * W / b.width, y: (e.clientY - b.top) * H / b.height }; }
@@ -255,13 +253,12 @@ function local(card, e) { const b = card.canvas.getBoundingClientRect(); return 
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now;
-  const live = document.getElementById('values').checked;
   cards.forEach(card => {
-    card.since += dt * 1000;
-    const sp = card.sp; sp.p.step(dt); sp.fade.step(dt); sp.rings.forEach(s => s.step(dt)); sp.knobs.forEach(s => s.step(dt));
-    const springsIdle = sp.p.done && sp.rings.every(s => s.done) && sp.fade.done;
-    const s = (!card.open && card.since > 600 * k(card) && (!card.c.springs || springsIdle)) ? CLOSED : card.c.frame(card.open, card.since, k(card), sp);
-    draw(card.ctx, Object.assign({ dx: 0, dy: 0, clipR: null }, s), live);
+    if (card.tw) { card.tw.t += dt * 1000; card.tw.value = lerp(card.tw.from, card.tw.to, card.tw.ease(clamp(card.tw.t / card.tw.ms))); }
+    else card.spring.step(dt);
+    const p = progress(card);
+    if (p <= 0.0005 && !card.open) draw(card.ctx, { alpha: 0, tab: 1, ring: [], toggles: [] });
+    else draw(card.ctx, card.c.frame(p));
   });
   requestAnimationFrame(frame);
 }
@@ -273,6 +270,6 @@ let looping = null;
 document.getElementById('loop').onclick = e => {
   if (looping) { clearInterval(looping); looping = null; e.target.textContent = 'Loop all'; return; }
   e.target.textContent = 'Stop loop';
-  const tick = () => cards.forEach(c => setOpen(c, !c.open)); tick(); looping = setInterval(tick, 1600 * slow());
+  const tick = () => cards.forEach(c => setOpen(c, !c.open)); tick(); looping = setInterval(tick, 1400 * slow());
 };
 </script>

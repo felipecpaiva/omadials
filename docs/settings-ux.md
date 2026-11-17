@@ -79,3 +79,11 @@ Rings and Toggles become an edit list in two sections, like a phone's control ce
 - The preview highlights the control being edited, and clicking a ring or toggle in the preview opens its Edit sheet.
 - Removing never deletes settings: a removed control keeps its icon and style for when it is added back.
 - The common ring style stays as one card at the top of Rings ("All rings").
+
+## Animation setting (maintainer, 2026-11-17)
+
+A card "Animation" on the Behavior page: **Style** as picture choices that play a small looping preview of each motion
+(Tab morph, Hybrid, Lens, Spring cascade, Minimal, Fan, from `docs/prototype/motion-lab.html`), **Speed** (0.5x to 2x)
+and, for spring styles, **Bounce** (0 to 0.35). Rule for every style: it opens out of the closed tab and closes back
+into it, and its first and last frames are exactly the tab (checked pixel by pixel in the lab). Reduced motion always
+uses Minimal without movement.
