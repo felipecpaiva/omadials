@@ -348,18 +348,7 @@ No live input automation by default. A live test runs only after asking whether 
 
 ## 13. Milestones
 
-Every milestone is shippable from the public repo. "Z13" means a live hand test on the device.
-
-| Version | Scope | Exit criteria |
-|---|---|---|
-| v0.1 Corner | Logic modules with tests, ConfigStore (read only, defaults), runner, registry, bottom-left M fan, 3 dials, 6 toggles, readout, IPC, keybind docs. Spikes S1 singleton, S2 FileView on a created file, S3 mask regions switching closed and open | `run-all.sh` green, validate passes. Z13: acceptance 2, 4, 8, 9, 10, 17, 18 |
-| v0.2 Touch | Tap and drag-open, push dwell, long press, value bubble, status line, keyboard order, accessibility, reduced motion. S4: screen reader on a layer surface | Z13: acceptance 1, 3, 5, 6, 7, 11 to 15, 19 |
-| v0.3 Settings | Panel, all 4 corners, 3 sizes, arc scrolling, outputs, problems banner, Undo, preview | Z13: 16, 20 to 23, portrait rotation |
-| v0.4 Details | Wi-Fi rows and secured inline connect (S7), keyboard fallback, Bluetooth, audio devices, power profile, brightness per monitor | Contract tests per detail. Z13: each detail by hand |
-| v0.5 Extras | Keyboard light, charge limit, pen battery, touchpad, touchscreen guard, airplane restore, recording, refresh and scale with revert (S5). Schema v1 frozen, `docs/file-contract.md` | Z13: every guard in section 11 tried by hand |
-| v0.6 Listing | README with written-files list, preview, marketplace notes, validate commit | Marketplace issue filed |
-| v0.7 App | Standalone `omadials-settings` (C++/Qt Quick, qmake), reuses logic JS, fixtures pass | App edits apply live to the plugin. Z13: theme switch in the app |
-| v1.0 | Multi-monitor checked on a real second screen (no virtual monitors), S6 power profile D-Bus, bug fixes only after | Two weeks of daily use on the Z13 with no open blocker |
+Moved to [plan.md](plan.md) on 2026-11-17: phases P0 to P10 with day goals and exit checks. That file is the only plan.
 
 ## 14. Open decisions for the maintainer
 
