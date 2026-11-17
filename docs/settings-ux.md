@@ -62,3 +62,20 @@ the preview on one page only.
 
 Plain English, sentence case, no config keys or units in labels (units go in the help line or the field suffix), no em
 or en dashes. "Show on screen" becomes "Show the corner".
+
+## Round 2 (maintainer, 2026-11-17: "I can't find a way easy enough to remove the rings or adjust")
+
+Rings and Toggles become an edit list in two sections, like a phone's control center editor:
+
+- **In the corner**: one row per control in corner order. Row: drag handle, icon, name, value now, an **Edit**
+  button (pencil, 48 px) and a **Remove** button (minus in a circle, 48 px, warn colour on hover). Up and down
+  buttons appear on keyboard focus and on long press for touch. A capacity line on top ("3 of 4 rings fit at Large");
+  when full, Add buttons below are disabled with "Remove one first, or choose a larger size".
+- **Not in the corner**: the rest, each with an **Add** button (plus in a circle). Display rings (Bluetooth device,
+  Wi-Fi signal, laptop and pen battery) live here too, with their source picker shown when added.
+- **Edit** opens a side sheet over the preview (bottom sheet when narrow) for that one control: icon (built-in glyphs
+  as a grid of real icons, plus "Type an icon name"), and for rings Track, Knob and Thickness as picture choices drawing
+  the ring that way, wheel step, and "Use the common style" (on by default). For toggles: When tapped, When held.
+- The preview highlights the control being edited, and clicking a ring or toggle in the preview opens its Edit sheet.
+- Removing never deletes settings: a removed control keeps its icon and style for when it is added back.
+- The common ring style stays as one card at the top of Rings ("All rings").
