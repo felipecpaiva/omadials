@@ -22,6 +22,9 @@ Item {
   Theme { id: omadialsTheme }
   ConfigStore { id: store; catalog: controlRegistry.catalog }
   Registry { id: controlRegistry; store: store; active: fanModel.open }
+  // The settings folder must exist before the store starts watching, or a later first file is never seen.
+  Component.onCompleted: controlRegistry.runner.run("config-dir", ["mkdir", "-p", Quickshell.env("HOME") + "/.config/omadials"], 3000,
+    () => store.reload())
   FanModel {
     id: fanModel
     registry: controlRegistry
