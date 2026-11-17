@@ -49,3 +49,10 @@ After the fix, five opens: visible in 75 to 111 ms, the shell answering other co
 
 Rule kept for the future: never build a list from the file system or a service on the shell thread without a
 bound; anything that can be large is searched on demand.
+
+## With the new motion (2026-11-17)
+
+Six open styles on a FrameAnimation spring (Tab morph default). 45 s settle, 30 s windows: off 1.07 %, closed 1.00 %
+(no clock runs at rest, no processes), open (reopened every 8 s) 3.07 %. The spike measured 5.55 to 5.56 ms average
+frame time while moving for every style at 180 Hz. A 60 fps capture of Tab morph showed the disc growing out of the
+tab and folding back into it with no element disappearing.
