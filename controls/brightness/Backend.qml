@@ -25,7 +25,7 @@ CommandControl {
     readonly property string sysDir: "/sys/class/backlight/" + (options.device || "amdgpu_bl1")
     property real sysMax: 0
     property FileView sysMaxFile: FileView { path: backend.sysDir + "/max_brightness"; printErrors: false
-        onLoaded: backend.sysMax = Number(text().trim()) || 0 }
+        onLoaded: { backend.sysMax = Number(text().trim()) || 0; backend.sysLevel.reload() } }
     property FileView sysLevel: FileView { path: backend.sysDir + "/brightness"; printErrors: false; watchChanges: true
         onFileChanged: reload()
         onLoaded: {
