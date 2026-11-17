@@ -27,7 +27,7 @@ const DEFAULTS = {
     "behavior": {"idleTimeoutS":10,"closeOnPointerLeave":true},
     "ringStyle": {"track":"solid","knob":"round","thickness":"normal"},
     "readoutRings": [],
-    "dials": [{"id":"brightness","order":0,"style":{"track":"solid","knob":"round","thickness":"normal"}},{"id":"volume","order":1,"style":{"track":"solid","knob":"round","thickness":"normal"}},{"id":"mic","order":2,"style":{"track":"solid","knob":"round","thickness":"normal"}}],
+    "dials": [{"id":"brightness","order":0},{"id":"volume","order":1},{"id":"mic","order":2}],
     "toggles": [{"id":"wifi","tapAction":"switchRadio","holdAction":"quickDetail"},{"id":"bluetooth","tapAction":"switchPower","holdAction":"quickDetail"},{"id":"nightlight","tapAction":"switch","holdAction":"quickDetail"},{"id":"dnd","tapAction":"switch","holdAction":"quickDetail"},{"id":"keepawake","tapAction":"switch","holdAction":"quickDetail"},{"id":"kbdlight","tapAction":"nextStep","holdAction":"quickDetail"},{"id":"airplane","tapAction":"switch","holdAction":"quickDetail"},{"id":"gameMode","tapAction":"switch","holdAction":"quickDetail"},{"id":"theme","tapAction":"quickDetail","holdAction":"quickDetail"},{"id":"media","tapAction":"quickDetail","holdAction":"quickDetail"},{"id":"touchpad","tapAction":"switch","holdAction":"quickDetail"},{"id":"touchscreen","tapAction":"switch","holdAction":"quickDetail"}],
     "readout": {"battery":true,"powerProfile":true,"penBattery":true},
     "options": {"brightness":{"wheelStep":5,"monitor":"auto"},"volume":{"wheelStep":5,"maxPercent":100},"mic":{"wheelStep":5}},

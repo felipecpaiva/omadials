@@ -44,7 +44,7 @@ For the Effect check, we searched the plugin (`Service.qml core controls views v
 | Corner | Above windows | `cornerIcon.aboveWindows` | run | code read | run |
 | Corner | Open when the pointer rests | `trigger.push` (new) | run, and `cornerIcon.mode` stays unchanged | code (was tied to "Show the tab") | run |
 | Corner | Opening delay | `trigger.pushDelayMs` | run | code read; hand | run |
-| Rings | All rings style | `ringStyle.*` | run | code read | run |
+| Rings | All rings style | `ringStyle.*` | run | run (was hidden by the built-in ring styles; IPC open shot) | run |
 | Rings | Edit sheet | `controls.<id>.icon`, `dials[].style` | existing test | code read | run |
 | Rings | Wheel step | `options.<id>.wheelStep` | existing test | code (was dead) | run |
 | Rings | Add, Remove, order | `dials`, `controls.<id>.shown` | existing test | code read; drag order is hand | run |
@@ -67,6 +67,7 @@ For the Effect check, we searched the plugin (`Service.qml core controls views v
   - Wheel step: `ValueMap.wheel` now takes the ring's step.
   - Tap zone: the window mask ignored it. Fix: `CornerWindow.zoneActive`. With the option off, a tab set to "Never" has no zone. "When the pointer is near" keeps its zone, because it needs the zone to see the pointer arrive.
   - Rest to open: it shared `cornerIcon.mode` with "Show the tab", so switching it changed the tab. Fix: it has its own key, `trigger.push`.
+- **All rings style did nothing (found by the maintainer).** The built-in ring list gave each ring its own solid, round, normal style, and that hid the All rings choice. The write test passed because the file was right; only the corner was wrong. Fix: the built-in rings have no own style. Proved live with a shot after the fix.
 - **"Choose screens" could not be picked.** The choice was rejected when no screen was selected yet. Fix: picking it now selects every screen first.
 - **Game mode switches left off forced a value** (gaps 5 and 10, animations on). Fix: an off switch now keeps the value from before game mode.
 - **Light themes:** the app forced `Material.Dark`, so the text stayed white on light backgrounds. Fix: light themes use `Material.Light`.

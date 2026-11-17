@@ -224,7 +224,7 @@ private slots:
         click(button("Remove Microphone from the corner"));
         QCOMPARE(eval("value('controls.mic.shown')").toBool(),false);
         QCOMPARE(eval("value('controls.mic.icon')").toString(),QString("volume"));
-        QVERIFY(eval("config.dials.some(function(d) { return d.id==='mic' && d.style.knob==='round' })").toBool());
+        QVERIFY(eval("config.dials.some(function(d) { return d.id==='mic' })").toBool());
         click(button("Add Microphone to the corner")); QVERIFY(eval("set('controls.mic.icon','default')").toBool());
         QCOMPARE(eval("value('controls.mic.shown')").toBool(),true);
         QCOMPARE(eval("config.dials.length").toInt(),3);

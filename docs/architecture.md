@@ -218,9 +218,9 @@ Path `~/.config/omadials/config.json` (platform.md section 5, option B). Draft v
     {"id": "signal", "source": "wifiSignal", "interface": "auto", "order": 4, "style": {"knob": "none"}}
   ],
   "dials": [
-    {"id": "brightness", "order": 0, "style": {"track": "solid", "knob": "round", "thickness": "normal"}},
-    {"id": "volume", "order": 1, "style": {"track": "solid", "knob": "round", "thickness": "normal"}},
-    {"id": "mic", "order": 2, "style": {"track": "solid", "knob": "round", "thickness": "normal"}}
+    {"id": "brightness", "order": 0},
+    {"id": "volume", "order": 1},
+    {"id": "mic", "order": 2}
   ],
   "toggles": [
     {"id": "wifi", "tapAction": "switchRadio", "holdAction": "quickDetail"},

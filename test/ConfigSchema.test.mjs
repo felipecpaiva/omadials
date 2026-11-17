@@ -132,3 +132,7 @@ test('game mode: null gaps mean leave the gaps alone, with no error', ()=>{
     assert.equal(r.config.gameMode.gapsIn,null); assert.equal(r.config.gameMode.gapsOut,null);
     assert.deepEqual(r.errors.filter(e=>e.path.startsWith('gameMode')),[]);
 });
+test('all rings style reaches the default rings (no own style hides it)', ()=>{
+    const r=validate({version:1,ringStyle:{track:'dotted',knob:'bar',thickness:'thin'}});
+    for(const d of r.config.dials)assert.equal(d.style,undefined,d.id);
+});
