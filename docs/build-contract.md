@@ -30,6 +30,8 @@ How parallel work on the plugin stays compatible. Read with `architecture.md` (s
 - Property names must not start with a capital letter (`R`, `W`, `H` fail to load).
 - Do not redeclare FINAL Item properties (`top`, `right`, `x`, `y`, `width`, `radius` on Item, `state`, ...).
 - Give root ids that cannot shadow a property name (`theme: theme` binds to itself). Use `omadialsTheme`-style ids.
+- Files under `controls/<id>/` load on demand, so a sibling `.qml` there is not a type. Create it with
+  `Qt.createComponent(Qt.resolvedUrl("Name.qml")).createObject(parent, props)`.
 - The shell caches components: a file change needs `omarchy-restart-shell` to show.
 - A click on an `OnDemand` layer does not take keyboard focus (spike S3). Only keybind and IPC opens request focus.
 - Screen readers see nothing on Quickshell layer surfaces (spike S4). Still set `Accessible.name` and `role`.
