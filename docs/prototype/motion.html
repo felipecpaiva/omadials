@@ -122,7 +122,8 @@ function arcPath(r,start,end){
   return `M${a.x},${a.y} A${r},${r} 0 0 ${sweep} ${b.x},${b.y}`;
 }
 function escapeText(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function text(x,y,t,size=14,anchor='start',fill='text'){const p=loc(x,y);if(S.corner.includes('r'))anchor=anchor==='start'?'end':anchor==='end'?'start':anchor;return `<text x="${p.x}" y="${p.y}" font-size="${size}" text-anchor="${anchor}" fill="var(--${fill})">${escapeText(t)}</text>`}
+function text(x,y,t,size=14,anchor='start',fill='text'){const p=loc(x,y);if(S.corner.includes('r'))anchor=anchor==='start'?'end':anchor==='end'?'start':anchor;const base=S.corner.includes('t')?' dominant-baseline="hanging"':'';// mirror the text box, not the baseline, so top corners do not clip
+return `<text x="${p.x}" y="${p.y}" font-size="${size}" text-anchor="${anchor}"${base} fill="var(--${fill})">${escapeText(t)}</text>`}
 function surfacePath(){
   const r=R+(C.detailRadius-R)*S.morph,k=C.circleK;
   const pts=[[0,R],[0,0],[R-r,0],[R-r+k*r,0],[R,r-k*r],[R,r],[R,R]].map(p=>loc(...p));

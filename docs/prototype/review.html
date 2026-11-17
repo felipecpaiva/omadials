@@ -1,0 +1,657 @@
+<title>omadials experience review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a workbench. The live corner first, then the goal board grouped by experience area. */
+:root {
+  --bg:#f4f3f0; --panel:#ebe9e4; --fg:#16181d; --dim:#55575c; --line:#d3d0c9; --accent:#a83e2c;
+  --ok:#2f6b3f; --ok-bg:#dcebdf; --call:#8a5a00; --call-bg:#f6e7c8; --hw:#2c5a8a; --hw-bg:#dbe6f2;
+  --display:"JetBrains Mono",ui-monospace,monospace; --body:Inter,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#16181d; --panel:#1e2128; --fg:#f4f5f7; --dim:#a4a7ae; --line:#30343c; --accent:#ff8c78;
+  --ok:#8fd19e; --ok-bg:#1f3326; --call:#f2c46d; --call-bg:#3a2f17; --hw:#8fbbe8; --hw-bg:#1b2a3b; color-scheme:dark } }
+:root[data-theme="dark"] {
+  --bg:#16181d; --panel:#1e2128; --fg:#f4f5f7; --dim:#a4a7ae; --line:#30343c; --accent:#ff8c78;
+  --ok:#8fd19e; --ok-bg:#1f3326; --call:#f2c46d; --call-bg:#3a2f17; --hw:#8fbbe8; --hw-bg:#1b2a3b; color-scheme:dark }
+* { box-sizing:border-box }
+body { background:var(--bg); color:var(--fg); font:15px/1.55 var(--body) }
+.wrap { max-width:1120px; margin:0 auto; padding-block:28px 64px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)) }
+h1,h2,h3 { font-family:var(--display); font-weight:700; text-wrap:balance; margin:0 }
+h1 { font-size:clamp(28px,5vw,44px); letter-spacing:-.02em }
+h1 span { color:var(--accent) }
+h2 { font-size:20px; margin-top:48px }
+h3 { font-size:15px }
+p { margin:6px 0; max-width:68ch }
+.lede { color:var(--dim) }
+.eyebrow { font:500 12px var(--display); letter-spacing:.08em; text-transform:uppercase; color:var(--dim) }
+code { font:13px var(--display) }
+
+/* Simulator */
+.sim { margin-top:20px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--panel) }
+.bar { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:12px }
+.bar + .bar { border-top:1px solid var(--line) }
+.sim button, .sim select { font:500 13px var(--body); color:var(--fg); background:var(--bg); border:1px solid var(--line);
+  border-radius:8px; padding:8px 12px; min-height:40px; cursor:pointer }
+.sim button#play { background:var(--accent); color:var(--bg); border-color:var(--accent) }
+.sim label { display:flex; align-items:center; gap:6px; font-size:13px; min-height:40px }
+.sim input { accent-color:var(--accent) }
+.sim :focus-visible { outline:2px solid var(--accent); outline-offset:2px }
+.viewport { overflow:auto; max-height:640px; border-top:1px solid var(--line) }
+#stage { --surface:#20262c; --edge:#59626b; --text:#f0ede7; --secondary:#b7b9ba; --track:#646c73; --accent:#dbb28a;
+  --ink:#20262c; --off:#30383f; --warn:#ffad99; --desk:#141c22;
+  position:relative; width:100%; min-width:850px; height:850px; overflow:hidden; color:var(--text);
+  background:radial-gradient(ellipse at 65% 25%, var(--off), var(--desk) 75%) }
+.wall { position:absolute; top:36%; left:42%; pointer-events:none; opacity:.35; font:250 clamp(28px,5vw,64px) var(--body); letter-spacing:-2px }
+.wall small { display:block; font-size:12px; letter-spacing:2px; margin-top:12px }
+#scene { position:absolute; inset:0; width:100%; height:100%; touch-action:none; user-select:none }
+#detail { position:absolute; display:none; overflow:auto; padding:16px; pointer-events:none; font-family:var(--body) }
+#detail button { width:100%; min-height:48px; text-align:left; margin:0 0 4px; border:0; border-bottom:1px solid var(--edge);
+  border-radius:0; background:transparent; color:var(--text); font:14px var(--body); cursor:pointer }
+#detail .head { display:flex; align-items:center; gap:12px; min-height:48px; margin-bottom:8px }
+#detail .head button { width:48px; margin:0; text-align:center; border:1px solid var(--edge); border-radius:8px }
+#detail h2 { font:500 20px var(--body); margin:0 }
+.status { padding:12px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center }
+#live { font:13px var(--display); min-height:20px; flex:1 1 280px }
+.legend { display:flex; flex-wrap:wrap; gap:6px }
+.legend span { font:12px var(--display); padding:3px 8px; border:1px solid var(--line); border-radius:99px; color:var(--dim) }
+.how { color:var(--dim); font-size:13px; padding:0 12px 12px }
+
+/* Goal board */
+.summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:16px }
+.count { border:1px solid var(--line); border-radius:10px; padding:14px; background:var(--panel); cursor:pointer; text-align:left;
+  font:inherit; color:inherit }
+.count[aria-pressed="true"] { outline:2px solid var(--accent) }
+.count b { display:block; font:700 30px var(--display) }
+.count small { color:var(--dim) }
+.chip { display:inline-block; font:600 11px var(--display); letter-spacing:.04em; text-transform:uppercase; padding:3px 8px; border-radius:99px; white-space:nowrap }
+.chip.ok { color:var(--ok); background:var(--ok-bg) }
+.chip.call { color:var(--call); background:var(--call-bg) }
+.chip.hw { color:var(--hw); background:var(--hw-bg) }
+.area { margin-top:28px }
+.area > p { color:var(--dim); font-size:14px }
+.rows { margin-top:10px; border-top:1px solid var(--line) }
+.row { display:grid; grid-template-columns:110px minmax(0,1fr); gap:6px 16px; padding:12px 0; border-bottom:1px solid var(--line) }
+.row .what { min-width:0 }
+.row .what strong { font-weight:600 }
+.row .why { color:var(--dim); font-size:14px; margin-top:2px }
+.row .rec { font-size:14px; margin-top:4px }
+.row .rec::before { content:"Recommend: "; font-weight:600; color:var(--call) }
+.row .src { font:12px var(--display); color:var(--dim); margin-top:4px }
+.row[hidden] { display:none }
+.limits { margin-top:16px; padding:16px; border:1px dashed var(--line); border-radius:10px }
+.limits ul, .loop ol { margin:8px 0 0; padding-left:20px }
+.loop li, .limits li { margin:4px 0 }
+@media (max-width:600px) { .row { grid-template-columns:1fr } }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important } }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Design round 1 · 2026-11-17</div>
+  <h1>oma<span>dials</span> experience review</h1>
+  <p class="lede">Quick settings as you drag or tap from a screen corner. Play with the corner below, then go through the goal board. Every number in the simulation comes from <code>docs/experience.md</code>.</p>
+
+  <section class="sim" aria-label="Corner simulation">
+    <div class="bar">
+      <button id="play">Play storyboard</button><button id="open">Open / close</button>
+      <label>Corner <select id="corner"><option value="bl">Bottom left</option><option value="br">Bottom right</option><option value="tl">Top left</option><option value="tr">Top right</option></select></label>
+      <label><input id="slow" type="checkbox">Slow motion x0.25</label>
+      <label><input id="reduced" type="checkbox">Reduced motion</label>
+      <label><input id="light" type="checkbox">Light Omarchy theme</label>
+    </div>
+    <div class="bar">
+      <label>Detail <select id="kind"><option>Wi-Fi</option><option>Outputs</option><option>Displays</option></select></label>
+      <button id="details">Open detail</button><button id="page">Toggle page</button><button id="external">Volume key +5</button>
+      <label><input id="missing" type="checkbox">Mic unavailable</label><button id="settings">Where is the gear?</button>
+    </div>
+    <p class="how">Tap the faint dot in the corner to open, or press there and drag outward. Drag a ring to change it; a tap alone never changes a value. Tap Wi-Fi for a slow command and Bluetooth for a failure. Hold a toggle or a dial label for its detail. Escape goes back, then closes.</p>
+    <div class="viewport" id="viewport">
+      <div id="stage">
+        <div class="wall">Less reach.<small>CONTROL FROM THE CORNER</small></div>
+        <svg id="scene" aria-label="Interactive corner dials" role="group"></svg>
+        <section id="detail" aria-label="Control detail"></section>
+      </div>
+    </div>
+    <div class="status">
+      <div id="live" role="status" aria-live="polite">Closed. Tap the corner or play the storyboard.</div>
+      <div class="legend"><span>180 ms open</span><span>20 ms ring stagger</span><span>120 ms close</span><span>200 ms detail</span><span>6 px drag start</span></div>
+    </div>
+  </section>
+
+  <h2>Goal board</h2>
+  <p class="lede">What the full experience on Omarchy needs, area by area. Each line has one status. Pick a box to filter.</p>
+  <div class="summary" id="summary"></div>
+  <div id="board"></div>
+
+  <div class="limits">
+    <h3>What this page cannot show</h3>
+    <ul>
+      <li>Hyprland layer focus and the input mask switching from the corner zone to the full screen (spike S3).</li>
+      <li>Whether Hyprland's own layer fade stacks on top of ours on first open.</li>
+      <li>Real frame pacing on the Z13, real touch, and real hardware commands.</li>
+      <li>Screen reader output on a layer surface (spike S4).</li>
+    </ul>
+  </div>
+
+  <h2>How each round works</h2>
+  <div class="loop"><ol>
+    <li>You answer the "Your call" lines, here in comments or in chat.</li>
+    <li>The answers go into <code>docs/experience.md</code> and <code>docs/ux.md</code> first.</li>
+    <li>The prototype <code>docs/prototype/motion.html</code> follows the docs, and this page is rebuilt from it.</li>
+    <li>When no "Your call" lines are left, the Z13 spikes start, then v0.1 code.</li>
+  </ol></div>
+</div>
+
+<script>
+// Goal board data. Status: ok = decided in the docs, call = needs the maintainer, hw = only a Z13 test can settle it.
+const AREAS = [
+ { name:'Opening from the corner', note:'It grows out of the corner and never jumps.', rows:[
+  ['ok','Tap the 32 px corner zone to open','Press and release within 400 ms, under 10 px of movement.','','ux.md 2'],
+  ['ok','Drag outward to open','The fan follows the finger. Released past 40% it opens, else it closes.','','ux.md 2, experience.md'],
+  ['ok','Mouse push with a 150 ms dwell','A small hint arc fades in over 80 ms first. Never while a button is held.','','experience.md'],
+  ['ok','Open in 180 ms, rings 20 ms apart','Uses the stock Omarchy curve (0.23, 1, 0.32, 1). Values never animate up from zero.','','experience.md, Style.qml:371'],
+  ['call','"Springs closed" means no bounce','A short drag that is let go returns in 120 ms with no overshoot.','Keep it calm: no overshoot, same curve as the rest.','experience.md open questions'],
+  ['hw','Zone mask switches cleanly closed to open','The tiny corner zone must grow to a full-screen catcher and shrink back.','','spike S3'],
+  ['hw','No double fade from Hyprland','Hyprland fades layers too. Check that both fades do not stack.','','looknfeel.lua:86-89'],
+ ]},
+ { name:'Dials', note:'Follow the finger exactly, and never change a value by accident.', rows:[
+  ['ok','A tap never changes a value','A drag starts after 6 px. The ring is locked at first touch.','','ux.md 4, acceptance 8 and 9'],
+  ['ok','Knob, fill and number move on the same frame','No easing during a drag.','','experience.md'],
+  ['ok','A tick at each step and at 0 and max','The knob outline grows for 40 ms and shrinks for 80 ms. One tick, not a buzz.','','experience.md'],
+  ['ok','Brightness writes once, on release','The floor is 1%, so the screen never goes black.','','ux.md acceptance 10'],
+  ['ok','A volume key while open glides the knob','120 ms. The number is true at once.','','experience.md'],
+  ['call','Volume above 100%','The Z13 sits at 110% today.','Cap at 100 by default, a setting allows up to 150, and the number always shows the real value.','architecture.md decision 3'],
+  ['call','Exact ring radii','Rings sit at R minus 22, 66 and 110 in the simulation.','Adopt this after a label check at sizes S, M and L.','experience.md open questions'],
+ ]},
+ { name:'Toggles', note:'Tell the truth: pending, done and failed all look different.', rows:[
+  ['ok','Press shrinks to 0.92 in 80 ms','The 48 px hit area never shrinks.','','experience.md'],
+  ['ok','Slow command shows a moving dashed ring','Only that toggle waits. Everything else still works.','','experience.md'],
+  ['ok','A failure rolls back in 120 ms with a reason','No shake. No silent retry.','','experience.md'],
+  ['call','Default toggles at size M','Six slots fit on the arc.','Wi-Fi, Bluetooth, night light, do not disturb, keep awake, keyboard light.','architecture.md decision 5'],
+  ['call','Where the settings gear goes','Six 48 px slots fill the arc. There is no room left for a gear.','Put the gear in the readout, beside the power chip.','experience.md open questions'],
+ ]},
+ { name:'Pages and details', note:'Details open inside the corner, never in a new window.', rows:[
+  ['ok','Toggle pages slide one slot in 160 ms','A 7th toggle at M makes page 2.','','ux.md 3, experience.md'],
+  ['ok','Hold 450 ms to open a detail','The quarter circle morphs to a rounded square in 200 ms.','','ux.md acceptance 12'],
+  ['ok','A new secured Wi-Fi opens the stock panel','A password in a command line is visible to other programs.','','architecture.md'],
+ ]},
+ { name:'Closing and interruptions', note:'Never jump. Reverse from where it is.', rows:[
+  ['ok','Close in 120 ms, scaling to 0.8','Outside tap, Escape, corner tap, keybind, workspace switch, 10 s idle.','','ux.md 2, experience.md'],
+  ['ok','Open again while closing reverses smoothly','Starts from the shown values, not from zero.','','experience.md interruption rules'],
+  ['ok','Nothing closes during a drag','Dismissal waits until release.','','ux.md 2'],
+  ['hw','The outside tap does not reach the app below','And the old window gets focus back after close.','','ux.md acceptance 5'],
+  ['hw','Keyboard focus works with OnDemand','Exclusive focus is refused by Hyprland, so we never use it.','','ux.md 2'],
+  ['hw','Off over fullscreen windows and the lock screen','','','ux.md acceptance 7'],
+ ]},
+ { name:'Theme and look', note:'Your Omarchy theme, live.', rows:[
+  ['ok','Colors come only from the Omarchy theme','No color in plugin code. A test checks this.','','architecture.md 8'],
+  ['ok','Theme change cross-fades in 160 ms','Text snaps if a mid-fade color is too faint.','','experience.md'],
+  ['hw','Contrast on White, Tokyo Night and Flexoki Light','The muted color fails for text, so we never use it for text.','','ux.md 6'],
+ ]},
+ { name:'Corners and sizes', note:'Any corner, any screen.', rows:[
+  ['ok','All 4 corners mirror, text stays upright','Try the corner picker above.','','ux.md 5'],
+  ['call','Size L never reaches full size on the Z13','The Z13 is about 1536 by 960 logical px. The 45% cap gives 432 px, under L at 460.','Let L shrink to the cap and say so in settings, or set L to 430.','new finding, experience.md'],
+  ['call','Very small screens','The cap can make rings and 48 px targets too tight.','Set a minimum screen size and fall back to size S below it.','experience.md open questions'],
+ ]},
+ { name:'Comfort and access', note:'Works for everyone, and with animations off.', rows:[
+  ['ok','Reduced motion makes every change instant','Drags still follow the finger.','','experience.md'],
+  ['ok','Full keyboard path','Tab order, arrows, Page keys, Home and End.','','ux.md acceptance 14'],
+  ['hw','A screen reader reads names and values','Not proven on a layer surface.','','spike S4'],
+ ]},
+ { name:'Speed', note:'Costs nothing when closed. Smooth when open.', rows:[
+  ['ok','No timers or checks while closed','Status checks run only while it is open.','','architecture.md 1'],
+  ['hw','60 fps on the Z13','Most frames within 16.7 ms over a 30 s test of open, drag and detail.','','experience.md performance'],
+  ['hw','Ring fill by shader, Shape as fallback','Measure both on the Z13.','','experience.md performance'],
+ ]},
+ { name:'Fit with Omarchy', note:'Feels native, changes nothing you did not ask for.', rows:[
+  ['ok','No new gestures','3 and 4 finger swipes stay as they are.','','ux.md 2'],
+  ['call','Bar widgets: replace or sit beside','Audio, network and power already live in the bar.','Sit beside. Removing stock widgets is the user\'s choice.','architecture.md decision 2'],
+  ['call','A bar button for omadials','Adding one makes install change the bar.','Leave it out. Tap, keybind and IPC cover it.','architecture.md decision 4'],
+  ['call','Settings app timing','A settings panel first, then a separate app.','Panel at v0.3, app at v0.7 after the settings format is frozen.','architecture.md decision 1'],
+ ]},
+];
+const LABEL = { ok:'Decided', call:'Your call', hw:'Z13 test' };
+const HINT = { ok:'Written down in the docs', call:'Needs your answer before code', hw:'Only a test on the Z13 can settle it' };
+let filter = null;
+function esc(t){ return String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])) }
+function drawBoard(){
+  const all = AREAS.flatMap(a => a.rows);
+  document.getElementById('summary').innerHTML = ['call','hw','ok'].map(s =>
+    `<button class="count" aria-pressed="${filter===s}" data-s="${s}"><span class="chip ${s}">${LABEL[s]}</span><b>${all.filter(r=>r[0]===s).length}</b><small>${HINT[s]}</small></button>`).join('');
+  document.getElementById('board').innerHTML = AREAS.map(a => {
+    const rows = a.rows.filter(r => !filter || r[0]===filter);
+    if (!rows.length) return '';
+    return `<section class="area"><h3>${esc(a.name)}</h3><p>${esc(a.note)}</p><div class="rows">${rows.map(([s,what,why,rec,src]) =>
+      `<div class="row"><div><span class="chip ${s}">${LABEL[s]}</span></div><div class="what"><strong>${esc(what)}</strong>${why?`<div class="why">${esc(why)}</div>`:''}${rec?`<div class="rec">${esc(rec)}</div>`:''}<div class="src">${esc(src)}</div></div></div>`).join('')}</div></section>`;
+  }).join('');
+  for (const b of document.querySelectorAll('.count')) b.onclick = () => { filter = filter===b.dataset.s ? null : b.dataset.s; drawBoard() };
+}
+drawBoard();
+</script>
+<script>
+'use strict';
+// All motion numbers live here. Base milliseconds match experience.md.
+const C = Object.freeze({
+  open:180, close:120, stagger:20, hint:80, press:80, pressReturn:120,
+  fill:120, value:120, bubble:80, bubbleHold:600, tickIn:40, tickOut:80,
+  pending:900, pendingPeriod:12, detail:200, detailOut:80, detailIn:120,
+  page:160, theme:160, holdStart:150, hold:450, dwell:150, leave:600,
+  idle:10000, tap:400, drag:6, cancelHold:10, openThreshold:.4,
+  slowFactor:4, scaleStart:.6, scaleClose:.8, scalePress:.92,
+  radius:380, cap:.45, band:44, stroke:4, knob:7, knobOutline:2,
+  tickOutline:3, endpointOutline:4, toggleR:216, toggleSize:40,
+  target:48, trigger:32, push:2, hintRadius:24, hintOpacity:.7,
+  start:6, end:84, bubbleDistance:56, clearance:8, detailRadius:14,
+  fakeSlow:1500, fakeFailure:900, fakeFast:450, step:5, fineStep:1,
+  ease:[.23,1,.32,1], circleK:.55228475,
+  storyboardPause:650, storyboardDrag:850, storyboardHold:1100
+});
+const PALETTES = {
+  dark:{surface:'#20262c',edge:'#59626b',text:'#f0ede7',secondary:'#b7b9ba',track:'#646c73',accent:'#dbb28a',ink:'#20262c',off:'#30383f',warn:'#ffad99',desk:'#141c22'},
+  light:{surface:'#f6f1e8',edge:'#7b736a',text:'#282622',secondary:'#625c54',track:'#898278',accent:'#80502a',ink:'#f6f1e8',off:'#e4ddd2',warn:'#9c3427',desk:'#d9d1c4'}
+};
+const $ = id => document.getElementById(id);
+const svg=$('scene'), stage=$('stage'), detail=$('detail');
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const rad=deg=>deg*Math.PI/180;
+const S={state:'closed',corner:'bl',opacity:0,scale:C.scaleStart,hint:0,morph:0,
+  fanAlpha:1,detailAlpha:0,rings:[0,0,0],values:[72,40,15],shown:[72,40,15],
+  ticks:[0,0,0],endpointLatch:[null,null,null],bubble:0,bubblePoint:null,bubbleIndex:0,page:0,pageMix:1,
+  oldPage:0,detailKind:'Wi-Fi',status:'',reduced:false,slow:false,missing:false,
+  muted:[false,false,false],pending:new Map(),pendingAlpha:Array(8).fill(0),failures:new Set(),on:[true,true,false,false,true,false,false,false],
+  proposed:[true,true,false,false,true,false,false,false],presses:Array(8).fill(1),
+  fills:[1,1,0,0,1,0,0,0],colours:{...PALETTES.dark},focus:0};
+let width=0,height=0,R=C.radius,ratio=1,frame=0,drag=null,holdTimer=0,holdStartTimer=0,
+ bubbleTimer=0,idleTimer=0,leaveTimer=0,dwellTimer=0,playToken=0,lastPending=0;
+const tracks=new Map();
+function visual(ms){return S.reduced?0:ms*(S.slow?C.slowFactor:1)}
+// Solve x(t) before evaluating y(t), so this is the exact CSS/Qt Bezier.
+function ease(x){
+  let lo=0,hi=1,t=x;
+  const [x1,y1,x2,y2]=C.ease;
+  for(let i=0;i<18;i++){
+    const u=1-t,at=3*u*u*t*x1+3*u*t*t*x2+t*t*t;
+    if(at<x)lo=t;else hi=t;t=(lo+hi)/2;
+  }
+  return 3*(1-t)*(1-t)*t*y1+3*(1-t)*t*t*y2+t*t*t;
+}
+function wake(){if(!frame)frame=requestAnimationFrame(tick)}
+function animate(key,get,set,to,ms,delay=0,done=null,linear=false){
+  tracks.delete(key);
+  const from=get(),duration=visual(ms),wait=visual(delay);
+  if(!duration&&!wait){set(to);if(done)done();render();return}
+  tracks.set(key,{from,to,set,start:performance.now()+wait,duration,done,linear});wake();
+}
+function prop(key,to,ms,delay=0,done=null){animate(key,()=>S[key],v=>S[key]=v,to,ms,delay,done)}
+function arrayProp(name,i,to,ms,delay=0,done=null){animate(name+i,()=>S[name][i],v=>S[name][i]=v,to,ms,delay,done)}
+function tick(now){
+  frame=0;
+  for(const [key,a] of [...tracks]){
+    if(tracks.get(key)!==a||now<a.start)continue;
+    const p=clamp((now-a.start)/Math.max(1,a.duration));
+    a.set(a.from+(a.to-a.from)*(a.linear?p:ease(p)));
+    if(p===1){tracks.delete(key);if(a.done)a.done()}
+  }
+  lastPending=now;render();
+  if(tracks.size||(!S.reduced&&S.pending.size&&S.opacity>0))wake();
+}
+function say(text){S.status=text;$('live').textContent=text;render()}
+function activity(){clearTimeout(idleTimer);if(S.state!=='closed'&&!drag)idleTimer=setTimeout(()=>closeFan(),C.idle)}
+function origin(){return{x:S.corner.includes('r')?width:0,y:S.corner.includes('t')?0:height}}
+function map(x,y){return{x:S.corner.includes('r')?width-x:x,y:S.corner.includes('t')?height-y:y}}
+function point(r,a){return map(r*Math.sin(rad(a)),height-r*Math.cos(rad(a)))}
+function localPoint(r,a){return{x:r*Math.sin(rad(a)),y:R-r*Math.cos(rad(a))}}
+function pointer(e){const b=svg.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top}}
+function canonical(p){return{x:S.corner.includes('r')?width-p.x:p.x,y:S.corner.includes('t')?p.y:height-p.y}}
+function polar(p){const q=canonical(p);return{d:Math.hypot(q.x,q.y),a:Math.atan2(q.x,q.y)*180/Math.PI}}
+function ringRadius(i){return R-C.band/2-i*C.band}
+function loc(x,y){return map(x,height-R+y)}
+function arcPath(r,start,end){
+  const a=point(r,start),b=point(r,end),sweep=(S.corner.includes('r')!==S.corner.includes('t'))?0:1;
+  return `M${a.x},${a.y} A${r},${r} 0 0 ${sweep} ${b.x},${b.y}`;
+}
+function escapeText(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function text(x,y,t,size=14,anchor='start',fill='text'){const p=loc(x,y);if(S.corner.includes('r'))anchor=anchor==='start'?'end':anchor==='end'?'start':anchor;const base=S.corner.includes('t')?' dominant-baseline="hanging"':'';// mirror the text box, not the baseline, so top corners do not clip
+return `<text x="${p.x}" y="${p.y}" font-size="${size}" text-anchor="${anchor}"${base} fill="var(--${fill})">${escapeText(t)}</text>`}
+function surfacePath(){
+  const r=R+(C.detailRadius-R)*S.morph,k=C.circleK;
+  const pts=[[0,R],[0,0],[R-r,0],[R-r+k*r,0],[R,r-k*r],[R,r],[R,R]].map(p=>loc(...p));
+  return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y} L${pts[2].x},${pts[2].y} C${pts[3].x},${pts[3].y} ${pts[4].x},${pts[4].y} ${pts[5].x},${pts[5].y} L${pts[6].x},${pts[6].y} Z`;
+}
+const names=['Brightness','Volume','Mic'];
+const toggleNames=['Wi-Fi','Bluetooth','Night light','DND','Keep awake','Keyboard light','Airplane','Touchpad'];
+const glyphs=['Wi','Bt','☾','D','☕','⌨','✈','T'];
+function pageItems(page){return page===0?[0,1,2,3,4,'more']:[5,6,7,'back']}
+function slotAngle(i){return C.start+(C.target/Math.min(C.toggleR,R-3*C.band-C.target/2))*180/Math.PI*i+C.target/2/Math.min(C.toggleR,R-3*C.band-C.target/2)*180/Math.PI}
+function toggleRadius(){return Math.min(C.toggleR,R-3*C.band-C.target/2)}
+function toggleLayer(page,alpha,offset){
+  if(alpha<=0)return '';
+  const tr=toggleRadius();
+  let out=`<g opacity="${alpha}">`;
+  pageItems(page).forEach((id,i)=>{
+    const a=slotAngle(i)+offset,p=point(tr,a);
+    if(a<C.start||a>C.end)return;
+    const isNumber=typeof id==='number',pending=isNumber&&S.pending.has(id),fill=isNumber?S.fills[id]:0;
+    const scale=isNumber?S.presses[id]:1;
+    out+=`<g transform="translate(${p.x} ${p.y}) scale(${scale})"><circle r="${C.toggleSize/2}" fill="var(--off)" stroke="var(--edge)"/><circle r="${C.toggleSize/2}" fill="var(--accent)" opacity="${fill}"/>`;
+    out+=`<text text-anchor="middle" dominant-baseline="central" font-size="14" fill="var(--text)">${isNumber?glyphs[id]:(id==='more'?'••':'‹')}</text>`;
+    if(fill)out+=`<text text-anchor="middle" dominant-baseline="central" font-size="14" fill="var(--ink)" opacity="${fill}">${isNumber?glyphs[id]:''}</text>`;
+    if(isNumber&&S.pendingAlpha[id]>0)out+=`<circle r="23" fill="none" stroke="var(--text)" stroke-width="2" opacity="${S.pendingAlpha[id]}" stroke-dasharray="6 6" stroke-dashoffset="${S.reduced?0:-(lastPending/visual(C.pending)%1)*C.pendingPeriod}"/>`;
+    if(isNumber&&S.failures.has(id))out+='<text x="16" y="-16" font-size="16" fill="var(--warn)">!</text>';
+    if(drag&&drag.type==='toggle'&&drag.id===id&&drag.holding){
+      const progress=S.reduced?0:clamp((performance.now()-drag.time-C.holdStart)/(C.hold-C.holdStart));
+      out+=`<circle r="23" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="${progress*2*Math.PI*23} ${2*Math.PI*23}" transform="rotate(-90)"/>`;
+    }
+    out+='</g>';
+  });return out+'</g>';
+}
+function render(){
+  const o=origin(),transform=`translate(${o.x} ${o.y}) scale(${S.scale}) translate(${-o.x} ${-o.y})`;
+  let out=`<g font-family="system-ui, sans-serif"><path d="${arcPath(C.hintRadius,C.start,C.end)}" fill="none" stroke="var(--accent)" stroke-width="2" opacity="${S.hint}"/>`;
+  if(S.opacity>0){
+    out+=`<g opacity="${S.opacity}" transform="${transform}"><path d="${surfacePath()}" fill="var(--surface)" stroke="var(--edge)" stroke-width="1"/><g opacity="${S.fanAlpha}">`;
+    for(let i=0;i<3;i++){
+      if(i===2&&S.missing)continue;
+      const r=ringRadius(i),q=S.rings[i],end=C.start+(C.end-C.start)*q,v=clamp(S.shown[i]/100),a=C.start+(C.end-C.start)*v,p=point(r,a);
+      if(q>0)out+=`<path d="${arcPath(r,C.start,Math.max(C.start+.001,end))}" fill="none" stroke="var(--track)" stroke-width="${C.stroke}" stroke-linecap="round"/><path d="${arcPath(r,C.start,Math.max(C.start+.001,Math.min(end,a)))}" fill="none" stroke="var(--accent)" stroke-width="${C.stroke}" stroke-linecap="round"/>`;
+      out+=`<circle cx="${p.x}" cy="${p.y}" r="${C.knob}" fill="var(--accent)" stroke="var(--ink)" stroke-width="${C.knobOutline+S.ticks[i]}" opacity="${q}"/>`;
+      out+=`<g opacity="${q}">${text(14,R-r+22,`${S.muted[i]?'⊘':['☀','♪','●'][i]} ${S.values[i]}`,16)}</g>`;
+    }
+    const slot=C.target/toggleRadius()*180/Math.PI;
+    if(S.pageMix<1)out+=toggleLayer(S.oldPage,1-S.pageMix,slot*S.pageMix);
+    out+=toggleLayer(S.page,S.pageMix,-slot*(1-S.pageMix));
+    out+=text(20,R-135,S.status.length>32?S.status.slice(0,30)+'…':S.status,11,'start','secondary');
+    out+=text(20,R-110,'On battery, 2 h 50 m',11,'start','secondary');
+    out+=text(20,R-53,'72%',50);
+    const cp=loc(20,R-46);
+    out+=`<rect x="${S.corner.includes('r')?cp.x-104:cp.x}" y="${S.corner.includes('t')?cp.y-48:cp.y}" width="104" height="48" rx="8" fill="var(--off)"/>`;
+    out+=text(28,R-16,'Balanced',13);
+    out+=text(R-45,R-20,S.page===0?'1 / 2':'2 / 2',11,'middle','secondary');
+    out+='</g></g>';
+  }
+  // The invisible trigger remains a true radius-32 quarter disc.
+  if(S.opacity===0)out+=`<circle cx="${o.x}" cy="${o.y}" r="${C.trigger}" fill="var(--accent)" fill-opacity=".04"/>`;
+  if(S.bubble>0&&S.bubblePoint&&S.opacity>0){
+    let p=S.bubblePoint,dx=width/2-p.x,dy=height/2-p.y,d=Math.hypot(dx,dy)||1;
+    const x=clamp(p.x+C.bubbleDistance*dx/d,C.clearance+30,width-C.clearance-30),y=clamp(p.y+C.bubbleDistance*dy/d,C.clearance+16,height-C.clearance-16);
+    out+=`<g opacity="${S.bubble}"><rect x="${x-30}" y="${y-16}" width="60" height="32" rx="16" fill="var(--accent)"/><text x="${x}" y="${y+5}" text-anchor="middle" fill="var(--ink)">${S.values[S.bubbleIndex]}%</text></g>`;
+  }
+  out+='</g>';svg.innerHTML=out;
+  detail.style.width=R+'px';detail.style.height=R+'px';
+  detail.style.left=(S.corner.includes('r')?width-R:0)+'px';
+  detail.style.top=(S.corner.includes('t')?0:height-R)+'px';
+  detail.style.display=S.detailAlpha>0?'block':'none';
+  detail.style.opacity=S.detailAlpha*S.opacity;
+  detail.style.transformOrigin=`${S.corner.includes('r')?'right':'left'} ${S.corner.includes('t')?'top':'bottom'}`;
+  detail.style.transform=`scale(${S.scale})`;
+  detail.style.pointerEvents=S.state==='detail'?'auto':'none';
+}
+function openFan(stagger=true){
+  clearTimeout(leaveTimer);clearTimeout(dwellTimer);prop('hint',0,C.hint);
+  const fresh=S.state==='closed'||S.state==='hinting';
+  if(fresh){S.scale=C.scaleStart;S.opacity=0;S.rings.fill(0);S.morph=0;S.fanAlpha=1;S.detailAlpha=0;S.pageMix=1}
+  S.state='opening';
+  if(!fresh){prop('morph',0,C.detail);prop('detailAlpha',0,C.detailOut);prop('fanAlpha',1,C.detailIn)}
+  const remain=fresh?1:Math.max(1-S.opacity,(1-S.scale)/(1-C.scaleStart),...S.rings.map(q=>1-q));
+  prop('opacity',1,C.open*remain);prop('scale',1,C.open*remain);
+  S.rings.forEach((q,i)=>arrayProp('rings',i,1,C.open*(fresh?1:1-q),fresh&&stagger?i*C.stagger:0,()=>{if(S.rings.every(v=>v===1)&&S.state==='opening')S.state='open'}));
+  say('Opening from the corner.');activity();
+}
+function closeFan(){
+  if(drag){drag.dismiss=true;return}
+  if(S.state==='closed')return;
+  S.state='closing';S.pushSuppressed=true;clearTimeout(idleTimer);clearTimeout(leaveTimer);
+  for(let i=0;i<3;i++)tracks.delete('rings'+i);
+  prop('bubble',0,C.bubble);
+  const remain=Math.max(S.opacity,Math.abs(S.scale-C.scaleClose)/(1-C.scaleClose));
+  prop('scale',C.scaleClose,C.close*Math.min(1,remain));
+  prop('opacity',0,C.close*Math.min(1,remain),0,()=>{S.state='closed';S.detailAlpha=0;S.fanAlpha=1;S.morph=0;say('Closed. Tap the corner to open.')});
+}
+function toggleFan(){playToken++;S.pointerSession=false;activity();if(['closed','hinting','closing'].includes(S.state))openFan();else closeFan()}
+function bubble(i,p){clearTimeout(bubbleTimer);S.bubbleIndex=i;S.bubblePoint=p;prop('bubble',1,C.bubble)}
+function hideBubble(){clearTimeout(bubbleTimer);bubbleTimer=setTimeout(()=>prop('bubble',0,C.bubble),C.bubbleHold)}
+function tickMark(i,endpoint=false){
+  arrayProp('ticks',i,(endpoint?C.endpointOutline:C.tickOutline)-C.knobOutline,C.tickIn,0,()=>arrayProp('ticks',i,0,C.tickOut));
+}
+function value(i,v,direct=false){
+  const old=S.values[i],raw=clamp(v,i===0?1:0,100);v=Math.round(raw);S.values[i]=v;
+  if(direct){tracks.delete('shown'+i);S.shown[i]=raw}else arrayProp('shown',i,v,C.value);
+  const floor=i===0?1:0;
+  if(raw>=floor+1&&raw<=99)S.endpointLatch[i]=null;
+  const endpoint=raw===floor?'floor':raw===100?'max':null;
+  if(endpoint&&S.endpointLatch[i]!==endpoint){S.endpointLatch[i]=endpoint;tickMark(i,true)}
+  say(`${names[i]}: ${v}%${i===0&&direct?' preview':''}`);
+}
+function toggle(id){
+  if(S.pending.has(id)){say(`${toggleNames[id]}: still pending`);return}
+  S.failures.delete(id);S.proposed[id]=!S.on[id];S.pending.set(id,true);S.pendingAlpha[id]=1;arrayProp('fills',id,+S.proposed[id],C.fill);
+  say(`${toggleNames[id]}: turning ${S.proposed[id]?'on':'off'}`);wake();
+  setTimeout(()=>{
+    S.pending.delete(id);arrayProp('pendingAlpha',id,0,C.hint);
+    if(id===1){S.failures.add(id);arrayProp('fills',id,+S.on[id],C.fill);S.proposed[id]=S.on[id];say('Could not change Bluetooth: demo failure')}
+    else{S.on[id]=S.proposed[id];say(`${toggleNames[id]}: ${S.on[id]?'on':'off'}, confirmed`)}
+    render();
+  },id===0?C.fakeSlow:id===1?C.fakeFailure:C.fakeFast);
+}
+function page(){
+  if(S.pageMix<1)return;
+  S.oldPage=S.page;S.page=1-S.page;S.pageMix=0;prop('pageMix',1,C.page);say(`Toggle page ${S.page+1}`);activity();
+}
+function buildDetail(){
+  const rows=S.detailKind==='Wi-Fi'?['Radio: on','Studio / connected','Workshop / saved','Guest / open','Private network / open stock settings']:
+    S.detailKind==='Power profile'?['Saver','Balanced / selected','Performance']:
+    S.detailKind==='Outputs'?['Speakers / selected','Headphones','USB audio','Mute output']:
+    ['Internal display / selected','Brightness: 72%','Refresh rate','Scale','Display changes need confirm and revert'];
+  detail.innerHTML='<div class="head"><button id="back" aria-label="Back">‹</button><h2>'+escapeText(S.detailKind)+'</h2></div>'+rows.map(t=>'<button class="row">'+escapeText(t)+'</button>').join('');
+  $('back').onclick=back;
+  for(const b of detail.querySelectorAll('.row'))b.onclick=()=>{say(b.textContent+' / demo only');activity()};
+}
+function enterDetail(kind=$('kind').value){
+  if(['closed','hinting','closing'].includes(S.state))openFan(false);
+  S.state='detail';S.detailKind=kind;buildDetail();
+  prop('morph',1,C.detail);prop('fanAlpha',0,C.detailOut);
+  prop('detailAlpha',1,C.detailIn,C.detailOut,()=>{if(S.state==='detail')$('back').focus()});say(kind+' detail');activity();
+}
+function back(){
+  S.state='open';prop('morph',0,C.detail);prop('detailAlpha',0,C.detailOut);
+  prop('fanAlpha',1,C.detailIn,C.detailOut);svg.focus();say('Back to dials');activity();
+}
+function hit(p){
+  const z=polar(p);
+  if(z.d<=C.trigger)return{type:'corner'};
+  if(S.state==='closed'||S.state==='hinting')return{type:'outside'};
+  if(S.state==='detail')return{type:'outside'};
+  // Labels have priority over a ring band, as they support mute and detail.
+  for(let i=0;i<3;i++){
+    if(i===2&&S.missing)continue;
+    const label=loc(C.target/2,R-ringRadius(i)+22);
+    if(Math.abs(p.x-label.x)<C.target/2&&Math.abs(p.y-label.y)<C.target/2)return{type:'label',i};
+  }
+  for(const [slot,id] of pageItems(S.page).entries()){
+    const pt=point(toggleRadius(),slotAngle(slot));
+    if(Math.hypot(p.x-pt.x,p.y-pt.y)<=C.target/2&&S.pageMix===1)return{type:'toggle',id};
+  }
+  const profile=loc(72,R-24);
+  if(Math.abs(p.x-profile.x)<52&&Math.abs(p.y-profile.y)<C.target/2)return{type:'profile'};
+  if(z.a>=C.start-4&&z.a<=C.end+4){
+    const i=[0,1,2].find(i=>!(i===2&&S.missing)&&Math.abs(z.d-ringRadius(i))<=C.band/2);
+    if(i!==undefined)return{type:'ring',i};
+  }
+  if(Math.abs(z.d-toggleRadius())<C.target/2)return{type:'arc'};
+  return{type:z.d>R?'outside':'surface'};
+}
+function clearHold(){clearTimeout(holdTimer);clearTimeout(holdStartTimer);if(drag)drag.holding=false;tracks.delete('holdClock')}
+function setupHold(d){
+  holdStartTimer=setTimeout(()=>{
+    if(drag!==d)return;d.holding=true;
+    // A dummy local track schedules the hold-outline redraw only while held.
+    animate('holdClock',()=>0,()=>{},1,C.hold-C.holdStart,0,null,true);
+  },C.holdStart);
+  holdTimer=setTimeout(()=>{
+    if(drag!==d)return;d.consumed=true;clearHold();
+    const kind=d.type==='label'?(d.i===0?'Displays':'Outputs'):(d.id===0?'Wi-Fi':d.id===1?'Wi-Fi':'Outputs');
+    enterDetail(kind);
+  },C.hold);
+}
+svg.tabIndex=0;
+svg.addEventListener('pointerdown',e=>{
+  if(e.button!==0)return;playToken++;activity();clearTimeout(idleTimer);
+  const p=pointer(e),h=hit(p);if(h.type==='outside'){closeFan();return}
+  drag={...h,start:p,last:p,time:performance.now(),moved:false,previousState:S.state};
+  svg.setPointerCapture(e.pointerId);
+  if(h.type==='ring'){
+    drag.previous=S.values[h.i];tracks.delete('shown'+h.i);S.state='dragging';bubble(h.i,p);
+  }else if(h.type==='corner'){
+    if(['closed','hinting'].includes(S.state)){S.state='dragging';drag.openGesture=true}
+  }else if(h.type==='label'||(h.type==='toggle'&&typeof h.id==='number')){
+    if(h.type==='toggle')arrayProp('presses',h.id,C.scalePress,C.press);
+    setupHold(drag);
+  }
+});
+svg.addEventListener('pointermove',e=>{
+  const p=pointer(e);
+  if(!drag){
+    const z=canonical(p),inPush=z.x<=C.push&&z.y<=C.push;
+    if(!inPush)S.pushSuppressed=false;
+    if(['closed','hinting'].includes(S.state)&&inPush&&!e.buttons&&!S.pushSuppressed){
+      if(S.state==='closed'){S.state='hinting';prop('hint',C.hintOpacity,C.hint);dwellTimer=setTimeout(()=>{if(S.state==='hinting'){S.pointerSession=true;openFan()}},C.dwell)}
+    }else if(S.state==='hinting'){clearTimeout(dwellTimer);S.state='closed';prop('hint',0,C.hint)}
+    if(S.pointerSession&&S.opacity>0){
+      if(polar(p).d>R){if(!leaveTimer)leaveTimer=setTimeout(()=>{leaveTimer=0;closeFan()},C.leave)}
+      else{clearTimeout(leaveTimer);leaveTimer=0}
+    }return;
+  }
+  drag.last=p;const moved=Math.hypot(p.x-drag.start.x,p.y-drag.start.y);
+  if(moved>=C.cancelHold)clearHold();
+  if(moved>=C.drag)drag.moved=true;
+  if(drag.consumed)return;
+  if(drag.type==='corner'&&drag.openGesture&&drag.moved){
+    const progress=clamp(polar(p).d/R);drag.progress=progress;S.opacity=progress;S.scale=C.scaleStart+(1-C.scaleStart)*progress;S.rings.fill(progress);render();
+  }else if(drag.type==='ring'&&drag.moved){
+    const z=polar(p);value(drag.i,(z.a-C.start)/(C.end-C.start)*100,true);bubble(drag.i,p);
+  }
+});
+function release(e,cancel=false){
+  if(!drag)return;
+  const d=drag;clearHold();drag=null;if(S.queuedMissing!==undefined){S.missing=S.queuedMissing;delete S.queuedMissing}
+  if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);
+  if(d.type==='toggle'&&typeof d.id==='number')arrayProp('presses',d.id,1,C.pressReturn);
+  if(d.consumed){activity();return}
+  if(d.type==='corner'){
+    if(d.openGesture){
+      if(cancel)closeFan();else if(performance.now()-d.time<=C.tap&&Math.hypot(d.last.x-d.start.x,d.last.y-d.start.y)<C.cancelHold&&polar(d.last).d<=C.trigger)openFan();else if(d.moved){if((d.progress||0)>C.openThreshold)openFan(false);else closeFan()}
+      else if(performance.now()-d.time<=C.tap)openFan();else closeFan();
+    }else if(!cancel&&!d.moved)closeFan();
+  }else if(d.type==='ring'){
+    S.state='open';if(cancel&&d.i===0)value(d.i,d.previous);
+    else if(d.moved&&d.i===0)say('Brightness: '+S.values[0]+'%, committed on release');
+    hideBubble();
+  }else if(!cancel&&!d.moved){
+    if(d.type==='toggle'){if(typeof d.id==='number')toggle(d.id);else page()}
+    if(d.type==='label'){
+      bubble(d.i,d.last);hideBubble();if(d.i>0)S.muted[d.i]=!S.muted[d.i];say(d.i===0?'Brightness value':names[d.i]+(S.muted[d.i]?': muted':': unmuted'));
+    }
+    if(d.type==='profile')enterDetail('Power profile');
+  }else if(!cancel&&d.type==='arc'&&d.moved)page();
+  if(d.dismiss)closeFan();activity();render();
+}
+svg.addEventListener('pointerup',e=>release(e));
+svg.addEventListener('pointercancel',e=>release(e,true));
+svg.addEventListener('lostpointercapture',e=>{if(drag)release(e,true)});
+svg.addEventListener('pointerleave',()=>{
+  if(S.state==='hinting'){clearTimeout(dwellTimer);S.state='closed';prop('hint',0,C.hint)}
+  if(S.pointerSession&&!drag){clearTimeout(leaveTimer);leaveTimer=setTimeout(()=>{leaveTimer=0;closeFan()},C.leave)}
+});
+svg.addEventListener('wheel',e=>{
+  const p=pointer(e),h=hit(p);if(h.type==='ring'){
+    e.preventDefault();value(h.i,S.values[h.i]+(e.deltaY<0?1:-1)*(e.shiftKey?C.fineStep:C.step));bubble(h.i,p);hideBubble();activity();
+  }else if(h.type==='toggle'||h.type==='arc'){e.preventDefault();page()}
+},{passive:false});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.preventDefault();playToken++;if(S.state==='detail')back();else closeFan();return}
+  if(document.activeElement!==svg)return;
+  if(e.key==='Tab'){S.focus=(S.focus+(e.shiftKey?-1:1)+9)%9;say(S.focus<3?names[S.focus]+' focused':toggleNames[pageItems(S.page)[S.focus-3]]||'More focused');e.preventDefault();return}
+  if(S.focus<3&&S.opacity>0){
+    const i=S.focus,step=e.shiftKey?C.fineStep:C.step;
+    let v=S.values[i];
+    if(['ArrowUp','ArrowRight'].includes(e.key))v+=step;
+    else if(['ArrowDown','ArrowLeft'].includes(e.key))v-=step;
+    else if(e.key==='PageUp')v+=25;else if(e.key==='PageDown')v-=25;
+    else if(e.key==='Home')v=i===0?1:0;else if(e.key==='End')v=100;
+    else if(e.key==='Enter'&&e.shiftKey){enterDetail(i===0?'Displays':'Outputs');e.preventDefault();return}else return;
+    e.preventDefault();value(i,v);bubble(i,point(ringRadius(i),C.start+(C.end-C.start)*S.values[i]/100));hideBubble();activity();
+  }else if(e.key==='Enter'||e.key===' '){
+    e.preventDefault();const id=pageItems(S.page)[S.focus-3];if(e.shiftKey)enterDetail();else if(typeof id==='number')toggle(id);else page();
+  }
+});
+function colourRGB(hex){return hex.match(/[a-f\d]{2}/gi).map(v=>parseInt(v,16))}
+function theme(light){
+  const target=PALETTES[light?'light':'dark'];
+  for(const key of Object.keys(target)){
+    const start=colourRGB(S.colours[key]),end=colourRGB(target[key]);
+    animate('colour'+key,()=>0,t=>{
+      const hex='#'+start.map((v,i)=>Math.round(v+(end[i]-v)*t).toString(16).padStart(2,'0')).join('');
+      S.colours[key]=hex;stage.style.setProperty('--'+key,hex);
+    },1,C.theme);
+  }
+  
+}
+function reduced(on){
+  S.reduced=on;
+  if(on){
+    // Finish all current semantic targets, including tracks created by completions.
+    let guard=0;while(tracks.size&&guard++<50){const batch=[...tracks.values()];tracks.clear();for(const a of batch){a.set(a.to);if(a.done)a.done()}}
+  }
+  render();wake();
+}
+function resize(){
+  width=stage.clientWidth;height=stage.clientHeight;R=Math.min(C.radius,C.cap*Math.min(width,height));ratio=R/C.radius;
+  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);render();
+}
+$('open').onclick=toggleFan;
+$('details').onclick=()=>{playToken++;enterDetail()};
+$('page').onclick=()=>{playToken++;if(S.opacity===0)openFan();page()};
+$('external').onclick=()=>{playToken++;if(S.opacity===0)openFan();value(1,(S.values[1]+C.step)%101);activity()};
+$('settings').onclick=()=>say('Open question: six arc slots leave no extra 48 px gear slot. Recommendation: put gear in the readout.');
+$('corner').onchange=()=>{
+  playToken++;if(drag){clearHold();drag=null}S.corner=$('corner').value;render();
+  const vp=$('viewport');vp.scrollLeft=S.corner.includes('r')?stage.clientWidth:0;vp.scrollTop=S.corner.includes('t')?0:stage.clientHeight;
+};
+$('reduced').onchange=()=>reduced($('reduced').checked);
+$('light').onchange=()=>theme($('light').checked);
+$('slow').onchange=()=>{S.slow=$('slow').checked;say(S.slow?'Quarter speed. Gesture and command clocks stay real time.':'Normal speed.')};
+$('missing').onchange=()=>{if(drag){S.queuedMissing=$('missing').checked;say('Availability change queued until release');return}S.missing=$('missing').checked;say(S.missing?'Mic unavailable: hidden, no hardware.':'Mic available')};
+$('kind').onchange=()=>{if(S.state==='detail')enterDetail()};
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function storyboard(){
+  const token=++playToken;clearTimeout(idleTimer);
+  const pause=async(ms,visualTime=false)=>{await wait(visualTime?visual(ms):ms);if(token!==playToken)throw new Error('stopped')};
+  $('play').textContent='Playing, click to stop';
+  try{
+    closeFan();await pause(C.close,true);openFan();await pause(C.open+2*C.stagger+C.storyboardPause,true);
+    say('Press ring: value bubble, no value jump.');bubble(1,point(ringRadius(1),40));await pause(C.storyboardPause);
+    say('Dragging: pointer owns the knob, no easing.');
+    const start=performance.now(),from=S.values[1];
+    while(performance.now()-start<C.storyboardDrag){
+      const p=clamp((performance.now()-start)/C.storyboardDrag);value(1,from+(100-from)*p,true);bubble(1,point(ringRadius(1),C.start+(C.end-C.start)*S.values[1]/100));await pause(16);
+    }
+    value(1,100,true);tickMark(1,true);hideBubble();await pause(C.storyboardPause);
+    say('A stepped value: one local tick.');tickMark(2);await pause(C.storyboardPause);
+    toggle(0);await pause(C.fakeSlow+C.storyboardPause);
+    toggle(1);await pause(C.fakeFailure+visual(C.fill)+C.storyboardPause);
+    page();await pause(C.page+C.storyboardPause,true);
+    enterDetail('Wi-Fi');await pause(C.detail,true);await pause(C.storyboardHold);
+    back();await pause(C.detail+C.storyboardPause,true);
+    value(1,65);await pause(C.value+C.storyboardPause,true);
+    closeFan();await pause(C.close,true);say('Storyboard complete. Try a dial, theme or corner.');
+  }catch(err){if(err.message!=='stopped')throw err}
+  finally{if(token===playToken)$('play').textContent='Play storyboard'}
+}
+$('play').onclick=()=>{if($('play').textContent.startsWith('Playing')){playToken++;$('play').textContent='Play storyboard';activity()}else storyboard()};
+new ResizeObserver(resize).observe(stage);
+resize();
+$('viewport').scrollTop=stage.clientHeight;
+
+</script>

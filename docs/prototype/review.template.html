@@ -1,0 +1,235 @@
+<title>omadials experience review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a workbench. The live corner first, then the goal board grouped by experience area. */
+:root {
+  --bg:#f4f3f0; --panel:#ebe9e4; --fg:#16181d; --dim:#55575c; --line:#d3d0c9; --accent:#a83e2c;
+  --ok:#2f6b3f; --ok-bg:#dcebdf; --call:#8a5a00; --call-bg:#f6e7c8; --hw:#2c5a8a; --hw-bg:#dbe6f2;
+  --display:"JetBrains Mono",ui-monospace,monospace; --body:Inter,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#16181d; --panel:#1e2128; --fg:#f4f5f7; --dim:#a4a7ae; --line:#30343c; --accent:#ff8c78;
+  --ok:#8fd19e; --ok-bg:#1f3326; --call:#f2c46d; --call-bg:#3a2f17; --hw:#8fbbe8; --hw-bg:#1b2a3b; color-scheme:dark } }
+:root[data-theme="dark"] {
+  --bg:#16181d; --panel:#1e2128; --fg:#f4f5f7; --dim:#a4a7ae; --line:#30343c; --accent:#ff8c78;
+  --ok:#8fd19e; --ok-bg:#1f3326; --call:#f2c46d; --call-bg:#3a2f17; --hw:#8fbbe8; --hw-bg:#1b2a3b; color-scheme:dark }
+* { box-sizing:border-box }
+body { background:var(--bg); color:var(--fg); font:15px/1.55 var(--body) }
+.wrap { max-width:1120px; margin:0 auto; padding-block:28px 64px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)) }
+h1,h2,h3 { font-family:var(--display); font-weight:700; text-wrap:balance; margin:0 }
+h1 { font-size:clamp(28px,5vw,44px); letter-spacing:-.02em }
+h1 span { color:var(--accent) }
+h2 { font-size:20px; margin-top:48px }
+h3 { font-size:15px }
+p { margin:6px 0; max-width:68ch }
+.lede { color:var(--dim) }
+.eyebrow { font:500 12px var(--display); letter-spacing:.08em; text-transform:uppercase; color:var(--dim) }
+code { font:13px var(--display) }
+
+/* Simulator */
+.sim { margin-top:20px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--panel) }
+.bar { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:12px }
+.bar + .bar { border-top:1px solid var(--line) }
+.sim button, .sim select { font:500 13px var(--body); color:var(--fg); background:var(--bg); border:1px solid var(--line);
+  border-radius:8px; padding:8px 12px; min-height:40px; cursor:pointer }
+.sim button#play { background:var(--accent); color:var(--bg); border-color:var(--accent) }
+.sim label { display:flex; align-items:center; gap:6px; font-size:13px; min-height:40px }
+.sim input { accent-color:var(--accent) }
+.sim :focus-visible { outline:2px solid var(--accent); outline-offset:2px }
+.viewport { overflow:auto; max-height:640px; border-top:1px solid var(--line) }
+#stage { --surface:#20262c; --edge:#59626b; --text:#f0ede7; --secondary:#b7b9ba; --track:#646c73; --accent:#dbb28a;
+  --ink:#20262c; --off:#30383f; --warn:#ffad99; --desk:#141c22;
+  position:relative; width:100%; min-width:850px; height:850px; overflow:hidden; color:var(--text);
+  background:radial-gradient(ellipse at 65% 25%, var(--off), var(--desk) 75%) }
+.wall { position:absolute; top:36%; left:42%; pointer-events:none; opacity:.35; font:250 clamp(28px,5vw,64px) var(--body); letter-spacing:-2px }
+.wall small { display:block; font-size:12px; letter-spacing:2px; margin-top:12px }
+#scene { position:absolute; inset:0; width:100%; height:100%; touch-action:none; user-select:none }
+#detail { position:absolute; display:none; overflow:auto; padding:16px; pointer-events:none; font-family:var(--body) }
+#detail button { width:100%; min-height:48px; text-align:left; margin:0 0 4px; border:0; border-bottom:1px solid var(--edge);
+  border-radius:0; background:transparent; color:var(--text); font:14px var(--body); cursor:pointer }
+#detail .head { display:flex; align-items:center; gap:12px; min-height:48px; margin-bottom:8px }
+#detail .head button { width:48px; margin:0; text-align:center; border:1px solid var(--edge); border-radius:8px }
+#detail h2 { font:500 20px var(--body); margin:0 }
+.status { padding:12px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center }
+#live { font:13px var(--display); min-height:20px; flex:1 1 280px }
+.legend { display:flex; flex-wrap:wrap; gap:6px }
+.legend span { font:12px var(--display); padding:3px 8px; border:1px solid var(--line); border-radius:99px; color:var(--dim) }
+.how { color:var(--dim); font-size:13px; padding:0 12px 12px }
+
+/* Goal board */
+.summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:16px }
+.count { border:1px solid var(--line); border-radius:10px; padding:14px; background:var(--panel); cursor:pointer; text-align:left;
+  font:inherit; color:inherit }
+.count[aria-pressed="true"] { outline:2px solid var(--accent) }
+.count b { display:block; font:700 30px var(--display) }
+.count small { color:var(--dim) }
+.chip { display:inline-block; font:600 11px var(--display); letter-spacing:.04em; text-transform:uppercase; padding:3px 8px; border-radius:99px; white-space:nowrap }
+.chip.ok { color:var(--ok); background:var(--ok-bg) }
+.chip.call { color:var(--call); background:var(--call-bg) }
+.chip.hw { color:var(--hw); background:var(--hw-bg) }
+.area { margin-top:28px }
+.area > p { color:var(--dim); font-size:14px }
+.rows { margin-top:10px; border-top:1px solid var(--line) }
+.row { display:grid; grid-template-columns:110px minmax(0,1fr); gap:6px 16px; padding:12px 0; border-bottom:1px solid var(--line) }
+.row .what { min-width:0 }
+.row .what strong { font-weight:600 }
+.row .why { color:var(--dim); font-size:14px; margin-top:2px }
+.row .rec { font-size:14px; margin-top:4px }
+.row .rec::before { content:"Recommend: "; font-weight:600; color:var(--call) }
+.row .src { font:12px var(--display); color:var(--dim); margin-top:4px }
+.row[hidden] { display:none }
+.limits { margin-top:16px; padding:16px; border:1px dashed var(--line); border-radius:10px }
+.limits ul, .loop ol { margin:8px 0 0; padding-left:20px }
+.loop li, .limits li { margin:4px 0 }
+@media (max-width:600px) { .row { grid-template-columns:1fr } }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important } }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Design round 1 · 2026-11-17</div>
+  <h1>oma<span>dials</span> experience review</h1>
+  <p class="lede">Quick settings as you drag or tap from a screen corner. Play with the corner below, then go through the goal board. Every number in the simulation comes from <code>docs/experience.md</code>.</p>
+
+  <section class="sim" aria-label="Corner simulation">
+    <div class="bar">
+      <button id="play">Play storyboard</button><button id="open">Open / close</button>
+      <label>Corner <select id="corner"><option value="bl">Bottom left</option><option value="br">Bottom right</option><option value="tl">Top left</option><option value="tr">Top right</option></select></label>
+      <label><input id="slow" type="checkbox">Slow motion x0.25</label>
+      <label><input id="reduced" type="checkbox">Reduced motion</label>
+      <label><input id="light" type="checkbox">Light Omarchy theme</label>
+    </div>
+    <div class="bar">
+      <label>Detail <select id="kind"><option>Wi-Fi</option><option>Outputs</option><option>Displays</option></select></label>
+      <button id="details">Open detail</button><button id="page">Toggle page</button><button id="external">Volume key +5</button>
+      <label><input id="missing" type="checkbox">Mic unavailable</label><button id="settings">Where is the gear?</button>
+    </div>
+    <p class="how">Tap the faint dot in the corner to open, or press there and drag outward. Drag a ring to change it; a tap alone never changes a value. Tap Wi-Fi for a slow command and Bluetooth for a failure. Hold a toggle or a dial label for its detail. Escape goes back, then closes.</p>
+    <div class="viewport" id="viewport">
+      <div id="stage">
+        <div class="wall">Less reach.<small>CONTROL FROM THE CORNER</small></div>
+        <svg id="scene" aria-label="Interactive corner dials" role="group"></svg>
+        <section id="detail" aria-label="Control detail"></section>
+      </div>
+    </div>
+    <div class="status">
+      <div id="live" role="status" aria-live="polite">Closed. Tap the corner or play the storyboard.</div>
+      <div class="legend"><span>180 ms open</span><span>20 ms ring stagger</span><span>120 ms close</span><span>200 ms detail</span><span>6 px drag start</span></div>
+    </div>
+  </section>
+
+  <h2>Goal board</h2>
+  <p class="lede">What the full experience on Omarchy needs, area by area. Each line has one status. Pick a box to filter.</p>
+  <div class="summary" id="summary"></div>
+  <div id="board"></div>
+
+  <div class="limits">
+    <h3>What this page cannot show</h3>
+    <ul>
+      <li>Hyprland layer focus and the input mask switching from the corner zone to the full screen (spike S3).</li>
+      <li>Whether Hyprland's own layer fade stacks on top of ours on first open.</li>
+      <li>Real frame pacing on the Z13, real touch, and real hardware commands.</li>
+      <li>Screen reader output on a layer surface (spike S4).</li>
+    </ul>
+  </div>
+
+  <h2>How each round works</h2>
+  <div class="loop"><ol>
+    <li>You answer the "Your call" lines, here in comments or in chat.</li>
+    <li>The answers go into <code>docs/experience.md</code> and <code>docs/ux.md</code> first.</li>
+    <li>The prototype <code>docs/prototype/motion.html</code> follows the docs, and this page is rebuilt from it.</li>
+    <li>When no "Your call" lines are left, the Z13 spikes start, then v0.1 code.</li>
+  </ol></div>
+</div>
+
+<script>
+// Goal board data. Status: ok = decided in the docs, call = needs the maintainer, hw = only a Z13 test can settle it.
+const AREAS = [
+ { name:'Opening from the corner', note:'It grows out of the corner and never jumps.', rows:[
+  ['ok','Tap the 32 px corner zone to open','Press and release within 400 ms, under 10 px of movement.','','ux.md 2'],
+  ['ok','Drag outward to open','The fan follows the finger. Released past 40% it opens, else it closes.','','ux.md 2, experience.md'],
+  ['ok','Mouse push with a 150 ms dwell','A small hint arc fades in over 80 ms first. Never while a button is held.','','experience.md'],
+  ['ok','Open in 180 ms, rings 20 ms apart','Uses the stock Omarchy curve (0.23, 1, 0.32, 1). Values never animate up from zero.','','experience.md, Style.qml:371'],
+  ['call','"Springs closed" means no bounce','A short drag that is let go returns in 120 ms with no overshoot.','Keep it calm: no overshoot, same curve as the rest.','experience.md open questions'],
+  ['hw','Zone mask switches cleanly closed to open','The tiny corner zone must grow to a full-screen catcher and shrink back.','','spike S3'],
+  ['hw','No double fade from Hyprland','Hyprland fades layers too. Check that both fades do not stack.','','looknfeel.lua:86-89'],
+ ]},
+ { name:'Dials', note:'Follow the finger exactly, and never change a value by accident.', rows:[
+  ['ok','A tap never changes a value','A drag starts after 6 px. The ring is locked at first touch.','','ux.md 4, acceptance 8 and 9'],
+  ['ok','Knob, fill and number move on the same frame','No easing during a drag.','','experience.md'],
+  ['ok','A tick at each step and at 0 and max','The knob outline grows for 40 ms and shrinks for 80 ms. One tick, not a buzz.','','experience.md'],
+  ['ok','Brightness writes once, on release','The floor is 1%, so the screen never goes black.','','ux.md acceptance 10'],
+  ['ok','A volume key while open glides the knob','120 ms. The number is true at once.','','experience.md'],
+  ['call','Volume above 100%','The Z13 sits at 110% today.','Cap at 100 by default, a setting allows up to 150, and the number always shows the real value.','architecture.md decision 3'],
+  ['call','Exact ring radii','Rings sit at R minus 22, 66 and 110 in the simulation.','Adopt this after a label check at sizes S, M and L.','experience.md open questions'],
+ ]},
+ { name:'Toggles', note:'Tell the truth: pending, done and failed all look different.', rows:[
+  ['ok','Press shrinks to 0.92 in 80 ms','The 48 px hit area never shrinks.','','experience.md'],
+  ['ok','Slow command shows a moving dashed ring','Only that toggle waits. Everything else still works.','','experience.md'],
+  ['ok','A failure rolls back in 120 ms with a reason','No shake. No silent retry.','','experience.md'],
+  ['call','Default toggles at size M','Six slots fit on the arc.','Wi-Fi, Bluetooth, night light, do not disturb, keep awake, keyboard light.','architecture.md decision 5'],
+  ['call','Where the settings gear goes','Six 48 px slots fill the arc. There is no room left for a gear.','Put the gear in the readout, beside the power chip.','experience.md open questions'],
+ ]},
+ { name:'Pages and details', note:'Details open inside the corner, never in a new window.', rows:[
+  ['ok','Toggle pages slide one slot in 160 ms','A 7th toggle at M makes page 2.','','ux.md 3, experience.md'],
+  ['ok','Hold 450 ms to open a detail','The quarter circle morphs to a rounded square in 200 ms.','','ux.md acceptance 12'],
+  ['ok','A new secured Wi-Fi opens the stock panel','A password in a command line is visible to other programs.','','architecture.md'],
+ ]},
+ { name:'Closing and interruptions', note:'Never jump. Reverse from where it is.', rows:[
+  ['ok','Close in 120 ms, scaling to 0.8','Outside tap, Escape, corner tap, keybind, workspace switch, 10 s idle.','','ux.md 2, experience.md'],
+  ['ok','Open again while closing reverses smoothly','Starts from the shown values, not from zero.','','experience.md interruption rules'],
+  ['ok','Nothing closes during a drag','Dismissal waits until release.','','ux.md 2'],
+  ['hw','The outside tap does not reach the app below','And the old window gets focus back after close.','','ux.md acceptance 5'],
+  ['hw','Keyboard focus works with OnDemand','Exclusive focus is refused by Hyprland, so we never use it.','','ux.md 2'],
+  ['hw','Off over fullscreen windows and the lock screen','','','ux.md acceptance 7'],
+ ]},
+ { name:'Theme and look', note:'Your Omarchy theme, live.', rows:[
+  ['ok','Colors come only from the Omarchy theme','No color in plugin code. A test checks this.','','architecture.md 8'],
+  ['ok','Theme change cross-fades in 160 ms','Text snaps if a mid-fade color is too faint.','','experience.md'],
+  ['hw','Contrast on White, Tokyo Night and Flexoki Light','The muted color fails for text, so we never use it for text.','','ux.md 6'],
+ ]},
+ { name:'Corners and sizes', note:'Any corner, any screen.', rows:[
+  ['ok','All 4 corners mirror, text stays upright','Try the corner picker above.','','ux.md 5'],
+  ['call','Size L never reaches full size on the Z13','The Z13 is about 1536 by 960 logical px. The 45% cap gives 432 px, under L at 460.','Let L shrink to the cap and say so in settings, or set L to 430.','new finding, experience.md'],
+  ['call','Very small screens','The cap can make rings and 48 px targets too tight.','Set a minimum screen size and fall back to size S below it.','experience.md open questions'],
+ ]},
+ { name:'Comfort and access', note:'Works for everyone, and with animations off.', rows:[
+  ['ok','Reduced motion makes every change instant','Drags still follow the finger.','','experience.md'],
+  ['ok','Full keyboard path','Tab order, arrows, Page keys, Home and End.','','ux.md acceptance 14'],
+  ['hw','A screen reader reads names and values','Not proven on a layer surface.','','spike S4'],
+ ]},
+ { name:'Speed', note:'Costs nothing when closed. Smooth when open.', rows:[
+  ['ok','No timers or checks while closed','Status checks run only while it is open.','','architecture.md 1'],
+  ['hw','60 fps on the Z13','Most frames within 16.7 ms over a 30 s test of open, drag and detail.','','experience.md performance'],
+  ['hw','Ring fill by shader, Shape as fallback','Measure both on the Z13.','','experience.md performance'],
+ ]},
+ { name:'Fit with Omarchy', note:'Feels native, changes nothing you did not ask for.', rows:[
+  ['ok','No new gestures','3 and 4 finger swipes stay as they are.','','ux.md 2'],
+  ['call','Bar widgets: replace or sit beside','Audio, network and power already live in the bar.','Sit beside. Removing stock widgets is the user\'s choice.','architecture.md decision 2'],
+  ['call','A bar button for omadials','Adding one makes install change the bar.','Leave it out. Tap, keybind and IPC cover it.','architecture.md decision 4'],
+  ['call','Settings app timing','A settings panel first, then a separate app.','Panel at v0.3, app at v0.7 after the settings format is frozen.','architecture.md decision 1'],
+ ]},
+];
+const LABEL = { ok:'Decided', call:'Your call', hw:'Z13 test' };
+const HINT = { ok:'Written down in the docs', call:'Needs your answer before code', hw:'Only a test on the Z13 can settle it' };
+let filter = null;
+function esc(t){ return String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])) }
+function drawBoard(){
+  const all = AREAS.flatMap(a => a.rows);
+  document.getElementById('summary').innerHTML = ['call','hw','ok'].map(s =>
+    `<button class="count" aria-pressed="${filter===s}" data-s="${s}"><span class="chip ${s}">${LABEL[s]}</span><b>${all.filter(r=>r[0]===s).length}</b><small>${HINT[s]}</small></button>`).join('');
+  document.getElementById('board').innerHTML = AREAS.map(a => {
+    const rows = a.rows.filter(r => !filter || r[0]===filter);
+    if (!rows.length) return '';
+    return `<section class="area"><h3>${esc(a.name)}</h3><p>${esc(a.note)}</p><div class="rows">${rows.map(([s,what,why,rec,src]) =>
+      `<div class="row"><div><span class="chip ${s}">${LABEL[s]}</span></div><div class="what"><strong>${esc(what)}</strong>${why?`<div class="why">${esc(why)}</div>`:''}${rec?`<div class="rec">${esc(rec)}</div>`:''}<div class="src">${esc(src)}</div></div></div>`).join('')}</div></section>`;
+  }).join('');
+  for (const b of document.querySelectorAll('.count')) b.onclick = () => { filter = filter===b.dataset.s ? null : b.dataset.s; drawBoard() };
+}
+drawBoard();
+</script>
+<script>
+/*MOTION_SCRIPT*/
+</script>
