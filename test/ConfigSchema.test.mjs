@@ -116,3 +116,9 @@ test('animation: defaults to Tab morph at 1x with bounce 0.06; bad values are re
         assert.deepEqual(r.config.animation,{style:'morph',speed:1,bounce:0.06});
     }
 });
+test('theme pair names match the installed list loosely and are kept before the list loads', ()=>{
+    const res={themes:['Catppuccin Latte','Tokyo Night']};
+    assert.deepEqual(C.validate({version:1,themePair:{light:'catppuccin-latte',dark:'tokyo-night'}},catalog,res).errors,[]);
+    assert.ok(C.validate({version:1,themePair:{dark:'nope'}},catalog,res).errors.some(e=>e.path==='themePair.dark'));
+    assert.deepEqual(C.validate({version:1,themePair:{light:'catppuccin-latte'}},catalog,{themes:[]}).errors,[]);
+});

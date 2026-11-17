@@ -185,7 +185,12 @@ function validate(obj,catalog,resources) {
     });
     if(!config.outputs.names.every(function(v){return typeof v==='string'&&v.length>0;})){error('outputs.names','wrong_type');config.outputs.names=[];}
     if(config.outputs.mode==='named'&&!config.outputs.names.length)error('outputs.names','unknown_value');
-    ['light','dark'].forEach(function(k){const v=config.themePair[k];if(v&&(!resources||!resources.themes||resources.themes.indexOf(v)<0)){error('themePair.'+k,'unknown_value');config.themePair[k]='';}});
+    // Theme names match the installed list ignoring case, spaces and dashes ("catppuccin-latte" is "Catppuccin Latte").
+    // While that list is not known yet, a well-formed name is kept rather than reported.
+    const themeKey=function(t){return String(t).toLowerCase().replace(/[\s_-]+/g,'-');};
+    const known=resources&&resources.themes&&resources.themes.length ? resources.themes.map(themeKey) : null;
+    ['light','dark'].forEach(function(k){const v=config.themePair[k];if(!v)return;
+        if(known ? known.indexOf(themeKey(v))<0 : !/^[A-Za-z0-9 ._-]{1,64}$/.test(v)){error('themePair.'+k,'unknown_value');config.themePair[k]='';}});
     return {config:config,errors:errors,readOnly:input.version>VERSION};
 }
 function patch(text,path,value) {
