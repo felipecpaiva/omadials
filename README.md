@@ -1,6 +1,6 @@
 # omadials
 
-A control corner for [Omarchy](https://omarchy.org). Tap or push into a screen corner and a quarter dial opens
+A control corner for [Omarchy](https://omarchy.org). Quick settings as you drag or tap from a screen corner. A quarter dial opens
 with your hardware quick settings: brightness, volume and mic as arcs you drag, plus toggles for Wi-Fi,
 Bluetooth, night light, do not disturb, keep awake and power profile. Touch first, mouse fine.
 
