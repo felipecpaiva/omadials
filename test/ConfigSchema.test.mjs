@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {load} from './load.mjs';
 const C=load('ConfigSchema');
 const clone=x=>JSON.parse(JSON.stringify(x));
-const catalog=Object.keys(C.DEFAULTS.controls).map(id=>({id,kind:['headphones','signal'].includes(id)?'readout':'dial',placements:['brightness','volume','mic','headphones','signal'].includes(id)?['ring']:['arc']}));
+const catalog=Object.keys(C.DEFAULTS.controls).concat(['headphones','signal']).map(id=>({id,kind:['headphones','signal'].includes(id)?'readout':'dial',placements:['brightness','volume','mic','headphones','signal'].includes(id)?['ring']:['arc']}));
 const validate=x=>C.validate(x,catalog,{themes:['white','tokyo-night'],icons:['custom-icon']});
 function at(obj,path,value){const keys=path.split('.');let cur=obj;for(const k of keys.slice(0,-1))cur=cur[k]??={};cur[keys.at(-1)]=value;return obj;}
 for(const name of ['valid','invalid','partial','unknown-keys'])test(`config fixture ${name}`,()=>{
@@ -85,4 +85,9 @@ test('defaults validate against the catalog', async()=>{
     const cat=JSON.parse(fs.readFileSync(new URL('../controls/catalog.json',import.meta.url),'utf8'));
     const r=C.validate({},cat.controls||cat);
     assert.deepEqual(r.errors,[]);
+});
+test('the shipped defaults validate cleanly as a whole file', async()=>{
+    const fs=await import('node:fs');
+    const cat=JSON.parse(fs.readFileSync(new URL('../controls/catalog.json',import.meta.url),'utf8'));
+    assert.deepEqual(C.validate(C.DEFAULTS,cat).errors,[]);
 });

@@ -20,3 +20,5 @@ assert.ok(!S.validJournal({version:1,instance:'',baseline:intended,intended}));
 
 assert.equal(S.processStart('123 (a tricky ) name) S ' + Array(18).fill('0').join(' ') + ' 999'), '999');
 assert.throws(()=>S.processStart('invalid'));
+// Read-back from Hyprland 0.56 (spike S8): gaps arrive as css text.
+assert.equal(loadLocal('map.js').parse('{"option": "general:gaps_in", "css": "0 0 0 0", "set": true }',{key:'gapsIn',type:'gaps'}),'0 0 0 0');

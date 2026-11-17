@@ -19,12 +19,7 @@ const DEFAULTS = {
         "airplane": {"shown":true,"icon":"default"},
         "gameMode": {"shown":true,"icon":"default"},
         "theme": {"shown":true,"icon":"default"},
-        "media": {"shown":true,"icon":"default"},
-        "touchpad": {"shown":false,"icon":"default"},
-        "touchscreen": {"shown":false,"icon":"default"},
-        "recording": {"shown":false,"icon":"default"},
-        "headphones": {"shown":false,"icon":"default"},
-        "signal": {"shown":false,"icon":"default"}
+        "media": {"shown":true,"icon":"default"}
     },
     "behavior": {"idleTimeoutS":10,"closeOnPointerLeave":true},
     "ringStyle": {"track":"solid","knob":"round","thickness":"normal"},
@@ -91,14 +86,16 @@ function validate(obj,catalog,resources) {
     if(input.version===undefined){if(Object.keys(input).length)error('version','wrong_type');}
     else if(input.version>VERSION)error('version','newer_version');
     else if(input.version!==VERSION)error('version','unknown_value');
-    const controls=catalog||Object.keys(DEFAULTS.controls).map(function(id){
+    const controls=catalog||Object.keys(DEFAULTS.controls).concat(['headphones','signal']).map(function(id){
         const readout=id==='headphones'||id==='signal',ring=readout||DEFAULTS.dials.some(function(d){return d.id===id;});
         return {id:id,placements:ring ? ['ring'] : ['arc'],kind:readout ? 'readout' : ring ? 'dial' : 'toggle'};
     });
     const by=Object.create(null);controls.forEach(function(c){by[c.id]=c;});
     if(input.controls!==undefined) {
         if(!object(input.controls))error('controls','wrong_type');else Object.keys(input.controls).forEach(function(id){
-            if(!by[id]){error('controls.'+id,'unknown_control');return;}
+            // A readout ring entry (for example headphones) is configured by its own id, not a catalog id.
+            const isReadout=Array.isArray(input.readoutRings ? input.readoutRings : DEFAULTS.readoutRings)&&(input.readoutRings||DEFAULTS.readoutRings).some(function(r){return r&&r.id===id;});
+            if(!by[id]&&!isReadout){error('controls.'+id,'unknown_control');return;}
             config.controls[id]=fields(input.controls[id],DEFAULTS.controls[id]||{shown:false,icon:'default'},'controls.'+id);
         });
     }

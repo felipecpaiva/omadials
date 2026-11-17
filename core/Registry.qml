@@ -37,7 +37,8 @@ QtObject {
         const config = JSON.parse(JSON.stringify(store.config)), desired = []
         entries().forEach(entry => {
             const meta = catalog.find(c => c.id === entry.source)
-            const shown = config.controls[entry.id]?.shown || entry.id === "powerprofile" && config.readout?.powerProfile
+            // The corner readout always needs the battery and the power profile, shown as rings or not.
+            const shown = config.controls[entry.id]?.shown || entry.id === "powerprofile" || entry.id === "laptopBattery"
             if (!meta || !settingsOpen && !shown) return
             let object = objects[entry.id]
             const parameter = (config.readoutRings || []).find(r => r.id === entry.id) || {}

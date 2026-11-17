@@ -27,6 +27,7 @@ Item {
     registry: controlRegistry
     config: root.config
     battery: controlRegistry.revision >= 0 ? controlRegistry.byId("laptopBattery") : null
+    profile: controlRegistry.revision >= 0 ? controlRegistry.byId("powerprofile") : null
     onSettingsRequested: root.openSettings()
   }
 

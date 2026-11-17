@@ -11,7 +11,9 @@ function parse(text, option) {
     const v = JSON.parse(text);
     if (option.type === 'bool' && typeof v.bool === 'boolean') return v.bool;
     if (option.type === 'bool' && (v.int === 0 || v.int === 1)) return v.int === 1;
-    if (option.type === 'gaps' && typeof v.custom === 'string' && /^\d+(?:\.\d+)?(?:\s+\d+(?:\.\d+)?){0,3}$/.test(v.custom.trim())) return v.custom.trim();
+    // Hyprland 0.56 reports gaps as {css: "0 0 0 0"}; older builds used {custom: ...}.
+    const gaps = typeof v.css === 'string' ? v.css : v.custom;
+    if (option.type === 'gaps' && typeof gaps === 'string' && /^\d+(?:\.\d+)?(?:\s+\d+(?:\.\d+)?){0,3}$/.test(gaps.trim())) return gaps.trim();
     throw new Error('Invalid read-back for ' + option.key);
 }
 function intended(config) {
