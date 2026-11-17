@@ -37,9 +37,16 @@ def with_(base, **paths):
     return cfg
 
 
+m = None   # the uinput mouse, set below
+# A cursor warp sends no hover to the corner surface, so every arrival is real relative motion (uinput moves in
+# physical px, scale 1.6; the screen edge stops the pointer, so overshooting lands exactly in the corner).
+def slide(dx, dy): m.move(round(dx * 1.6), round(dy * 1.6), steps=25, pause=0.012); time.sleep(0.1)
+def leave_corner(): slide(700, -500)
+
+
 def rest_in_corner(wait=1.0):
-    """Leave the corner first (resting there once suppresses the next push), then rest in the 2 px push spot."""
-    to(*AWAY); time.sleep(0.3); to(1, H - 1); time.sleep(wait)
+    """Leave the corner first (resting there once suppresses the next push), then slide into the 2 px push spot."""
+    to(*AWAY); time.sleep(0.3); to(60, H - 60); slide(-200, 200); time.sleep(wait)
 
 
 results = {}
@@ -54,7 +61,7 @@ base = with_(base, **{"trigger.push": True, "trigger.pushDelayMs": 150, "cornerI
 vol0 = sh("wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@").split()[1]
 cursor0 = json.loads(sh("hyprctl", "cursorpos", "-j") or '{"x":900,"y":300}')
 try:
-    with Mouse() as m:                     # wheel only; this script never presses a button
+    with Mouse() as m:                     # moves and one wheel notch; this script never presses a button
         close()
 
         # 0. control: with the defaults, resting in the corner opens it (proves the rest method works here)
@@ -72,10 +79,10 @@ try:
         check("2 control: tab never + zone on: opens", is_open()); close()
 
         # 3. close when the pointer leaves
-        write(base); rest_in_corner(); to(*AWAY); time.sleep(1.3)
+        write(base); rest_in_corner(); leave_corner(); time.sleep(1.3)
         check("3 control: leave on, moving away closes", not is_open()); close()
         write(with_(base, **{"behavior.closeOnPointerLeave": False, "behavior.idleTimeoutS": 5}))
-        rest_in_corner(); opened = is_open(); to(*AWAY); time.sleep(1.5)
+        rest_in_corner(); opened = is_open(); leave_corner(); time.sleep(1.5)
         check("3 leave off: stays open after moving away", opened and is_open())
         time.sleep(5)
         check("3 leave off: closes after the 5 s close-after time", not is_open()); close()
@@ -84,7 +91,7 @@ try:
         write(with_(base, **{"options.volume.wheelStep": 10}))
         sh("wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0.5"); time.sleep(0.5)
         sh("omarchy-shell", "omadials", "open"); time.sleep(0.8)
-        to(*VOLUME_RING); before = volume()
+        to(VOLUME_RING[0] - 20, VOLUME_RING[1]); slide(20, 0); before = volume()
         m.wheel(-1)
         time.sleep(0.6); after = volume()
         check("4 wheel step 10: one notch is 10", before - after == 10, f"{before} -> {after}")
