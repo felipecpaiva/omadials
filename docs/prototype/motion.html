@@ -58,7 +58,7 @@ const C = Object.freeze({
   fakeSlow:1500, fakeFailure:900, fakeFast:450, step:5, fineStep:1,
   ease:[.23,1,.32,1], circleK:.55228475,
   demoApps:[65,40,80], demoProgress:40, fineNear:22, fineFar:66, fineGain:.25, finerGain:.1, detentStep:25, snapWindow:2, batteryFont:40, statusWidth:176, statusDepth:132, statusShortWidth:120, readoutWidth:150, readoutDepth:112, labelInset:4, markSize:4, percent:100,
-  textWidth:220, textInset:12,labelOffset:14,labelPad:10,ringStart:3,ringEnd:87,tabRadius:42,tabArcs:[16,24,32],tabFill:[.3,.55,.8],tab2Arcs:[19,31],tab2Fill:[.4,.65],tabKnob:4,iconSize:28,iconInset:4,iconRest:.7,iconReveal:80,windowW:300,windowH:220,textGap:8,statusLongWidth:144,statusLongLines:4,noticeWidth:260, statusHeight:54, textLine:18, labelWidth:96, labelHeight:40, thin:2, normal:4, bold:6, dash:10, gap:6, dot:1, segment:18, bar:12, maxRings:3, fadeSlots:.6,
+  textWidth:220, textInset:12,labelOffset:14,labelPad:10,ringStart:3,ringEnd:87,tabRadius:42,tabArcs:[16,24,32],tabFill:[.3,.55,.8],tab2Arcs:[19,31],tab2Fill:[.4,.65],tabKnob:4,iconSize:28,iconInset:4,iconRest:.7,iconReveal:80,windowW:300,windowH:220,textGap:8,statusLongWidth:144,statusLongLines:4,noticeWidth:260,noticeHold:2500, statusHeight:54, textLine:18, labelWidth:96, labelHeight:40, thin:2, normal:4, bold:6, dash:10, gap:6, dot:1, segment:18, bar:12, maxRings:3, fadeSlots:.6,
   storyboardPause:650, storyboardDrag:850, storyboardHold:1100
 });
 const PALETTES = {
@@ -78,7 +78,7 @@ const S={iconReveal:0,state:'closed',corner:'bl',opacity:0,scale:C.scaleStart,hi
 let width=0,height=0,R=C.radius,ratio=1,frame=0,drag=null,holdTimer=0,holdStartTimer=0,
  bubbleTimer=0,idleTimer=0,leaveTimer=0,dwellTimer=0,playToken=0,lastPending=0;
 const tracks=new Map();
-const config={icons:{},ringShown:[true,true,true],tabStyle:'rings2knob',iconMode:'always',iconAbove:true,demoWindow:false,toggles:[0,1,2,3,4,5,6,7,8,9,10],enabled:new Set([0,1,2,3,4,5,6,7,8,9,10]),wifiTap:'switchRadio',styles:Array.from({length:C.maxRings},()=>({track:'solid',knob:'round',thickness:'normal'})),readouts:[null,null,null],snap:true,fine:true,lightTheme:"Paper Light",darkTheme:"Midnight",game:{animations:true,blur:true,shadows:true,gaps:true},apps:[...C.demoApps],keyboard:true};
+const config={size:'M',icons:{},ringShown:[true,true,true],tabStyle:'rings2knob',iconMode:'always',iconAbove:true,demoWindow:false,toggles:[0,1,2,3,4,5,6,7,8,9,10],enabled:new Set([0,1,2,3,4,5,6,7,8,9,10]),wifiTap:'switchRadio',styles:Array.from({length:C.maxRings},()=>({track:'solid',knob:'round',thickness:'normal'})),readouts:[null,null,null],snap:true,fine:true,lightTheme:"Paper Light",darkTheme:"Midnight",game:{animations:true,blur:true,shadows:true,gaps:true},apps:[...C.demoApps],keyboard:true};
 S.arcOffset=0;
 const copy=document.createElement('div');copy.className='fan-copy';stage.append(copy);
 const statusBox=document.createElement('div');statusBox.className='status-box';stage.append(statusBox);
@@ -126,7 +126,7 @@ function tick(now){
   lastPending=now;render();
   if(tracks.size||(!S.reduced&&S.pending.size&&S.opacity>0))wake();
 }
-function say(text){S.status=text;$('live').textContent=text;render()}
+function say(text){S.statusAt=performance.now();clearTimeout(S.noticeTimer);S.noticeTimer=setTimeout(()=>render(),C.noticeHold+20);S.status=text;$('live').textContent=text;render()}
 function activity(){clearTimeout(idleTimer);if(S.state!=='closed'&&!drag)idleTimer=setTimeout(()=>closeFan(),C.idle)}
 function origin(){return{x:S.corner.includes('r')?width:0,y:S.corner.includes('t')?0:height}}
 function map(x,y){return{x:S.corner.includes('r')?width-x:x,y:S.corner.includes('t')?height-y:y}}
@@ -156,9 +156,15 @@ const TOGGLE_ICONS=[['Wi','≋','◠'],['Bt','ᛒ','✱'],['☾','☼','◑'],['
 const RING_ICONS=[['☀','☼','✹'],['♪','♫','◖'],['●','◉','◎']];
 const glyphs=new Proxy([],{get:(t,k)=>isNaN(k)?t[k]:TOGGLE_ICONS[k][config.icons['t'+k]||0]});
 function ringIcon(i){return RING_ICONS[i][config.icons['r'+i]||0]}
-function ringShown(i){return config.ringShown[i]&&!(i===2&&S.missing)}
+// Expansion sizes. Compact drops the heavy text: ring names, the battery line, and the status inside the fan.
+const SIZES={S:{label:'Compact',radius:330,toggleR:200,rings:2,names:false,batteryLine:false,batteryFont:28,statusInside:false},
+  M:{label:'Normal',radius:420,toggleR:240,rings:3,names:true,batteryLine:true,batteryFont:40,statusInside:true},
+  L:{label:'Large',radius:500,toggleR:280,rings:3,names:true,batteryLine:true,batteryFont:48,statusInside:true}};
+function size(){return SIZES[config.size]}
+function baseShown(i){return config.ringShown[i]&&!(i===2&&S.missing)}
+function ringShown(i){return baseShown(i)&&[0,1,2].filter(baseShown).indexOf(i)<size().rings}
 function slotAngle(i){return C.start+slotStep()*(i-S.arcOffset+.5)}
-function toggleRadius(){return Math.min(C.toggleR,R-C.maxRings*C.band-C.target/2)}
+function toggleRadius(){return Math.min(size().toggleR,R-size().rings*C.band-C.target/2)}
 function toggleLayer(page,alpha,offset){
   if(alpha<=0)return '';
   const tr=toggleRadius();
@@ -198,7 +204,7 @@ function render(){
     }
     for(let i=0;i<C.maxRings;i++){
       if(!ringShown(i))continue;
-      const d=devices[config.readouts[i]],caption=d?('Read only '+(d.connected?d.value+'%':'not connected')):ringIcon(i)+' '+names[i]+' '+S.values[i]+'%';
+      const d=devices[config.readouts[i]],caption=d?('Read only '+(d.connected?d.value+'%':'not connected')):ringIcon(i)+' '+(size().names?names[i]+' ':'')+S.values[i]+'%';
       // Label follows the ring, on its corner side. The path always runs left to right so glyphs stay upright.
       const rl=ringRadius(i)-C.labelOffset,a1=point(rl,C.ringStart),a2=point(rl,C.ringEnd),m=point(rl,(C.ringStart+C.ringEnd)/2);
       const [p1,p2]=a1.x<a2.x?[a1,a2]:[a2,a1],sw=((m.x-p1.x)*(p2.y-m.y)-(m.y-p1.y)*(p2.x-m.x))>0?1:0,left=!S.corner.includes('r');
@@ -230,20 +236,21 @@ function render(){
   const right=S.corner.includes('r'),top=S.corner.includes('t');
   copy.style.display=S.opacity>0&&S.fanAlpha>0?'block':'none';copy.style.opacity=S.opacity*S.fanAlpha;
   placeBox(copy,C.textInset,C.textInset,C.readoutWidth,C.readoutDepth);
-  copy.innerHTML=`<div style="font-size:${C.batteryFont}px;line-height:1">72%</div><p class="battery-line">On battery, 2 h 50 m</p><button style="min-height:${C.target}px;width:100%" id="profile-chip">Balanced</button>`;
+  copy.innerHTML=`<div style="font-size:${size().batteryFont}px;line-height:1">72%</div><p class="battery-line"${size().batteryLine?"":" hidden"}>On battery, 2 h 50 m</p><button style="min-height:${C.target}px;width:100%" id="profile-chip">Balanced</button>`;
   copy.style.pointerEvents='auto';$('profile-chip').onclick=()=>enterDetail('Power profile');
-  statusBox.style.display=S.opacity>0&&S.fanAlpha>0?'block':'none';statusBox.style.opacity=S.opacity*S.fanAlpha;
+  // Compact shows the status only briefly, as a notice beside the fan.
+  statusBox.style.display=S.opacity>0&&S.fanAlpha>0&&(size().statusInside||performance.now()-(S.statusAt||0)<C.noticeHold)?'block':'none';statusBox.style.opacity=S.opacity*S.fanAlpha;
   placeBox(statusBox,C.textInset,C.statusDepth,C.statusShortWidth,C.textLine*2);
   statusBox.style.padding='0';statusBox.style.border='0';statusBox.style.background='transparent';statusBox.textContent=S.status;
   // Measure before choosing the readout priority. No clipping or ellipsis.
   // scrollHeight never drops below the box height, so measure the text with an auto height.
-  statusBox.style.height='auto';let long=statusBox.scrollHeight>C.textLine;statusBox.style.height=C.textLine*2+'px';
+  statusBox.style.height='auto';let long=statusBox.scrollHeight>C.textLine*2||(!size().statusInside&&S.status!=='');statusBox.style.height=C.textLine*2+'px';
   statusBox.style.pointerEvents='none';statusBox.onclick=null;
   // Long status: the battery lines give way and the status takes their room above the chip.
-  if(long){placeBox(copy,C.textInset,C.textInset,C.readoutWidth,C.target);copy.querySelector('.battery-line').hidden=true;copy.firstElementChild.hidden=true;
+  if(long&&size().statusInside){placeBox(copy,C.textInset,C.textInset,C.readoutWidth,C.target);copy.querySelector('.battery-line').hidden=true;copy.firstElementChild.hidden=true;
     placeBox(statusBox,C.textInset,C.textInset+C.target+C.textGap,C.statusLongWidth,C.textLine*C.statusLongLines);}
   // Still too long for the corner: show it whole as a notice beside the fan, along the same screen edge. Never cut it.
-  if(long&&statusBox.scrollHeight>C.textLine*C.statusLongLines){
+  if(long&&(!size().statusInside||statusBox.scrollHeight>C.textLine*C.statusLongLines)){
     statusBox.style.height='auto';placeBox(statusBox,R+C.textGap,C.textInset,C.noticeWidth,0);statusBox.style.height='auto';
     Object.assign(statusBox.style,{padding:'8px 12px',border:'1px solid var(--edge)',background:'var(--surface)',borderRadius:'10px'});
     if(!S.corner.includes('t')){statusBox.style.top='';statusBox.style.bottom=C.textInset+'px'}}
@@ -501,7 +508,7 @@ function reduced(on){
   render();wake();
 }
 function resize(){
-  width=stage.clientWidth;height=stage.clientHeight;R=Math.min(C.radius,C.cap*Math.min(width,height));ratio=R/C.radius;
+  width=stage.clientWidth;height=stage.clientHeight;R=Math.min(size().radius,C.cap*Math.min(width,height));ratio=R/size().radius;
   svg.setAttribute('viewBox',`0 0 ${width} ${height}`);render();
 }
 $('open').onclick=toggleFan;
@@ -555,7 +562,8 @@ $('play').onclick=()=>{if($('play').textContent.startsWith('Playing')){playToken
 new ResizeObserver(resize).observe(stage);
 function settingsPanel(){
   const panel=$('settings-panel');panel.innerHTML='<h2>Settings (live demo)</h2><fieldset id="toggle-config"><legend>Toggles: show, icon and order</legend></fieldset><label>Wi-Fi tap <select id="wifi-action"><option value="switchRadio">Switch radio</option><option value="quickDetail">Quick Wi-Fi detail</option><option value="fullWindow">Full Omarchy Wi-Fi window</option></select></label><fieldset id="ring-config"><legend>Ring styles and readouts (M: three total, choose a readout to replace a slider)</legend></fieldset><button id="stress">Long text stress</button>';
-  panel.insertAdjacentHTML('beforeend','<fieldset id="round3-settings"><legend>Corner and extras</legend><label>Corner tab <select id="tab-style"><option value="rings2knob">2 rings and a knob</option><option value="rings3">3 rings</option></select></label><label>Corner icon <select id="icon-mode"><option value="always">Always</option><option value="onApproach">On approach</option><option value="never">Never</option></select></label><label><input id="icon-above" type="checkbox">Icon above windows</label><label><input id="demo-window" type="checkbox">Demo: a window covers the corner</label><p>The tap zone always works, in every mode.</p><label><input id="snap-on" type="checkbox">Magnetic snap</label><label><input id="fine-on" type="checkbox">Outward fine control</label><label>Light theme<input id="light-name"></label><label>Dark theme<input id="dark-name"></label><p>Order changes only here. Scroll resets on open.</p></fieldset>');
+  panel.insertAdjacentHTML('beforeend','<fieldset id="round3-settings"><legend>Corner and extras</legend><label>Size <select id="size-pick"><option value="S">Compact</option><option value="M">Normal</option><option value="L">Large</option></select></label><label>Corner tab <select id="tab-style"><option value="rings2knob">2 rings and a knob</option><option value="rings3">3 rings</option></select></label><label>Corner icon <select id="icon-mode"><option value="always">Always</option><option value="onApproach">On approach</option><option value="never">Never</option></select></label><label><input id="icon-above" type="checkbox">Icon above windows</label><label><input id="demo-window" type="checkbox">Demo: a window covers the corner</label><p>The tap zone always works, in every mode.</p><label><input id="snap-on" type="checkbox">Magnetic snap</label><label><input id="fine-on" type="checkbox">Outward fine control</label><label>Light theme<input id="light-name"></label><label>Dark theme<input id="dark-name"></label><p>Order changes only here. Scroll resets on open.</p></fieldset>');
+  $('size-pick').value=config.size;$('size-pick').onchange=()=>{config.size=$('size-pick').value;resize();say(size().label+' size'+(R<size().radius?', capped at '+Math.round(R)+' px by this screen':''))};
   $('tab-style').value=config.tabStyle;$('tab-style').onchange=()=>{config.tabStyle=$('tab-style').value;render()};
   $('icon-mode').value=config.iconMode;$('icon-mode').onchange=()=>{config.iconMode=$('icon-mode').value;render()};
   for(const [id,key] of [['icon-above','iconAbove'],['demo-window','demoWindow']]){$(id).checked=config[key];$(id).onchange=()=>{config[key]=$(id).checked;render()}}

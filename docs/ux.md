@@ -51,6 +51,16 @@ Dial rings sweep 3 to 87 degrees, so they run close to both screen edges (about 
 | M | 3 | 240 | 6 |
 | L | 4 | 280 | 7 |
 
+**Expansion size is a user choice** (Settings, Size: Compact, Normal, Large; maintainer request 2026-11-17). Each size also sets how much text the corner carries:
+
+| Size | Ring labels | Corner readout | Status line |
+|---|---|---|---|
+| Compact (S) | Icon and value only | 28 px battery number and the profile chip; no battery line | Never inside the fan: a notice beside it for 2.5 s after an action; errors stay until the next action |
+| Normal (M) | Icon, name and value | 40 px battery number, battery line, profile chip | Inside, up to 2 lines above the readout; longer gives way (battery lines hide), then the notice |
+| Large (L) | Icon, name and value | 48 px battery number, battery line, profile chip | As Normal, with more room |
+
+When the screen cap makes a size smaller than its nominal radius, Settings says so (for example Large on the Z13 shows "capped at 432 px").
+
 **Overflow.** Rings, including readouts, have a hard cap: S 2, M 3, L 4. Settings refuse extra rings with a size hint. Toggles form one ordered scrollable strip on the arc. Press and slide after 6 px, following tangential finger travel 1:1 without inertia. Movement at 6 px cancels hold. Release snaps to the nearest slot over 160 ms using the shared E curve, without overshoot. Wheel scrolls one slot. Theme-only end fades indicate remaining items. No More slot, pages or page dots.
 
 **Text geometry.** Geometry returns a reserved box for status, battery line, dial labels, toggle names in details, detail rows and readout labels. Text wraps inside that box, never truncates, never uses ellipsis, and never overlaps another box or target. Minimum font size is 12 px. Status has up to two lines. Rows grow with wrapped text above their 48 px minimum. If measured text still cannot fit, layout gives way: the battery line hides, then the large number yields; unfit full text opens a scrollable status detail inside the corner. No font shrinking below 12 px. Support 32-byte SSIDs, long Bluetooth names and translations 1.4 times longer.
