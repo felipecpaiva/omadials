@@ -144,20 +144,20 @@ Goal: open the corner on the Z13 and change real values.
 
 ## P6. Details (v0.4)
 
-- [ ] **P6.1 Detail frame.** Morph in 200 ms, back, focus restore, async rows.
-- [ ] **P6.2 Wi-Fi.** List, connect saved, inline password through stdin (P1.6), no-keyboard fallback, full window
+- [x] **P6.1 Detail frame.** Morph in 200 ms, back, focus restore, async rows.
+- [~] **P6.2 Wi-Fi.** (list, connect saved and full window live; inline password off until S7) List, connect saved, inline password through stdin (P1.6), no-keyboard fallback, full window
   action.
-- [ ] **P6.3 Bluetooth.** Power, devices, battery where reported ("no data" otherwise).
-- [ ] **P6.4 Audio.** Output and input pickers, per-app volume (P1.8).
-- [ ] **P6.5 Power profile, displays** (brightness per monitor; refresh and scale with confirm and revert per P1.5).
-- [ ] **P6.6 Theme picker and media detail** (P1.7, P1.8).
+- [~] **P6.3 Bluetooth.** (device rows live; battery where reported needs a headset) Power, devices, battery where reported ("no data" otherwise).
+- [x] **P6.4 Audio.** (outputs, inputs and app sliders seen live 2026-11-17) Output and input pickers, per-app volume (P1.8).
+- [~] **P6.5 Power profile, displays** (displays detail live; confirm and revert needs hands) (brightness per monitor; refresh and scale with confirm and revert per P1.5).
+- [~] **P6.6 Theme picker and media detail** (theme list and media "No media playing" live; a playing player untested) (P1.7, P1.8).
 - [ ] **P6.7 Release v0.4** with GIF.
 
 Done when (each): contract tests for the detail, plus a hand check on the Z13.
 
 ## P7. Extras and freeze (v0.5)
 
-- [ ] **P7.1 Readout rings.** Bluetooth device battery (pick the device), Wi-Fi signal, laptop and pen battery; not
+- [~] **P7.1 Readout rings.** (Wi-Fi signal ring live; Bluetooth device and pen need the devices) Bluetooth device battery (pick the device), Wi-Fi signal, laptop and pen battery; not
   connected shown truthfully.
 - [x] **P7.2 Game mode toggle** (2026-11-17, on and off verified live, docs/spikes.md) with exact revert (P1.7).
 - [ ] **P7.3 Hardware extras.** Keyboard light, charge limit, touchpad, touchscreen guard, airplane restore.
@@ -166,7 +166,7 @@ Done when (each): contract tests for the detail, plus a hand check on the Z13.
 
 ## P8. Release and listing (v0.6)
 
-- [ ] **P8.1 README for users.** What it is, install, every file it writes, uninstall, GIFs, the not-affiliated line.
+- [x] **P8.1 README for users.** (2026-11-17; screenshots to add) What it is, install, every file it writes, uninstall, GIFs, the not-affiliated line.
 - [ ] **P8.2 Marketplace request** with `preview.png`, following the OmaBar and omagnet listings. Freeze master while
   the request is open.
 
