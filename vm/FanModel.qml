@@ -45,6 +45,23 @@ QtObject {
         interval: session.config.behavior ? session.config.behavior.idleTimeoutS * 1000 : Gesture.IDLE
         onTriggered: { if (!session.captured) session.close() }
     }
+    // Dials write live while dragged (maintainer request): at most one write in flight, always the newest value.
+    // A value released while a write is still running is written as soon as that write ends.
+    property var liveControl: null
+    property real liveValue: -1
+    property real lastLive: -1
+    property Timer liveWrite: Timer {
+        interval: 50; repeat: true
+        running: !!session.liveControl
+        onTriggered: {
+            const c = session.liveControl
+            if (!c || c.availability !== "available") { session.liveControl = null; return }
+            if (c.writeState === "pending") return
+            const v = Math.round(session.captured && session.draftControl === c ? session.draft : session.liveValue)
+            if (v !== session.lastLive) { session.lastLive = v; c.set(v) }
+            else if (!(session.captured && session.draftControl === c)) session.liveControl = null
+        }
+    }
     property Timer bubbleTimer: Timer { interval: Motion.TIMES.bubbleHold; onTriggered: session.bubbleVisible = false }
     function textLayout(size, measure, screen, corner, radius, elapsed) { return Layout.textLayout(size,status,measure,screen,corner,radius,statusError,elapsed) }
     function activity() { if (open && idle.interval > 0) idle.restart() }
@@ -96,10 +113,13 @@ QtObject {
         const result = Gesture.dial(gesture, angle, distance, {startAngle:ValueMap.START, snap:opts.snap, fineEnabled:opts.fineEnabled})
         if (result.tick) { tickControl = draftControl; tickSerial++ }
         gesture = result.state; draft = ValueMap.nativeValue(result.value / 100, draftControl.range)
+        if (liveControl !== draftControl) { liveControl = draftControl; lastLive = Math.round(draftControl.value === null ? -1 : draftControl.value) }
         fine = gesture.gain < 1; bubble(draftControl, point, draft)
     }
     function commitDial(moved, cancel) {
-        if (draftControl && draftControl.kind !== "readout" && moved && !cancel && draftControl.availability === "available") { draftControl.set(draft); report(draftControl) }
+        if (draftControl && draftControl.kind !== "readout" && moved && !cancel && draftControl.availability === "available") {
+            liveValue = draft; liveControl = draftControl; report(draftControl)   // the live writer sends the final value
+        }
         releaseCapture()
     }
     function ringStyle(control) {

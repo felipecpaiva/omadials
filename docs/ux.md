@@ -90,7 +90,7 @@ omadials sits beside bar widgets and never edits the bar (architecture.md decisi
 - Fine control: outward distance from the locked ring centre selects gain 0.25 beyond 22 px and 0.1 beyond 66 px. Rebase at each gain transition. Returning uses gain 1 without a jump. See experience.md, Dial precision.
 - Floors: brightness stops at 1%, never 0, so a drag cannot black out the screen. Volume input caps at the configured maximum, default 100%, up to 150%. Existing over-cap values remain truthful.
 - Mute: tapping the dial label mutes volume or mic.
-- Brightness is written on release; the knob previews it.
+- Dials write live while you drag (maintainer decision 2026-11-17: the screen must follow the finger). At most one write is in flight and the newest value wins, so slow external monitors (DDC) are never flooded; the released value is always written last.
 
 **Wheel and touchpad scroll** over a ring: 5% per notch, 1% with Shift. Smooth scroll adds pixel deltas into whole steps.
 

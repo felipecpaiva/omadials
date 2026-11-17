@@ -16,7 +16,7 @@ This is the shared checklist for [UX](ux.md) and [experience](experience.md). ID
 - [ ] **A-DIAL-3** Brightness never goes below 1%. Input never writes volume above the configured cap, 100% by default or up to 150%. Existing over-cap readings stay truthful.
 - [ ] **A-DIAL-4** The value bubble is never under the contact point.
 - [ ] **A-DIAL-5** Press and release at five positions on each ring with movement below 6 px. No backend write occurs. After crossing 6 px in normal mode, knob and fill match the clamped pointer angle in the next rendered frame. Fine mode follows the specified relative gain.
-- [ ] **A-DIAL-6** Cross ring bands while captured. Only the original dial changes. Brightness writes exactly once on completed release and never on cancellation.
+- [ ] **A-DIAL-6** Cross ring bands while captured. Only the original dial changes. Every dial writes live while dragged (at most one write in flight, newest value, about every 50 ms), and the released value is always the last one written. A cancelled drag writes nothing more.
 - [ ] **A-DIAL-7** A stepped-level crossing produces one 40 ms attack and 80 ms recovery. Holding an endpoint for 1 s causes no repeated tick. Re-entering after one step produces one new tick.
 - [ ] **A-DIAL-8** External updates glide for 120 ms, with text truthful immediately. An update during a drag cannot pull the knob away from the pointer. Over-cap readings are not falsified.
 - [ ] **A-DIAL-9** Exercise every track, knob and thickness globally and per ring. Bands remain 44 px, targets 48 px, theme-only colours; dash changes update shader uniforms without path rebuilds.
