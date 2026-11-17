@@ -1,0 +1,1 @@
+{"input":{"version":1,"corner":"somewhere","trigger":{"pushDelayMs":501},"options":{"volume":{"maxPercent":125}}},"errors":[["corner","unknown_value"],["trigger.pushDelayMs","out_of_range"],["options.volume.maxPercent","unknown_value"]],"expected":{"corner":"bottom-left","trigger.pushDelayMs":150,"options.volume.maxPercent":100}}

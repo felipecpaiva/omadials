@@ -1,0 +1,1 @@
+{"input":{"version":1,"corner":"top-right","size":"L","options":{"volume":{"maxPercent":150}},"themePair":{"light":"white","dark":"tokyo-night"}},"errors":[],"expected":{"corner":"top-right","size":"L","options.volume.maxPercent":150}}

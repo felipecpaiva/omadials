@@ -1,0 +1,1 @@
+{"input":{"version":1,"controls":{"wifi":{"shown":false}}},"errors":[],"expected":{"size":"M","controls.wifi.shown":false,"controls.volume.shown":true,"cornerIcon.mode":"always"}}

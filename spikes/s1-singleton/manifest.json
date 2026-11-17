@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.felipecpaiva.omadials-s1",
+  "name": "omadials spike S1",
+  "version": "0.0.1",
+  "author": "Felipe Paiva",
+  "description": "Spike: plugin-local pragma Singleton. Delete after the spike.",
+  "kinds": ["service"],
+  "entryPoints": { "service": "Service.qml" }
+}

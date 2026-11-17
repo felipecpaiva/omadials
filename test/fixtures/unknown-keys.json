@@ -1,0 +1,1 @@
+{"input":{"version":1,"future":{"keep":true},"controls":{"futureControl":{"shown":true}}},"errors":[["future","unknown_value"],["controls.futureControl","unknown_control"]],"expected":{"size":"M"}}
