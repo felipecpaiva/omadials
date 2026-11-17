@@ -57,3 +57,29 @@ This file holds the research; the chosen motion goes into `experience.md` after 
    rings 25 ms ahead; toggles pop along the arc. Close: fold back in 140 ms.
 6. **Hybrid (recommended first):** candidate 1's radius spring drives candidate 2's mask: one number controls shape
    and reveal. All content in about 300 ms, usable at about 150 ms. Close 0.18 s critically damped.
+
+## Technical findings on the Z13 (2026-11-17)
+
+Measured with standalone `qs -p` spikes (never the real shell), 180 Hz, scale 1.6.
+
+- **Today's motion has a kink.** `Behavior` + `NumberAnimation` (MotionValue) changes velocity when retargeted: a
+  0 to 1 then back to 0 test held at 0.925 for one frame, then dropped to 0.794 in one 5.5 ms frame.
+- **`SpringAnimation` judders here.** It updates every 16.6 ms, once per three 180 Hz frames, and starts about 20 ms
+  late. Its rule: every 16 ms, `v += (spring*diff - damping*v)/mass; x += v*0.016`.
+- **A small spring stepped in `FrameAnimation`** with real `frameTime` updates every frame and keeps velocity through
+  a retarget. Mapping with mass 1: stiffness = (2π/response)², damping = 4π(1 − bounce)/response.
+- **Reveal cost** (420 px disc, three live arcs, retargeted every 320 ms for 8 s): no dropped frames for scale, clip
+  rect, ShaderEffect wipe or MultiEffect mask; average 5.56 ms, worst 6.8 to 7.2 ms. Creating a layer at each open
+  costs a missed frame (8.57 ms worst): keep layers alive. `Fan` fills the output, so any layer must sit on a
+  disc-sized item, never the window.
+- **Cheapest of all:** animate the disc radius and the ring sweeps as geometry (Shape CurveRenderer), no layer.
+- **Morph:** the tab and the fan are separate layer surfaces that commit independently (up to one frame apart). For a
+  true morph, draw the tab inside CornerWindow when it is above windows; when behind windows, start the fan at the
+  tab's exact shape and hide the tab after the fan's first frame.
+- **Hyprland:** our windows stay mapped, so open and close never trigger a compositor fade. They fade once on first
+  map; Omarchy's syntax to stop that is `hl.layer_rule({ match = { namespace = "^omadials(-tab)?$" }, no_anim = true })`
+  (not applied: we do not edit the Hyprland config).
+
+**Technical recommendation:** replace MotionValue's NumberAnimation with a FrameAnimation spring (open: response
+0.30 s, bounce 0 to 0.1; close: 0.22 s, bounce 0); reveal by radius and sweep geometry; draw the tab in CornerWindow
+for the morph. This favours the Tab morph and Hybrid candidates.
