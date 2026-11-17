@@ -8,7 +8,7 @@ long="Wi-Fi: on, Workshop very long wireless network 5G, signal 72%, connected f
 for c in bl br tl tr; do
   hook="setTimeout(()=>{\$('reduced').checked=true;reduced(true);\$('corner').value='$c';\$('corner').onchange();openFan();say(\"$long\");render();},300);"
   sed "0,/<\/script>/! s#</script>#;$hook</script>#" "$here/review.html" > "$out/t_$c.html"
-  chromium --headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=1200,1250 \
+  chromium --headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=1200,1400 \
     --virtual-time-budget=3000 --screenshot="$out/$c.png" "file://$out/t_$c.html" >/dev/null 2>&1
 done
 echo "screenshots in $out: bl.png br.png tl.png tr.png"

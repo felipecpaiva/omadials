@@ -43,13 +43,13 @@ From the outside in, around the corner origin:
 
 Dial rings sweep 3 to 87 degrees, so they run close to both screen edges (about 19 px at M); the knob still clears the bezel. The toggle arc keeps 6 to 84 degrees so its 48 px targets never touch an edge.
 
-**Capacity.** Radius R is S 300, M 380 (default), L 460, capped at 45% of the output's shorter side so portrait works. Toggles that fit = floor(r_toggle x 1.36 rad / 48).
+**Capacity.** Radius R is S 330, M 420 (default), L 500 (raised 2026-11-17 so text has room), capped at 45% of the output's shorter side so portrait works. Toggles that fit = floor(r_toggle x 1.36 rad / 48).
 
 | Size | Dials | Toggle arc radius | Visible toggle slots |
 |---|---|---|---|
-| S | 2 | 180 | 5 |
-| M | 3 | 216 | 6 |
-| L | 4 | 252 | 7 |
+| S | 2 | 200 | 5 |
+| M | 3 | 240 | 6 |
+| L | 4 | 280 | 7 |
 
 **Overflow.** Rings, including readouts, have a hard cap: S 2, M 3, L 4. Settings refuse extra rings with a size hint. Toggles form one ordered scrollable strip on the arc. Press and slide after 6 px, following tangential finger travel 1:1 without inertia. Movement at 6 px cancels hold. Release snaps to the nearest slot over 160 ms using the shared E curve, without overshoot. Wheel scrolls one slot. Theme-only end fades indicate remaining items. No More slot, pages or page dots.
 

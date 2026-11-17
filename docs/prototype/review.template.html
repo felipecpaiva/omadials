@@ -42,7 +42,7 @@ code { font:13px var(--display) }
 .viewport { overflow:auto; max-height:640px; border-top:1px solid var(--line) }
 #stage { --surface:#20262c; --edge:#59626b; --text:#f0ede7; --secondary:#b7b9ba; --track:#646c73; --accent:#dbb28a;
   --ink:#20262c; --off:#30383f; --warn:#ffad99; --desk:#141c22;
-  position:relative; width:100%; min-width:850px; height:850px; overflow:hidden; color:var(--text);
+  position:relative; width:100%; min-width:960px; height:960px; overflow:hidden; color:var(--text);
   background:radial-gradient(ellipse at 65% 25%, var(--off), var(--desk) 75%) }
 .wall { position:absolute; top:36%; left:42%; pointer-events:none; opacity:.35; font:250 clamp(28px,5vw,64px) var(--body); letter-spacing:-2px }
 .wall small { display:block; font-size:12px; letter-spacing:2px; margin-top:12px }
@@ -215,7 +215,7 @@ const AREAS = [
  ]},
  { name:'Corners and sizes', note:'Any corner, any screen.', rows:[
   ['ok','All 4 corners mirror, text stays upright','Try the corner picker above.','','ux.md 5'],
-  ['call','Size L never reaches full size on the Z13','The Z13 is about 1536 by 960 logical px. The 45% cap gives 432 px, under L at 460.','Let L shrink to the cap and say so in settings, or set L to 430.','new finding, experience.md'],
+  ['call','Size L never reaches full size on the Z13','The Z13 is about 1536 by 960 logical px. The 45% cap gives 432 px, under L at 500. M at 420 fits.','Let L shrink to the cap and say so in settings.','new finding, experience.md'],
   ['call','Very small screens','The cap can make rings and 48 px targets too tight.','Set a minimum screen size and fall back to size S below it.','experience.md open questions'],
  ]},
  { name:'Comfort and access', note:'Works for everyone, and with animations off.', rows:[

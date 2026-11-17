@@ -142,7 +142,7 @@ All files are `.pragma library`, have no Qt calls, have no cross-imports, and st
 
 | File | Holds |
 |---|---|
-| `Geometry.js` | `toCanonical` and `fromCanonical` (4-corner mirroring, positions only, never a negative scale; references.md, Mirroring), `polar(x, y, H)`, `angleToFraction` over the 6 to 84 degree sweep, `fractionToAngle`, `ringRadii(R, n)`, `hitRing(d, radii, band)`, `knobPos`, `arcSlots(r, pitch)`, `capacity(size, shortSide)` (R = S 300, M 380, L 460, clamped to 45% of the short side; toggles = floor(r x 1.36 / 48); ux.md section 3), `bubblePos` (56 px toward the screen centre). |
+| `Geometry.js` | `toCanonical` and `fromCanonical` (4-corner mirroring, positions only, never a negative scale; references.md, Mirroring), `polar(x, y, H)`, `angleToFraction` over the 6 to 84 degree sweep, `fractionToAngle`, `ringRadii(R, n)`, `hitRing(d, radii, band)`, `knobPos`, `arcSlots(r, pitch)`, `capacity(size, shortSide)` (R = S 330, M 420, L 500, clamped to 45% of the short side; toggles = floor(r x 1.36 / 48); ux.md section 3), `bubblePos` (56 px toward the screen centre). |
 | `ValueMap.js` | Native value, fraction and angle conversions. Stepped snapping. `floor`. The over-cap case. Wheel steps (5%, 1% with Shift, pixel deltas into whole steps). Keyboard steps (5, 1, 25, Home, End). |
 | `Gesture.js` | Reducer for tap, drag-open (past 40%), 6 px drag start, ring lock, long press (450 ms, fill from 150 ms, 6 px cancels toggle hold, 10 px dial label hold), push dwell. Every threshold is a named constant from ux.md sections 2 and 4. |
 | `Layout.js` | Config, catalog, availability and capacity in; rings outer to inner, toggle strip offset and scroll bounds, readout, over-capacity errors out. |

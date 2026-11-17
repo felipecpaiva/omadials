@@ -42,7 +42,7 @@ code { font:13px var(--display) }
 .viewport { overflow:auto; max-height:640px; border-top:1px solid var(--line) }
 #stage { --surface:#20262c; --edge:#59626b; --text:#f0ede7; --secondary:#b7b9ba; --track:#646c73; --accent:#dbb28a;
   --ink:#20262c; --off:#30383f; --warn:#ffad99; --desk:#141c22;
-  position:relative; width:100%; min-width:850px; height:850px; overflow:hidden; color:var(--text);
+  position:relative; width:100%; min-width:960px; height:960px; overflow:hidden; color:var(--text);
   background:radial-gradient(ellipse at 65% 25%, var(--off), var(--desk) 75%) }
 .wall { position:absolute; top:36%; left:42%; pointer-events:none; opacity:.35; font:250 clamp(28px,5vw,64px) var(--body); letter-spacing:-2px }
 .wall small { display:block; font-size:12px; letter-spacing:2px; margin-top:12px }
@@ -215,7 +215,7 @@ const AREAS = [
  ]},
  { name:'Corners and sizes', note:'Any corner, any screen.', rows:[
   ['ok','All 4 corners mirror, text stays upright','Try the corner picker above.','','ux.md 5'],
-  ['call','Size L never reaches full size on the Z13','The Z13 is about 1536 by 960 logical px. The 45% cap gives 432 px, under L at 460.','Let L shrink to the cap and say so in settings, or set L to 430.','new finding, experience.md'],
+  ['call','Size L never reaches full size on the Z13','The Z13 is about 1536 by 960 logical px. The 45% cap gives 432 px, under L at 500. M at 420 fits.','Let L shrink to the cap and say so in settings.','new finding, experience.md'],
   ['call','Very small screens','The cap can make rings and 48 px targets too tight.','Set a minimum screen size and fall back to size S below it.','experience.md open questions'],
  ]},
  { name:'Comfort and access', note:'Works for everyone, and with animations off.', rows:[
@@ -263,14 +263,14 @@ const C = Object.freeze({
   snap:160, theme:160, holdStart:150, hold:450, dwell:150, leave:600,
   idle:10000, tap:400, drag:6, cancelHold:10, openThreshold:.4,
   slowFactor:4, scaleStart:.6, scaleClose:.8, scalePress:.92,
-  radius:380, cap:.45, band:44, stroke:4, knob:7, knobOutline:2,
-  tickOutline:3, endpointOutline:4, toggleR:216, toggleSize:40,
+  radius:420, cap:.45, band:44, stroke:4, knob:7, knobOutline:2,
+  tickOutline:3, endpointOutline:4, toggleR:240, toggleSize:40,
   target:48, trigger:32, push:2, hintRadius:24, hintOpacity:.7,
   start:6, end:84, bubbleDistance:56, clearance:8, detailRadius:14,
   fakeSlow:1500, fakeFailure:900, fakeFast:450, step:5, fineStep:1,
   ease:[.23,1,.32,1], circleK:.55228475,
-  demoApps:[65,40,80], demoProgress:40, fineNear:22, fineFar:66, fineGain:.25, finerGain:.1, detentStep:25, snapWindow:2, batteryFont:40, statusWidth:176, statusDepth:124, statusShortWidth:100, readoutWidth:136, readoutDepth:112, labelInset:4, markSize:4, percent:100,
-  textWidth:220, textInset:12,labelOffset:14,labelPad:10,ringStart:3,ringEnd:87,tabRadius:42,tabArcs:[16,24,32],tabFill:[.3,.55,.8],tab2Arcs:[19,31],tab2Fill:[.4,.65],tabKnob:4,iconSize:28,iconInset:4,iconRest:.7,iconReveal:80,windowW:300,windowH:220,textGap:8,statusLongWidth:124,statusLongLines:4,noticeWidth:260, statusHeight:54, textLine:18, labelWidth:96, labelHeight:40, thin:2, normal:4, bold:6, dash:10, gap:6, dot:1, segment:18, bar:12, maxRings:3, fadeSlots:.6,
+  demoApps:[65,40,80], demoProgress:40, fineNear:22, fineFar:66, fineGain:.25, finerGain:.1, detentStep:25, snapWindow:2, batteryFont:40, statusWidth:176, statusDepth:132, statusShortWidth:120, readoutWidth:150, readoutDepth:112, labelInset:4, markSize:4, percent:100,
+  textWidth:220, textInset:12,labelOffset:14,labelPad:10,ringStart:3,ringEnd:87,tabRadius:42,tabArcs:[16,24,32],tabFill:[.3,.55,.8],tab2Arcs:[19,31],tab2Fill:[.4,.65],tabKnob:4,iconSize:28,iconInset:4,iconRest:.7,iconReveal:80,windowW:300,windowH:220,textGap:8,statusLongWidth:144,statusLongLines:4,noticeWidth:260, statusHeight:54, textLine:18, labelWidth:96, labelHeight:40, thin:2, normal:4, bold:6, dash:10, gap:6, dot:1, segment:18, bar:12, maxRings:3, fadeSlots:.6,
   storyboardPause:650, storyboardDrag:850, storyboardHold:1100
 });
 const PALETTES = {
