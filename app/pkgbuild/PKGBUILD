@@ -1,0 +1,24 @@
+# Build from app/pkgbuild inside an omadials source checkout.
+pkgname=omadials-settings
+pkgver=0.7.0
+pkgrel=1
+pkgdesc='Standalone settings for the omadials corner plugin'
+arch=('x86_64' 'aarch64')
+license=('MIT')
+depends=('qt6-base' 'qt6-declarative' 'qt6-wayland')
+makedepends=('gcc' 'make' 'python')
+optdepends=('omarchy-shell: plugin status and Show on screen')
+source=()
+sha256sums=()
+build() {
+  mkdir -p "$startdir/../build"
+  cd "$startdir/../build"
+  qmake6 "$startdir/../omadials-settings.pro"
+  make
+}
+package() {
+  install -Dm755 "$startdir/../build/omadials-settings" "$pkgdir/usr/bin/omadials-settings"
+  install -Dm644 "$startdir/../omadials-settings.desktop" "$pkgdir/usr/share/applications/omadials-settings.desktop"
+  install -Dm644 "$startdir/../omadials-settings.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/omadials-settings.svg"
+  install -Dm644 "$startdir/../LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

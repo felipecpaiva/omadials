@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=omadials Settings
+Comment=Configure corner controls and behavior
+Exec=omadials-settings
+Icon=omadials-settings
+Terminal=false
+Categories=Settings;DesktopSettings;
+StartupWMClass=omadials-settings

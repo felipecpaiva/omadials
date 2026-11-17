@@ -172,10 +172,10 @@ Done when (each): contract tests for the detail, plus a hand check on the Z13.
 
 ## P9. Settings app (v0.7)
 
-- [ ] **P9.1 App skeleton** (C++, Qt Quick, qmake, Omarchy theme live).
-- [ ] **P9.2 Every setting from P5** on the frozen schema, reusing the logic JS.
-- [ ] **P9.3 Live apply** to the running plugin, and a `status()` IPC check.
-- [ ] **P9.4 Package and release v0.7.**
+- [x] **P9.1 App skeleton** (2026-11-17: builds with qmake6 and make, follows the theme) (C++, Qt Quick, qmake, Omarchy theme live).
+- [x] **P9.2 Every setting from P5** (same pages; real config validated read-only with `check --json`) on the frozen schema, reusing the logic JS.
+- [~] **P9.3 Live apply** (plugin reloads the file live, verified for corner and size; app edits not yet tried on the real file) to the running plugin, and a `status()` IPC check.
+- [~] **P9.4 Package and release v0.7.** (PKGBUILD ready; install and release not done)
 
 ## P10. Daily use (v1.0)
 
