@@ -165,6 +165,7 @@ Path `~/.config/omadials/config.json` (platform.md section 5, option B). Draft v
   "outputs": { "mode": "all", "names": [] },
   "trigger": { "tapZone": true, "pushDelayMs": 150 },
   "cornerIcon": { "mode": "always", "aboveWindows": true, "source": "default" },
+  "controls": { "brightness": { "shown": true, "icon": "default" }, "wifi": { "shown": true, "icon": "default" } },
   "behavior": { "idleTimeoutS": 10, "closeOnPointerLeave": true },
   "ringStyle": { "track": "solid", "knob": "round", "thickness": "normal" },
   "readoutRings": [

@@ -160,6 +160,9 @@ Durations go through `Style.duration(ms)` with `Style.easeOut`.
 
 ## 8. Configuration experience
 
+- **Show or hide every control.** Each toggle and each dial ring has its own Show switch. A hidden ring frees its band and the rings close the gap; a hidden toggle leaves the arc. Hidden controls stop all reads and polling. Hiding is not the same as missing hardware: missing is greyed with a reason, hidden is the user's choice.
+- **Pick the icon of each control.** Every toggle and ring label offers a short list of icons from the Omarchy icon theme, plus any icon theme name. Theme colours only. An unknown name falls back to the default icon and is reported in settings, never silently.
+
 A shell `panel` (`platform.md` 7a), opened from the gear or IPC. It writes `~/.config/omadials/config.json` on every change, and the corner applies it live.
 
 | Page | Contents |
