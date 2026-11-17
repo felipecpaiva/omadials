@@ -14,7 +14,7 @@ FocusScope {
     Rectangle { anchors.fill: parent; color: row.activeFocus ? row.theme.off : Qt.alpha(row.theme.surface,0); border.color: row.theme.edge; radius: 8 }
     Text {
         id: copy; x: 12; y: 10; width: parent.width-24
-        text: (row.rowData.icon ? row.rowData.icon+" " : "") + row.rowData.label + (row.rowData.sub ? "\n"+row.rowData.sub : "") + (row.rowData.state ? " · "+row.rowData.state : "")
+        text: (row.rowData.icon ? row.rowData.icon+" " : "") + row.rowData.label + (row.rowData.sub ? "\n"+row.rowData.sub : "") + (row.rowData.stateText ? " · "+row.rowData.stateText : typeof row.rowData.state === "string" && row.rowData.state ? " · "+row.rowData.state : "")
         wrapMode: Text.Wrap; color: row.theme.text; font.family: row.theme.font; font.pixelSize: 14
     }
     function pick() { control.activate(rowData.key); model.activity() }
