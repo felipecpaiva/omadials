@@ -91,6 +91,8 @@ private slots:
                 auto *pageItem = qobject_cast<QQuickItem*>(pages->property("item").value<QObject*>());
                 QVERIFY(pageItem); expand(pageItem); QTest::qWait(100);
             }
+            // A picture of each page, for design review (tests/page-0.png ... page-3.png).
+            if (qEnvironmentVariableIsSet("OMADIALS_PAGE_SHOTS")) window->grabWindow().save(QString("page-%1.png").arg(i));
         }
         pages->setProperty("currentIndex",0); QTest::qWait(100);
         QVERIFY(window->grabWindow().save("preview.png"));
