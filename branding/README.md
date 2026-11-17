@@ -1,58 +1,122 @@
-# omadials branding
+# omadials brand kit
 
-Three initial explorations made on 2026-11-17. The maintainer selected v1-quadrant for refinement. Read [BRIEF.md](BRIEF.md) for the product, constraints and references.
+Chosen direction: v1c-frame. The original exploration files are preserved.
 
-## The three explorations
+Start with [board.png](board.png), the full overview. Inspect [pixel-check.png](pixel-check.png) for native 16 and 32 px icons and nearest-neighbour enlargements.
 
-| Folder | Idea | Accent on graphite | Deep on paper |
-|--------|------|--------------------|---------------|
-| [v1-quadrant](explorations/v1-quadrant/) | Two corner arcs, an outer drag knob and inner toggles. The product, simplified. | Coral `#ff8c78`, 7.84:1 | `#a83e2c`, 5.58:1 |
-| [v2-knob](explorations/v2-knob/) | One bold open sweep and a round knob. One gesture. | Cyan `#52d9e8`, 10.53:1 | `#006b78`, 5.61:1 |
-| [v3-monogram](explorations/v3-monogram/) | A lowercase d with an inner concentric arc. The name in an initial. | Lavender `#c2a0ff`, 8.26:1 | `#7041ac`, 6.22:1 |
+## Usage
 
-The family ground is graphite `#16181d`; the main mark and dark wordmark use near white `#f4f5f7`. Light previews use paper `#f4f3f0`. Each direction uses one accent hue, with a deep variant replacing it on light surfaces. Ratios use WCAG relative luminance from linearized sRGB. Unrounded results are recorded in [contrast.json](contrast.json).
+`logo/icon.svg` is the transparent colour master for dark surfaces. `icon-light.svg` uses deep coral on light. `icon-mono.svg` is graphite on transparency; `icon-mono-dark.svg` is near white. Each has PNG exports at 1024, 512, 256, 128, 64, 32 and 16 px. `mask.svg` is a pure black silhouette on transparency, with a 512 px PNG. Use its alpha channel for masking. `app-icon.svg` adds a graphite tile for avatar slots.
 
-Each folder contains `icon.svg` (transparent real vector master), `icon-light.svg`, `icon-mono.svg`, `icon-mono-dark.svg`, `icon-512.png`, `icon-32.png`, `icon-16.png`, `concept.svg` and its 1024 by 1024 `concept.png`, `wordmark.svg`, `wordmark-light.svg`, `lockup.svg`, `lockup-light.svg`, and `notes.md`.
+Wordmarks and lockups without a surface suffix are transparent for dark surfaces; `-light` is transparent for light. `-on-dark` and `-on-paper` include backgrounds. All lettering is JetBrains Mono Bold converted to paths with fontTools. PNGs come from SVG via rsvg-convert.
 
-Standard icons, wordmarks and lockups are for dark surfaces. The `-light` files use graphite lettering and the deep accent for light surfaces. `icon-mono.svg` is graphite on transparent; `icon-mono-dark.svg` is near white on transparent. All lettering reads `omadials` in lowercase.
+README banners: `social/banner-dark.png` and `social/banner-light.png`, 1600 by 400, with the tagline "Turn, don't hunt."
 
-Compare them in [board.html](board.html) or [board.png](board.png). Both show the master at 512 px, small sizes including 32 and 16 px, colour on light, both one-colour versions, wordmarks, lockups and contrast values. The HTML also links each concept sheet and notes. [pixel-check.png](pixel-check.png) enlarges the native 16 px colour exports with nearest-neighbour scaling.
+Marketplace preview: [../preview.png](../preview.png), 1280 by 720. This is brand artwork, not a screenshot of a working plugin. Its source is `social/marketplace-preview.svg`. Feature demos are deferred until the plugin exists.
 
-## Round 2
+## Contrast
 
-The selected quadrant now has two refinements: [v1b-track](explorations/v1b-track/) uses two thin complete quarter tracks, opposing unequal fills, off-axis knobs and two inner toggles; [v1c-frame](explorations/v1c-frame/) adds a rounded L-shaped screen-corner edge. Both keep the arc origin empty and retain the coral and graphite palette, with deep coral on paper.
+WCAG sRGB relative luminance, calculated from the palette hex values:
 
-[board.html](board.html) and [board.png](board.png) compare the original with both refinements, including a locally drawn RSS shape for contrast. The original three-direction board is preserved as [board-round1.png](board-round1.png). Each new folder contains the full icon, wordmark, lockup, notes and concept file set, including vector concept sources.
+| Pair | Ratio |
+|---|---:|
+| Coral #ff8c78 / graphite #16181d | 7.84:1 |
+| Deep #a83e2c / paper #f4f3f0 | 5.58:1 |
+| Near white #f4f5f7 / graphite | 16.28:1 |
+| Graphite / paper | 16.00:1 |
+| Deep / near white | 5.68:1 |
+| Coral / paper | 2.04:1, do not use |
 
-The actual 16, 32 and 512 px PNG exports were visually inspected in [round2-review.png](round2-review.png). In my judgment neither refinement primarily reads as RSS or Wi-Fi at 16 px after reversing the inner fill. Track retains a faint quarter-fan association; frame makes the clearer control-panel silhouette. Knobs are clearer at 32 and 512 px. The native grid works without a separate small master.
+## Rebuild
 
-Rebuild only Round 2 locally with `PYTHONDONTWRITEBYTECODE=1 python3 branding/tools/round2.py`. This uses librsvg, fontTools and Pillow, with no network or git. The earlier rebuild commands below regenerate Round 1 and should only be used when intentionally restoring that board.
+Run `python3 branding/tools/<script>.py` from the repo root in this order: `logo`, `kit`, `social`, `sheet`, `terminal`, `final_board`. Requires Python, fontTools, Pillow, JetBrains Mono Nerd Font Bold and rsvg-convert. No browser is used. Exploration builders are separate and are not part of this rebuild.
 
-## How they were made
+## Verification
 
-- Original icon geometry drawn directly as SVG paths and circular arcs on a 16 by 16 coordinate grid. No raster artwork is embedded in the masters. The marks use no gradients, shadows or glow.
-- JetBrains Mono Bold lettering converted into actual vector paths with fontTools. The installed source is `/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Bold.ttf`. Wordmarks need no installed font to render.
-- Concept sheets are deterministic presentations of those same vectors, with palette swatches, computed contrast values and one-colour previews. No generated images were used at any step.
-- `tools/build.py`, `tools/wordmark.py`, `tools/board.py` and `tools/board_fallback.py` were adapted from the supplied OmaBar tools for the omadials name, palette and original marks. Other copied kit tools are retained as reference and are not part of this exploration rebuild.
-- Chromium was attempted for the board but could not start in the sandbox because its Crashpad socket operation was denied. `tools/board_fallback.py` produced the PNG with librsvg, using the actual vector artwork and outlined captions. The PNG is a comparison board, not a browser screenshot. Its source is `board.svg`; browser diagnostics are in `chromium.log`.
-- All outputs, browser profile and cache paths stay inside `branding/`. No source files in OmaBarConfigurator or omagnet were edited. No commits, pushes or network uploads were made.
+Reviewed the final overview, social card, one-page sheet and 16/32 px colour and monochrome pixel checks. The chosen native 16-unit geometry retains separate arcs and toggles without hinting. Social preview is 1280 by 640 and below 1 MB. All final SVG artwork uses paths for text. No em dash or en dash in final text. No Omarchy logo is included.
 
-### Rebuild
+## Final files
 
-```sh
-python3 branding/tools/build.py
-python3 branding/tools/board.py
-python3 branding/tools/verify.py
-```
-
-Needs Python with fontTools, JetBrains Mono Bold, `rsvg-convert`, `magick` and `chromium`. Chromium failure automatically selects the librsvg fallback.
-
-### Review
-
-Every SVG was rendered with librsvg. Concept sheets, the comparison board, native 16 px exports and enlarged pixel views were visually checked. Ring gaps, the open dial and the d counter remain separate at small sizes. The board includes light and dark one-colour silhouettes. `tools/verify.py` verifies deliverable names, raster dimensions, path-only icon masters, outlined wordmarks, SVG rendering and contrast thresholds, and scans text files for U+2013 and U+2014. Its result is recorded in `verification.json`.
-
-This is an exploration set. The chosen-direction production kit listed separately in the brief has not been commissioned by this task.
+- [logo/app-icon.png](logo/app-icon.png)
+- [logo/app-icon.svg](logo/app-icon.svg)
+- [logo/icon-1024.png](logo/icon-1024.png)
+- [logo/icon-128.png](logo/icon-128.png)
+- [logo/icon-16.png](logo/icon-16.png)
+- [logo/icon-256.png](logo/icon-256.png)
+- [logo/icon-32.png](logo/icon-32.png)
+- [logo/icon-512.png](logo/icon-512.png)
+- [logo/icon-64.png](logo/icon-64.png)
+- [logo/icon-light-1024.png](logo/icon-light-1024.png)
+- [logo/icon-light-128.png](logo/icon-light-128.png)
+- [logo/icon-light-16.png](logo/icon-light-16.png)
+- [logo/icon-light-256.png](logo/icon-light-256.png)
+- [logo/icon-light-32.png](logo/icon-light-32.png)
+- [logo/icon-light-512.png](logo/icon-light-512.png)
+- [logo/icon-light-64.png](logo/icon-light-64.png)
+- [logo/icon-light.svg](logo/icon-light.svg)
+- [logo/icon-mono-1024.png](logo/icon-mono-1024.png)
+- [logo/icon-mono-128.png](logo/icon-mono-128.png)
+- [logo/icon-mono-16.png](logo/icon-mono-16.png)
+- [logo/icon-mono-256.png](logo/icon-mono-256.png)
+- [logo/icon-mono-32.png](logo/icon-mono-32.png)
+- [logo/icon-mono-512.png](logo/icon-mono-512.png)
+- [logo/icon-mono-64.png](logo/icon-mono-64.png)
+- [logo/icon-mono-dark-1024.png](logo/icon-mono-dark-1024.png)
+- [logo/icon-mono-dark-128.png](logo/icon-mono-dark-128.png)
+- [logo/icon-mono-dark-16.png](logo/icon-mono-dark-16.png)
+- [logo/icon-mono-dark-256.png](logo/icon-mono-dark-256.png)
+- [logo/icon-mono-dark-32.png](logo/icon-mono-dark-32.png)
+- [logo/icon-mono-dark-512.png](logo/icon-mono-dark-512.png)
+- [logo/icon-mono-dark-64.png](logo/icon-mono-dark-64.png)
+- [logo/icon-mono-dark.svg](logo/icon-mono-dark.svg)
+- [logo/icon-mono.svg](logo/icon-mono.svg)
+- [logo/icon.svg](logo/icon.svg)
+- [logo/lockup-light.png](logo/lockup-light.png)
+- [logo/lockup-light.svg](logo/lockup-light.svg)
+- [logo/lockup-on-dark.png](logo/lockup-on-dark.png)
+- [logo/lockup-on-dark.svg](logo/lockup-on-dark.svg)
+- [logo/lockup-on-paper.png](logo/lockup-on-paper.png)
+- [logo/lockup-on-paper.svg](logo/lockup-on-paper.svg)
+- [logo/lockup.png](logo/lockup.png)
+- [logo/lockup.svg](logo/lockup.svg)
+- [logo/mask-512.png](logo/mask-512.png)
+- [logo/mask.svg](logo/mask.svg)
+- [logo/wordmark-light.png](logo/wordmark-light.png)
+- [logo/wordmark-light.svg](logo/wordmark-light.svg)
+- [logo/wordmark-on-dark.png](logo/wordmark-on-dark.png)
+- [logo/wordmark-on-dark.svg](logo/wordmark-on-dark.svg)
+- [logo/wordmark-on-paper.png](logo/wordmark-on-paper.png)
+- [logo/wordmark-on-paper.svg](logo/wordmark-on-paper.svg)
+- [logo/wordmark.png](logo/wordmark.png)
+- [logo/wordmark.svg](logo/wordmark.svg)
+- [social/avatar-400.png](social/avatar-400.png)
+- [social/banner-dark.png](social/banner-dark.png)
+- [social/banner-dark.svg](social/banner-dark.svg)
+- [social/banner-light.png](social/banner-light.png)
+- [social/banner-light.svg](social/banner-light.svg)
+- [social/card-square.png](social/card-square.png)
+- [social/card-square.svg](social/card-square.svg)
+- [social/card-wide-light.png](social/card-wide-light.png)
+- [social/card-wide-light.svg](social/card-wide-light.svg)
+- [social/card-wide.png](social/card-wide.png)
+- [social/card-wide.svg](social/card-wide.svg)
+- [social/github-social-preview.png](social/github-social-preview.png)
+- [social/github-social-preview.svg](social/github-social-preview.svg)
+- [social/marketplace-preview.png](social/marketplace-preview.png)
+- [social/marketplace-preview.svg](social/marketplace-preview.svg)
+- [terminal/banner.ansi](terminal/banner.ansi)
+- [terminal/banner.txt](terminal/banner.txt)
+- [terminal/lettering.png](terminal/lettering.png)
+- [terminal/lettering.svg](terminal/lettering.svg)
+- [board.svg](board.svg)
+- [board.png](board.png)
+- [pixel-check.png](pixel-check.png)
+- [brand-sheet.svg](brand-sheet.svg)
+- [brand-sheet.png](brand-sheet.png)
+- [brand-sheet.html](brand-sheet.html)
+- [contrast-final.json](contrast-final.json)
+- [Marketplace preview](../preview.png)
 
 ## Licence
 
-Original artwork made for this project and released under the project's MIT licence unless the maintainer chooses otherwise. Not affiliated with or endorsed by Omarchy. JetBrains Mono is licensed under the SIL Open Font License; the wordmarks contain outlines only.
+Original artwork released under the project's MIT licence unless the maintainer chooses otherwise. JetBrains Mono is under the SIL Open Font License. Not affiliated with or endorsed by Omarchy.

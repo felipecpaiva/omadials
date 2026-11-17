@@ -9,6 +9,7 @@ Bluetooth, night light, do not disturb, keep awake and power profile. Touch firs
 | Doc | What it holds |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Start here: layers, control contract, config, milestones |
+| [docs/experience.md](docs/experience.md) | Motion and interaction spec: timings, curves, state machine. Prototype: [docs/prototype/motion.html](docs/prototype/motion.html) |
 | [docs/ux.md](docs/ux.md) | Experience, touch, theming, settings window, acceptance checklist |
 | [docs/controls.md](docs/controls.md) | Every hardware control: read, write, events, availability |
 | [docs/platform.md](docs/platform.md) | Omarchy shell plugin contract |

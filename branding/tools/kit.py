@@ -1,19 +1,11 @@
-#!/usr/bin/env python3
-"""Build the wordmark and lockups (SVG and PNG) into branding/logo/. Same geometry as explorations/v1-pills.
-Usage: python3 branding/tools/kit.py"""
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from wordmark import C, LOGO, wordmark, lockup, png
-
-os.makedirs(LOGO, exist_ok=True)
-files = {
-    "wordmark.svg": wordmark(C["ink"]),                       # for dark grounds
-    "wordmark-light.svg": wordmark(C["ground"]),              # for light grounds
-    "lockup.svg": lockup(C["ink"], C["mint"]),                # for dark grounds
-    "lockup-light.svg": lockup(C["ground"], C["mint_deep"]),  # for light grounds
-}
-for name, text in files.items():
-    src = os.path.join(LOGO, name)
-    open(src, "w").write(text)
-    png(src, src[:-4] + ".png", h=256 if "lockup" in name else 192)
-print("wordmark and lockups written to logo/")
+"""Outlined JetBrains Mono Bold wordmarks and horizontal lockups."""
+from final_common import *
+for kind in ('wordmark','lockup'):
+    w=420 if kind=='wordmark' else 532
+    for suffix,ink in [('',WHITE),('-light',BG)]:
+        # Rebuild lettering with fontTools, retaining the exploration's metrics.
+        body=text('omadials',8 if kind=='wordmark' else 116,74,84,ink)
+        if kind=='lockup': body=embed(LOGO/f'icon{suffix}.svg',0,0,96,96)+body
+        save(LOGO/f'{kind}{suffix}.svg',body,w,96)
+        surface='dark' if not suffix else 'paper'
+        save(LOGO/f'{kind}-on-{surface}.svg',rect(0,0,w+48,144,0,BG if not suffix else PAPER)+f'<g transform="translate(24 24)">{body}</g>',w+48,144)

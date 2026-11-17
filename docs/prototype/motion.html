@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>omadials motion study</title>
+<style>
+:root { color-scheme:dark; --surface:#20262c; --edge:#59626b; --text:#f0ede7; --secondary:#b7b9ba; --track:#646c73; --accent:#dbb28a; --ink:#20262c; --off:#30383f; --warn:#ffad99; --desk:#141c22; }
+* { box-sizing:border-box } body { margin:0; background:var(--desk); color:var(--text); font:14px system-ui,sans-serif } header, footer { max-width:1100px; margin:auto; padding:20px } h1 { font-size:24px; font-weight:450; margin:0 0 8px } p { line-height:1.5; color:var(--secondary); margin:8px 0 } .tools { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-top:14px } button,select { font:inherit; color:var(--text); background:var(--off); border:1px solid var(--edge); border-radius:8px; padding:9px 12px; min-height:44px; cursor:pointer } button:focus-visible, select:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:3px } label { display:flex; align-items:center; gap:6px; min-height:44px } input { accent-color:var(--accent) } .viewport { overflow:auto; border-block:1px solid var(--edge) } #stage { position:relative; width:100%; min-width:850px; height:min(72vh,760px); min-height:850px; overflow:hidden; background:radial-gradient(ellipse at 65% 25%,var(--off),var(--desk) 75%) } .wall { position:absolute; top:36%; left:42%; pointer-events:none; opacity:.35; font-size:clamp(28px,5vw,72px); letter-spacing:-2px; font-weight:250 } .wall small { display:block; font-size:13px; letter-spacing:2px; margin-top:14px } #scene { width:100%; height:100%; position:absolute; inset:0; touch-action:none; user-select:none } #detail { position:absolute; display:none; overflow:auto; padding:16px; pointer-events:none; } #detail button { width:100%; min-height:48px; text-align:left; margin:0 0 4px; border:0; border-bottom:1px solid var(--edge); border-radius:0; background:transparent } #detail .head { display:flex; align-items:center; gap:12px; min-height:48px; margin-bottom:8px } #detail .head button { width:48px; margin:0; text-align:center } #detail h2 { font-size:20px; font-weight:450; margin:0 } #live { min-height:24px; color:var(--text) } .note { font-size:12px } #legend { display:flex; flex-wrap:wrap; gap:8px } #legend span { padding:5px 9px; border:1px solid var(--edge); border-radius:20px; color:var(--secondary) } @media(max-width:700px) { header,footer{padding:14px} .viewport{max-height:72vh} #stage{height:850px} }
+</style>
+</head>
+<body>
+<header>
+<h1>omadials / motion study</h1>
+<p>A quiet corner. Three direct dials. One place to settle.</p>
+<div class="tools">
+<button id="play">Play storyboard</button><button id="open">Open / close</button>
+<label>Corner <select id="corner"><option value="bl">Bottom left</option><option value="br">Bottom right</option><option value="tl">Top left</option><option value="tr">Top right</option></select></label>
+<label><input id="reduced" type="checkbox">Reduced motion</label>
+<label><input id="light" type="checkbox">Light theme</label>
+<label><input id="slow" type="checkbox">Slow motion x0.25</label>
+</div>
+<div class="tools">
+<label>Detail <select id="kind"><option>Wi-Fi</option><option>Outputs</option><option>Displays</option></select></label>
+<button id="details">Open detail</button><button id="page">Toggle page</button><button id="external">External volume +5</button>
+<label><input id="missing" type="checkbox">Mic unavailable</label><button id="settings">Settings placement question</button>
+</div>
+<p class="note">Tap the corner to open. Drag a ring, or scroll it. Tap Wi-Fi for a slow command, Bluetooth for a failure. Hold a toggle or dial label for detail. Escape goes back, then closes. Phone: scroll the demo viewport to reach another corner.</p>
+</header>
+<div class="viewport" id="viewport">
+<div id="stage">
+<div class="wall">Less reach.<small>CONTROL FROM THE CORNER</small></div>
+<svg id="scene" aria-label="Interactive corner dials" role="group"></svg>
+<section id="detail" aria-label="Control detail"></section>
+</div>
+</div>
+<footer>
+<div id="live" role="status" aria-live="polite">Closed. Tap the corner or play the storyboard.</div>
+<div id="legend"><span>180 ms entry</span><span>20 ms ring stagger</span><span>120 ms exit</span><span>200 ms detail</span></div>
+<p class="note">Illustrative M geometry. The desktop caps R at 45% of the shorter side. This scrollable browser stage keeps targets usable on phones. No system commands run. Settings gear placement is an open design question.</p>
+</footer>
+<script>
+'use strict';
+// All motion numbers live here. Base milliseconds match experience.md.
+const C = Object.freeze({
+  open:180, close:120, stagger:20, hint:80, press:80, pressReturn:120,
+  fill:120, value:120, bubble:80, bubbleHold:600, tickIn:40, tickOut:80,
+  pending:900, pendingPeriod:12, detail:200, detailOut:80, detailIn:120,
+  page:160, theme:160, holdStart:150, hold:450, dwell:150, leave:600,
+  idle:10000, tap:400, drag:6, cancelHold:10, openThreshold:.4,
+  slowFactor:4, scaleStart:.6, scaleClose:.8, scalePress:.92,
+  radius:380, cap:.45, band:44, stroke:4, knob:7, knobOutline:2,
+  tickOutline:3, endpointOutline:4, toggleR:216, toggleSize:40,
+  target:48, trigger:32, push:2, hintRadius:24, hintOpacity:.7,
+  start:6, end:84, bubbleDistance:56, clearance:8, detailRadius:14,
+  fakeSlow:1500, fakeFailure:900, fakeFast:450, step:5, fineStep:1,
+  ease:[.23,1,.32,1], circleK:.55228475,
+  storyboardPause:650, storyboardDrag:850, storyboardHold:1100
+});
+const PALETTES = {
+  dark:{surface:'#20262c',edge:'#59626b',text:'#f0ede7',secondary:'#b7b9ba',track:'#646c73',accent:'#dbb28a',ink:'#20262c',off:'#30383f',warn:'#ffad99',desk:'#141c22'},
+  light:{surface:'#f6f1e8',edge:'#7b736a',text:'#282622',secondary:'#625c54',track:'#898278',accent:'#80502a',ink:'#f6f1e8',off:'#e4ddd2',warn:'#9c3427',desk:'#d9d1c4'}
+};
+const $ = id => document.getElementById(id);
+const svg=$('scene'), stage=$('stage'), detail=$('detail');
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const rad=deg=>deg*Math.PI/180;
+const S={state:'closed',corner:'bl',opacity:0,scale:C.scaleStart,hint:0,morph:0,
+  fanAlpha:1,detailAlpha:0,rings:[0,0,0],values:[72,40,15],shown:[72,40,15],
+  ticks:[0,0,0],endpointLatch:[null,null,null],bubble:0,bubblePoint:null,bubbleIndex:0,page:0,pageMix:1,
+  oldPage:0,detailKind:'Wi-Fi',status:'',reduced:false,slow:false,missing:false,
+  muted:[false,false,false],pending:new Map(),pendingAlpha:Array(8).fill(0),failures:new Set(),on:[true,true,false,false,true,false,false,false],
+  proposed:[true,true,false,false,true,false,false,false],presses:Array(8).fill(1),
+  fills:[1,1,0,0,1,0,0,0],colours:{...PALETTES.dark},focus:0};
+let width=0,height=0,R=C.radius,ratio=1,frame=0,drag=null,holdTimer=0,holdStartTimer=0,
+ bubbleTimer=0,idleTimer=0,leaveTimer=0,dwellTimer=0,playToken=0,lastPending=0;
+const tracks=new Map();
+function visual(ms){return S.reduced?0:ms*(S.slow?C.slowFactor:1)}
+// Solve x(t) before evaluating y(t), so this is the exact CSS/Qt Bezier.
+function ease(x){
+  let lo=0,hi=1,t=x;
+  const [x1,y1,x2,y2]=C.ease;
+  for(let i=0;i<18;i++){
+    const u=1-t,at=3*u*u*t*x1+3*u*t*t*x2+t*t*t;
+    if(at<x)lo=t;else hi=t;t=(lo+hi)/2;
+  }
+  return 3*(1-t)*(1-t)*t*y1+3*(1-t)*t*t*y2+t*t*t;
+}
+function wake(){if(!frame)frame=requestAnimationFrame(tick)}
+function animate(key,get,set,to,ms,delay=0,done=null,linear=false){
+  tracks.delete(key);
+  const from=get(),duration=visual(ms),wait=visual(delay);
+  if(!duration&&!wait){set(to);if(done)done();render();return}
+  tracks.set(key,{from,to,set,start:performance.now()+wait,duration,done,linear});wake();
+}
+function prop(key,to,ms,delay=0,done=null){animate(key,()=>S[key],v=>S[key]=v,to,ms,delay,done)}
+function arrayProp(name,i,to,ms,delay=0,done=null){animate(name+i,()=>S[name][i],v=>S[name][i]=v,to,ms,delay,done)}
+function tick(now){
+  frame=0;
+  for(const [key,a] of [...tracks]){
+    if(tracks.get(key)!==a||now<a.start)continue;
+    const p=clamp((now-a.start)/Math.max(1,a.duration));
+    a.set(a.from+(a.to-a.from)*(a.linear?p:ease(p)));
+    if(p===1){tracks.delete(key);if(a.done)a.done()}
+  }
+  lastPending=now;render();
+  if(tracks.size||(!S.reduced&&S.pending.size&&S.opacity>0))wake();
+}
+function say(text){S.status=text;$('live').textContent=text;render()}
+function activity(){clearTimeout(idleTimer);if(S.state!=='closed'&&!drag)idleTimer=setTimeout(()=>closeFan(),C.idle)}
+function origin(){return{x:S.corner.includes('r')?width:0,y:S.corner.includes('t')?0:height}}
+function map(x,y){return{x:S.corner.includes('r')?width-x:x,y:S.corner.includes('t')?height-y:y}}
+function point(r,a){return map(r*Math.sin(rad(a)),height-r*Math.cos(rad(a)))}
+function localPoint(r,a){return{x:r*Math.sin(rad(a)),y:R-r*Math.cos(rad(a))}}
+function pointer(e){const b=svg.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top}}
+function canonical(p){return{x:S.corner.includes('r')?width-p.x:p.x,y:S.corner.includes('t')?p.y:height-p.y}}
+function polar(p){const q=canonical(p);return{d:Math.hypot(q.x,q.y),a:Math.atan2(q.x,q.y)*180/Math.PI}}
+function ringRadius(i){return R-C.band/2-i*C.band}
+function loc(x,y){return map(x,height-R+y)}
+function arcPath(r,start,end){
+  const a=point(r,start),b=point(r,end),sweep=(S.corner.includes('r')!==S.corner.includes('t'))?0:1;
+  return `M${a.x},${a.y} A${r},${r} 0 0 ${sweep} ${b.x},${b.y}`;
+}
+function escapeText(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function text(x,y,t,size=14,anchor='start',fill='text'){const p=loc(x,y);if(S.corner.includes('r'))anchor=anchor==='start'?'end':anchor==='end'?'start':anchor;return `<text x="${p.x}" y="${p.y}" font-size="${size}" text-anchor="${anchor}" fill="var(--${fill})">${escapeText(t)}</text>`}
+function surfacePath(){
+  const r=R+(C.detailRadius-R)*S.morph,k=C.circleK;
+  const pts=[[0,R],[0,0],[R-r,0],[R-r+k*r,0],[R,r-k*r],[R,r],[R,R]].map(p=>loc(...p));
+  return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y} L${pts[2].x},${pts[2].y} C${pts[3].x},${pts[3].y} ${pts[4].x},${pts[4].y} ${pts[5].x},${pts[5].y} L${pts[6].x},${pts[6].y} Z`;
+}
+const names=['Brightness','Volume','Mic'];
+const toggleNames=['Wi-Fi','Bluetooth','Night light','DND','Keep awake','Keyboard light','Airplane','Touchpad'];
+const glyphs=['Wi','Bt','☾','D','☕','⌨','✈','T'];
+function pageItems(page){return page===0?[0,1,2,3,4,'more']:[5,6,7,'back']}
+function slotAngle(i){return C.start+(C.target/Math.min(C.toggleR,R-3*C.band-C.target/2))*180/Math.PI*i+C.target/2/Math.min(C.toggleR,R-3*C.band-C.target/2)*180/Math.PI}
+function toggleRadius(){return Math.min(C.toggleR,R-3*C.band-C.target/2)}
+function toggleLayer(page,alpha,offset){
+  if(alpha<=0)return '';
+  const tr=toggleRadius();
+  let out=`<g opacity="${alpha}">`;
+  pageItems(page).forEach((id,i)=>{
+    const a=slotAngle(i)+offset,p=point(tr,a);
+    if(a<C.start||a>C.end)return;
+    const isNumber=typeof id==='number',pending=isNumber&&S.pending.has(id),fill=isNumber?S.fills[id]:0;
+    const scale=isNumber?S.presses[id]:1;
+    out+=`<g transform="translate(${p.x} ${p.y}) scale(${scale})"><circle r="${C.toggleSize/2}" fill="var(--off)" stroke="var(--edge)"/><circle r="${C.toggleSize/2}" fill="var(--accent)" opacity="${fill}"/>`;
+    out+=`<text text-anchor="middle" dominant-baseline="central" font-size="14" fill="var(--text)">${isNumber?glyphs[id]:(id==='more'?'••':'‹')}</text>`;
+    if(fill)out+=`<text text-anchor="middle" dominant-baseline="central" font-size="14" fill="var(--ink)" opacity="${fill}">${isNumber?glyphs[id]:''}</text>`;
+    if(isNumber&&S.pendingAlpha[id]>0)out+=`<circle r="23" fill="none" stroke="var(--text)" stroke-width="2" opacity="${S.pendingAlpha[id]}" stroke-dasharray="6 6" stroke-dashoffset="${S.reduced?0:-(lastPending/visual(C.pending)%1)*C.pendingPeriod}"/>`;
+    if(isNumber&&S.failures.has(id))out+='<text x="16" y="-16" font-size="16" fill="var(--warn)">!</text>';
+    if(drag&&drag.type==='toggle'&&drag.id===id&&drag.holding){
+      const progress=S.reduced?0:clamp((performance.now()-drag.time-C.holdStart)/(C.hold-C.holdStart));
+      out+=`<circle r="23" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="${progress*2*Math.PI*23} ${2*Math.PI*23}" transform="rotate(-90)"/>`;
+    }
+    out+='</g>';
+  });return out+'</g>';
+}
+function render(){
+  const o=origin(),transform=`translate(${o.x} ${o.y}) scale(${S.scale}) translate(${-o.x} ${-o.y})`;
+  let out=`<g font-family="system-ui, sans-serif"><path d="${arcPath(C.hintRadius,C.start,C.end)}" fill="none" stroke="var(--accent)" stroke-width="2" opacity="${S.hint}"/>`;
+  if(S.opacity>0){
+    out+=`<g opacity="${S.opacity}" transform="${transform}"><path d="${surfacePath()}" fill="var(--surface)" stroke="var(--edge)" stroke-width="1"/><g opacity="${S.fanAlpha}">`;
+    for(let i=0;i<3;i++){
+      if(i===2&&S.missing)continue;
+      const r=ringRadius(i),q=S.rings[i],end=C.start+(C.end-C.start)*q,v=clamp(S.shown[i]/100),a=C.start+(C.end-C.start)*v,p=point(r,a);
+      if(q>0)out+=`<path d="${arcPath(r,C.start,Math.max(C.start+.001,end))}" fill="none" stroke="var(--track)" stroke-width="${C.stroke}" stroke-linecap="round"/><path d="${arcPath(r,C.start,Math.max(C.start+.001,Math.min(end,a)))}" fill="none" stroke="var(--accent)" stroke-width="${C.stroke}" stroke-linecap="round"/>`;
+      out+=`<circle cx="${p.x}" cy="${p.y}" r="${C.knob}" fill="var(--accent)" stroke="var(--ink)" stroke-width="${C.knobOutline+S.ticks[i]}" opacity="${q}"/>`;
+      out+=`<g opacity="${q}">${text(14,R-r+22,`${S.muted[i]?'⊘':['☀','♪','●'][i]} ${S.values[i]}`,16)}</g>`;
+    }
+    const slot=C.target/toggleRadius()*180/Math.PI;
+    if(S.pageMix<1)out+=toggleLayer(S.oldPage,1-S.pageMix,slot*S.pageMix);
+    out+=toggleLayer(S.page,S.pageMix,-slot*(1-S.pageMix));
+    out+=text(20,R-135,S.status.length>32?S.status.slice(0,30)+'…':S.status,11,'start','secondary');
+    out+=text(20,R-110,'On battery, 2 h 50 m',11,'start','secondary');
+    out+=text(20,R-53,'72%',50);
+    const cp=loc(20,R-46);
+    out+=`<rect x="${S.corner.includes('r')?cp.x-104:cp.x}" y="${S.corner.includes('t')?cp.y-48:cp.y}" width="104" height="48" rx="8" fill="var(--off)"/>`;
+    out+=text(28,R-16,'Balanced',13);
+    out+=text(R-45,R-20,S.page===0?'1 / 2':'2 / 2',11,'middle','secondary');
+    out+='</g></g>';
+  }
+  // The invisible trigger remains a true radius-32 quarter disc.
+  if(S.opacity===0)out+=`<circle cx="${o.x}" cy="${o.y}" r="${C.trigger}" fill="var(--accent)" fill-opacity=".04"/>`;
+  if(S.bubble>0&&S.bubblePoint&&S.opacity>0){
+    let p=S.bubblePoint,dx=width/2-p.x,dy=height/2-p.y,d=Math.hypot(dx,dy)||1;
+    const x=clamp(p.x+C.bubbleDistance*dx/d,C.clearance+30,width-C.clearance-30),y=clamp(p.y+C.bubbleDistance*dy/d,C.clearance+16,height-C.clearance-16);
+    out+=`<g opacity="${S.bubble}"><rect x="${x-30}" y="${y-16}" width="60" height="32" rx="16" fill="var(--accent)"/><text x="${x}" y="${y+5}" text-anchor="middle" fill="var(--ink)">${S.values[S.bubbleIndex]}%</text></g>`;
+  }
+  out+='</g>';svg.innerHTML=out;
+  detail.style.width=R+'px';detail.style.height=R+'px';
+  detail.style.left=(S.corner.includes('r')?width-R:0)+'px';
+  detail.style.top=(S.corner.includes('t')?0:height-R)+'px';
+  detail.style.display=S.detailAlpha>0?'block':'none';
+  detail.style.opacity=S.detailAlpha*S.opacity;
+  detail.style.transformOrigin=`${S.corner.includes('r')?'right':'left'} ${S.corner.includes('t')?'top':'bottom'}`;
+  detail.style.transform=`scale(${S.scale})`;
+  detail.style.pointerEvents=S.state==='detail'?'auto':'none';
+}
+function openFan(stagger=true){
+  clearTimeout(leaveTimer);clearTimeout(dwellTimer);prop('hint',0,C.hint);
+  const fresh=S.state==='closed'||S.state==='hinting';
+  if(fresh){S.scale=C.scaleStart;S.opacity=0;S.rings.fill(0);S.morph=0;S.fanAlpha=1;S.detailAlpha=0;S.pageMix=1}
+  S.state='opening';
+  if(!fresh){prop('morph',0,C.detail);prop('detailAlpha',0,C.detailOut);prop('fanAlpha',1,C.detailIn)}
+  const remain=fresh?1:Math.max(1-S.opacity,(1-S.scale)/(1-C.scaleStart),...S.rings.map(q=>1-q));
+  prop('opacity',1,C.open*remain);prop('scale',1,C.open*remain);
+  S.rings.forEach((q,i)=>arrayProp('rings',i,1,C.open*(fresh?1:1-q),fresh&&stagger?i*C.stagger:0,()=>{if(S.rings.every(v=>v===1)&&S.state==='opening')S.state='open'}));
+  say('Opening from the corner.');activity();
+}
+function closeFan(){
+  if(drag){drag.dismiss=true;return}
+  if(S.state==='closed')return;
+  S.state='closing';S.pushSuppressed=true;clearTimeout(idleTimer);clearTimeout(leaveTimer);
+  for(let i=0;i<3;i++)tracks.delete('rings'+i);
+  prop('bubble',0,C.bubble);
+  const remain=Math.max(S.opacity,Math.abs(S.scale-C.scaleClose)/(1-C.scaleClose));
+  prop('scale',C.scaleClose,C.close*Math.min(1,remain));
+  prop('opacity',0,C.close*Math.min(1,remain),0,()=>{S.state='closed';S.detailAlpha=0;S.fanAlpha=1;S.morph=0;say('Closed. Tap the corner to open.')});
+}
+function toggleFan(){playToken++;S.pointerSession=false;activity();if(['closed','hinting','closing'].includes(S.state))openFan();else closeFan()}
+function bubble(i,p){clearTimeout(bubbleTimer);S.bubbleIndex=i;S.bubblePoint=p;prop('bubble',1,C.bubble)}
+function hideBubble(){clearTimeout(bubbleTimer);bubbleTimer=setTimeout(()=>prop('bubble',0,C.bubble),C.bubbleHold)}
+function tickMark(i,endpoint=false){
+  arrayProp('ticks',i,(endpoint?C.endpointOutline:C.tickOutline)-C.knobOutline,C.tickIn,0,()=>arrayProp('ticks',i,0,C.tickOut));
+}
+function value(i,v,direct=false){
+  const old=S.values[i],raw=clamp(v,i===0?1:0,100);v=Math.round(raw);S.values[i]=v;
+  if(direct){tracks.delete('shown'+i);S.shown[i]=raw}else arrayProp('shown',i,v,C.value);
+  const floor=i===0?1:0;
+  if(raw>=floor+1&&raw<=99)S.endpointLatch[i]=null;
+  const endpoint=raw===floor?'floor':raw===100?'max':null;
+  if(endpoint&&S.endpointLatch[i]!==endpoint){S.endpointLatch[i]=endpoint;tickMark(i,true)}
+  say(`${names[i]}: ${v}%${i===0&&direct?' preview':''}`);
+}
+function toggle(id){
+  if(S.pending.has(id)){say(`${toggleNames[id]}: still pending`);return}
+  S.failures.delete(id);S.proposed[id]=!S.on[id];S.pending.set(id,true);S.pendingAlpha[id]=1;arrayProp('fills',id,+S.proposed[id],C.fill);
+  say(`${toggleNames[id]}: turning ${S.proposed[id]?'on':'off'}`);wake();
+  setTimeout(()=>{
+    S.pending.delete(id);arrayProp('pendingAlpha',id,0,C.hint);
+    if(id===1){S.failures.add(id);arrayProp('fills',id,+S.on[id],C.fill);S.proposed[id]=S.on[id];say('Could not change Bluetooth: demo failure')}
+    else{S.on[id]=S.proposed[id];say(`${toggleNames[id]}: ${S.on[id]?'on':'off'}, confirmed`)}
+    render();
+  },id===0?C.fakeSlow:id===1?C.fakeFailure:C.fakeFast);
+}
+function page(){
+  if(S.pageMix<1)return;
+  S.oldPage=S.page;S.page=1-S.page;S.pageMix=0;prop('pageMix',1,C.page);say(`Toggle page ${S.page+1}`);activity();
+}
+function buildDetail(){
+  const rows=S.detailKind==='Wi-Fi'?['Radio: on','Studio / connected','Workshop / saved','Guest / open','Private network / open stock settings']:
+    S.detailKind==='Power profile'?['Saver','Balanced / selected','Performance']:
+    S.detailKind==='Outputs'?['Speakers / selected','Headphones','USB audio','Mute output']:
+    ['Internal display / selected','Brightness: 72%','Refresh rate','Scale','Display changes need confirm and revert'];
+  detail.innerHTML='<div class="head"><button id="back" aria-label="Back">‹</button><h2>'+escapeText(S.detailKind)+'</h2></div>'+rows.map(t=>'<button class="row">'+escapeText(t)+'</button>').join('');
+  $('back').onclick=back;
+  for(const b of detail.querySelectorAll('.row'))b.onclick=()=>{say(b.textContent+' / demo only');activity()};
+}
+function enterDetail(kind=$('kind').value){
+  if(['closed','hinting','closing'].includes(S.state))openFan(false);
+  S.state='detail';S.detailKind=kind;buildDetail();
+  prop('morph',1,C.detail);prop('fanAlpha',0,C.detailOut);
+  prop('detailAlpha',1,C.detailIn,C.detailOut,()=>{if(S.state==='detail')$('back').focus()});say(kind+' detail');activity();
+}
+function back(){
+  S.state='open';prop('morph',0,C.detail);prop('detailAlpha',0,C.detailOut);
+  prop('fanAlpha',1,C.detailIn,C.detailOut);svg.focus();say('Back to dials');activity();
+}
+function hit(p){
+  const z=polar(p);
+  if(z.d<=C.trigger)return{type:'corner'};
+  if(S.state==='closed'||S.state==='hinting')return{type:'outside'};
+  if(S.state==='detail')return{type:'outside'};
+  // Labels have priority over a ring band, as they support mute and detail.
+  for(let i=0;i<3;i++){
+    if(i===2&&S.missing)continue;
+    const label=loc(C.target/2,R-ringRadius(i)+22);
+    if(Math.abs(p.x-label.x)<C.target/2&&Math.abs(p.y-label.y)<C.target/2)return{type:'label',i};
+  }
+  for(const [slot,id] of pageItems(S.page).entries()){
+    const pt=point(toggleRadius(),slotAngle(slot));
+    if(Math.hypot(p.x-pt.x,p.y-pt.y)<=C.target/2&&S.pageMix===1)return{type:'toggle',id};
+  }
+  const profile=loc(72,R-24);
+  if(Math.abs(p.x-profile.x)<52&&Math.abs(p.y-profile.y)<C.target/2)return{type:'profile'};
+  if(z.a>=C.start-4&&z.a<=C.end+4){
+    const i=[0,1,2].find(i=>!(i===2&&S.missing)&&Math.abs(z.d-ringRadius(i))<=C.band/2);
+    if(i!==undefined)return{type:'ring',i};
+  }
+  if(Math.abs(z.d-toggleRadius())<C.target/2)return{type:'arc'};
+  return{type:z.d>R?'outside':'surface'};
+}
+function clearHold(){clearTimeout(holdTimer);clearTimeout(holdStartTimer);if(drag)drag.holding=false;tracks.delete('holdClock')}
+function setupHold(d){
+  holdStartTimer=setTimeout(()=>{
+    if(drag!==d)return;d.holding=true;
+    // A dummy local track schedules the hold-outline redraw only while held.
+    animate('holdClock',()=>0,()=>{},1,C.hold-C.holdStart,0,null,true);
+  },C.holdStart);
+  holdTimer=setTimeout(()=>{
+    if(drag!==d)return;d.consumed=true;clearHold();
+    const kind=d.type==='label'?(d.i===0?'Displays':'Outputs'):(d.id===0?'Wi-Fi':d.id===1?'Wi-Fi':'Outputs');
+    enterDetail(kind);
+  },C.hold);
+}
+svg.tabIndex=0;
+svg.addEventListener('pointerdown',e=>{
+  if(e.button!==0)return;playToken++;activity();clearTimeout(idleTimer);
+  const p=pointer(e),h=hit(p);if(h.type==='outside'){closeFan();return}
+  drag={...h,start:p,last:p,time:performance.now(),moved:false,previousState:S.state};
+  svg.setPointerCapture(e.pointerId);
+  if(h.type==='ring'){
+    drag.previous=S.values[h.i];tracks.delete('shown'+h.i);S.state='dragging';bubble(h.i,p);
+  }else if(h.type==='corner'){
+    if(['closed','hinting'].includes(S.state)){S.state='dragging';drag.openGesture=true}
+  }else if(h.type==='label'||(h.type==='toggle'&&typeof h.id==='number')){
+    if(h.type==='toggle')arrayProp('presses',h.id,C.scalePress,C.press);
+    setupHold(drag);
+  }
+});
+svg.addEventListener('pointermove',e=>{
+  const p=pointer(e);
+  if(!drag){
+    const z=canonical(p),inPush=z.x<=C.push&&z.y<=C.push;
+    if(!inPush)S.pushSuppressed=false;
+    if(['closed','hinting'].includes(S.state)&&inPush&&!e.buttons&&!S.pushSuppressed){
+      if(S.state==='closed'){S.state='hinting';prop('hint',C.hintOpacity,C.hint);dwellTimer=setTimeout(()=>{if(S.state==='hinting'){S.pointerSession=true;openFan()}},C.dwell)}
+    }else if(S.state==='hinting'){clearTimeout(dwellTimer);S.state='closed';prop('hint',0,C.hint)}
+    if(S.pointerSession&&S.opacity>0){
+      if(polar(p).d>R){if(!leaveTimer)leaveTimer=setTimeout(()=>{leaveTimer=0;closeFan()},C.leave)}
+      else{clearTimeout(leaveTimer);leaveTimer=0}
+    }return;
+  }
+  drag.last=p;const moved=Math.hypot(p.x-drag.start.x,p.y-drag.start.y);
+  if(moved>=C.cancelHold)clearHold();
+  if(moved>=C.drag)drag.moved=true;
+  if(drag.consumed)return;
+  if(drag.type==='corner'&&drag.openGesture&&drag.moved){
+    const progress=clamp(polar(p).d/R);drag.progress=progress;S.opacity=progress;S.scale=C.scaleStart+(1-C.scaleStart)*progress;S.rings.fill(progress);render();
+  }else if(drag.type==='ring'&&drag.moved){
+    const z=polar(p);value(drag.i,(z.a-C.start)/(C.end-C.start)*100,true);bubble(drag.i,p);
+  }
+});
+function release(e,cancel=false){
+  if(!drag)return;
+  const d=drag;clearHold();drag=null;if(S.queuedMissing!==undefined){S.missing=S.queuedMissing;delete S.queuedMissing}
+  if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);
+  if(d.type==='toggle'&&typeof d.id==='number')arrayProp('presses',d.id,1,C.pressReturn);
+  if(d.consumed){activity();return}
+  if(d.type==='corner'){
+    if(d.openGesture){
+      if(cancel)closeFan();else if(performance.now()-d.time<=C.tap&&Math.hypot(d.last.x-d.start.x,d.last.y-d.start.y)<C.cancelHold&&polar(d.last).d<=C.trigger)openFan();else if(d.moved){if((d.progress||0)>C.openThreshold)openFan(false);else closeFan()}
+      else if(performance.now()-d.time<=C.tap)openFan();else closeFan();
+    }else if(!cancel&&!d.moved)closeFan();
+  }else if(d.type==='ring'){
+    S.state='open';if(cancel&&d.i===0)value(d.i,d.previous);
+    else if(d.moved&&d.i===0)say('Brightness: '+S.values[0]+'%, committed on release');
+    hideBubble();
+  }else if(!cancel&&!d.moved){
+    if(d.type==='toggle'){if(typeof d.id==='number')toggle(d.id);else page()}
+    if(d.type==='label'){
+      bubble(d.i,d.last);hideBubble();if(d.i>0)S.muted[d.i]=!S.muted[d.i];say(d.i===0?'Brightness value':names[d.i]+(S.muted[d.i]?': muted':': unmuted'));
+    }
+    if(d.type==='profile')enterDetail('Power profile');
+  }else if(!cancel&&d.type==='arc'&&d.moved)page();
+  if(d.dismiss)closeFan();activity();render();
+}
+svg.addEventListener('pointerup',e=>release(e));
+svg.addEventListener('pointercancel',e=>release(e,true));
+svg.addEventListener('lostpointercapture',e=>{if(drag)release(e,true)});
+svg.addEventListener('pointerleave',()=>{
+  if(S.state==='hinting'){clearTimeout(dwellTimer);S.state='closed';prop('hint',0,C.hint)}
+  if(S.pointerSession&&!drag){clearTimeout(leaveTimer);leaveTimer=setTimeout(()=>{leaveTimer=0;closeFan()},C.leave)}
+});
+svg.addEventListener('wheel',e=>{
+  const p=pointer(e),h=hit(p);if(h.type==='ring'){
+    e.preventDefault();value(h.i,S.values[h.i]+(e.deltaY<0?1:-1)*(e.shiftKey?C.fineStep:C.step));bubble(h.i,p);hideBubble();activity();
+  }else if(h.type==='toggle'||h.type==='arc'){e.preventDefault();page()}
+},{passive:false});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.preventDefault();playToken++;if(S.state==='detail')back();else closeFan();return}
+  if(document.activeElement!==svg)return;
+  if(e.key==='Tab'){S.focus=(S.focus+(e.shiftKey?-1:1)+9)%9;say(S.focus<3?names[S.focus]+' focused':toggleNames[pageItems(S.page)[S.focus-3]]||'More focused');e.preventDefault();return}
+  if(S.focus<3&&S.opacity>0){
+    const i=S.focus,step=e.shiftKey?C.fineStep:C.step;
+    let v=S.values[i];
+    if(['ArrowUp','ArrowRight'].includes(e.key))v+=step;
+    else if(['ArrowDown','ArrowLeft'].includes(e.key))v-=step;
+    else if(e.key==='PageUp')v+=25;else if(e.key==='PageDown')v-=25;
+    else if(e.key==='Home')v=i===0?1:0;else if(e.key==='End')v=100;
+    else if(e.key==='Enter'&&e.shiftKey){enterDetail(i===0?'Displays':'Outputs');e.preventDefault();return}else return;
+    e.preventDefault();value(i,v);bubble(i,point(ringRadius(i),C.start+(C.end-C.start)*S.values[i]/100));hideBubble();activity();
+  }else if(e.key==='Enter'||e.key===' '){
+    e.preventDefault();const id=pageItems(S.page)[S.focus-3];if(e.shiftKey)enterDetail();else if(typeof id==='number')toggle(id);else page();
+  }
+});
+function colourRGB(hex){return hex.match(/[a-f\d]{2}/gi).map(v=>parseInt(v,16))}
+function theme(light){
+  const target=PALETTES[light?'light':'dark'];
+  for(const key of Object.keys(target)){
+    const start=colourRGB(S.colours[key]),end=colourRGB(target[key]);
+    animate('colour'+key,()=>0,t=>{
+      const hex='#'+start.map((v,i)=>Math.round(v+(end[i]-v)*t).toString(16).padStart(2,'0')).join('');
+      S.colours[key]=hex;document.documentElement.style.setProperty('--'+key,hex);
+    },1,C.theme);
+  }
+  document.documentElement.style.colorScheme=light?'light':'dark';
+}
+function reduced(on){
+  S.reduced=on;
+  if(on){
+    // Finish all current semantic targets, including tracks created by completions.
+    let guard=0;while(tracks.size&&guard++<50){const batch=[...tracks.values()];tracks.clear();for(const a of batch){a.set(a.to);if(a.done)a.done()}}
+  }
+  render();wake();
+}
+function resize(){
+  width=stage.clientWidth;height=stage.clientHeight;R=Math.min(C.radius,C.cap*Math.min(width,height));ratio=R/C.radius;
+  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);render();
+}
+$('open').onclick=toggleFan;
+$('details').onclick=()=>{playToken++;enterDetail()};
+$('page').onclick=()=>{playToken++;if(S.opacity===0)openFan();page()};
+$('external').onclick=()=>{playToken++;if(S.opacity===0)openFan();value(1,(S.values[1]+C.step)%101);activity()};
+$('settings').onclick=()=>say('Open question: six arc slots leave no extra 48 px gear slot. Recommendation: put gear in the readout.');
+$('corner').onchange=()=>{
+  playToken++;if(drag){clearHold();drag=null}S.corner=$('corner').value;render();
+  const vp=$('viewport');vp.scrollLeft=S.corner.includes('r')?stage.clientWidth:0;vp.scrollTop=S.corner.includes('t')?0:stage.clientHeight;
+};
+$('reduced').onchange=()=>reduced($('reduced').checked);
+$('light').onchange=()=>theme($('light').checked);
+$('slow').onchange=()=>{S.slow=$('slow').checked;say(S.slow?'Quarter speed. Gesture and command clocks stay real time.':'Normal speed.')};
+$('missing').onchange=()=>{if(drag){S.queuedMissing=$('missing').checked;say('Availability change queued until release');return}S.missing=$('missing').checked;say(S.missing?'Mic unavailable: hidden, no hardware.':'Mic available')};
+$('kind').onchange=()=>{if(S.state==='detail')enterDetail()};
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function storyboard(){
+  const token=++playToken;clearTimeout(idleTimer);
+  const pause=async(ms,visualTime=false)=>{await wait(visualTime?visual(ms):ms);if(token!==playToken)throw new Error('stopped')};
+  $('play').textContent='Playing, click to stop';
+  try{
+    closeFan();await pause(C.close,true);openFan();await pause(C.open+2*C.stagger+C.storyboardPause,true);
+    say('Press ring: value bubble, no value jump.');bubble(1,point(ringRadius(1),40));await pause(C.storyboardPause);
+    say('Dragging: pointer owns the knob, no easing.');
+    const start=performance.now(),from=S.values[1];
+    while(performance.now()-start<C.storyboardDrag){
+      const p=clamp((performance.now()-start)/C.storyboardDrag);value(1,from+(100-from)*p,true);bubble(1,point(ringRadius(1),C.start+(C.end-C.start)*S.values[1]/100));await pause(16);
+    }
+    value(1,100,true);tickMark(1,true);hideBubble();await pause(C.storyboardPause);
+    say('A stepped value: one local tick.');tickMark(2);await pause(C.storyboardPause);
+    toggle(0);await pause(C.fakeSlow+C.storyboardPause);
+    toggle(1);await pause(C.fakeFailure+visual(C.fill)+C.storyboardPause);
+    page();await pause(C.page+C.storyboardPause,true);
+    enterDetail('Wi-Fi');await pause(C.detail,true);await pause(C.storyboardHold);
+    back();await pause(C.detail+C.storyboardPause,true);
+    value(1,65);await pause(C.value+C.storyboardPause,true);
+    closeFan();await pause(C.close,true);say('Storyboard complete. Try a dial, theme or corner.');
+  }catch(err){if(err.message!=='stopped')throw err}
+  finally{if(token===playToken)$('play').textContent='Play storyboard'}
+}
+$('play').onclick=()=>{if($('play').textContent.startsWith('Playing')){playToken++;$('play').textContent='Play storyboard';activity()}else storyboard()};
+new ResizeObserver(resize).observe(stage);
+resize();
+$('viewport').scrollTop=stage.clientHeight;
+</script>
+</body>
+</html>

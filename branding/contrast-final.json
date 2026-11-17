@@ -1,0 +1,38 @@
+[
+  {
+    "pair": "Coral / graphite",
+    "foreground": "#ff8c78",
+    "background": "#16181d",
+    "ratio": 7.843018266562124
+  },
+  {
+    "pair": "Deep / paper",
+    "foreground": "#a83e2c",
+    "background": "#f4f3f0",
+    "ratio": 5.581993178181227
+  },
+  {
+    "pair": "Near white / graphite",
+    "foreground": "#f4f5f7",
+    "background": "#16181d",
+    "ratio": 16.279493990233327
+  },
+  {
+    "pair": "Graphite / paper",
+    "foreground": "#16181d",
+    "background": "#f4f3f0",
+    "ratio": 16.004187839249816
+  },
+  {
+    "pair": "Deep / near white",
+    "foreground": "#a83e2c",
+    "background": "#f4f5f7",
+    "ratio": 5.678015361383328
+  },
+  {
+    "pair": "Coral / paper",
+    "foreground": "#ff8c78",
+    "background": "#f4f3f0",
+    "ratio": 2.040564906941754
+  }
+]

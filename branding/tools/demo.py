@@ -17,7 +17,7 @@ OUT = os.path.join(ROOT, "branding", "demo")
 HOME = os.path.expanduser("~")
 STORE = os.path.join(HOME, ".config/omarchy/oma-bar-configurator.json")
 SHELL = os.path.join(HOME, ".config/omarchy/shell.json")
-PLUGIN = "io.github.felipecpaiva.omabarconfigurator"
+PLUGIN = "io.github.felipecpaiva.omadials"
 # Logical pixels (the screen is scaled): the bar plus the panel card under its middle.
 # Logical pixels: the whole bar and the panel card under its middle. Frames come out at 2x.
 REGION = "0,0 1280x600"
