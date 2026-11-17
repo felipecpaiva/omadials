@@ -9,3 +9,6 @@ for(const v of [19,101,20.5,'85',NaN]) assert.equal(S.write(v),null);
 
 assert.equal(S.normalize(84.7),85);
 assert.equal(S.normalize(NaN),null);
+{ const {readFileSync:r}=await import('node:fs');const src=r(new URL('./spec.js',import.meta.url),'utf8');const n=[...src.matchAll(/^(?:const|function)\s+(\w+)/gm)].map(m=>m[1]);
+  const C=new Function(src.replace(/^\.pragma library\s*\n/,'')+';return {'+n.join(',')+'};')();
+  assert.equal(C.fromSys('85\n').value,85); assert.equal(C.fromSys('').availability,'error'); }

@@ -17,3 +17,9 @@ function write(value, options) { if (!Number.isFinite(value)) return null;
     return argv.concat([String(normalize(value)) + '%']); }
 
 function probe(options) { return read(options); }
+// Read from sysfs (no process): the panel's level as a percent, rounded like brightnessctl, never below the 1% floor.
+function sysfs(options) { const d = '/sys/class/backlight/' + (options.device || 'amdgpu_bl1'); return {path: d + '/brightness', max: d + '/max_brightness'}; }
+function fromSys(raw, maxText) {
+    const n = Number(String(raw).trim()), max = Number(String(maxText).trim());
+    return Number.isFinite(n) && max > 0 ? good(Math.max(1, Math.round(n / max * 100))) : bad('Cannot read the backlight level', 0);
+}

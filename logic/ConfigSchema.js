@@ -39,7 +39,7 @@ const DEFAULTS = {
 };
 const VERSION=1, INDENT=2, MAX_RINGS=Object.freeze({S:2,M:3,L:4});
 const LIMITS=Object.freeze({pushDelayMs:[0,500],idleTimeoutS:[0,120],maxPercent:[100,150],snapWindowPercent:[0,2],gain:[0,1]});
-const ENUMS=Object.freeze({corner:['top-left','top-right','bottom-left','bottom-right'],size:['S','M','L'],mode:['all','focused','named'],iconMode:['always','onApproach','never'],track:['solid','dashed','dotted','segmented'],knob:['round','bar','none'],thickness:['thin','normal','bold'],source:['bluetoothBattery','wifiSignal','laptopBattery','penBattery'],tabStyle:['rings2knob','rings3'],toggleScroll:['resetOnOpen']});
+const ENUMS=Object.freeze({corner:['top-left','top-right','bottom-left','bottom-right'],size:['S','M','L'],mode:['all','focused','named'],iconMode:['always','onApproach','never'],track:['solid','dashed','dotted','segmented'],knob:['round','bar','none'],thickness:['thin','normal','bold'],source:['bluetoothBattery','wifiSignal','laptopBattery','penBattery'],tabStyle:['rings2knob','rings3','rings3knob'],toggleScroll:['resetOnOpen']});
 const ERROR_CODES=Object.freeze(['parse_error','newer_version','wrong_type','out_of_range','unknown_value','unknown_control','duplicate_control','wrong_placement','over_capacity']);
 const ACTIONS=Object.freeze({wifi:['switchRadio','quickDetail','fullWindow'],bluetooth:['switchPower','quickDetail','fullWindow'],kbdlight:['nextStep','quickDetail'],theme:['togglePair','quickDetail'],media:['quickDetail']});
 const ORDER_LIMITS=Object.freeze([0,Number.MAX_SAFE_INTEGER]), WHEEL_MIN=0;

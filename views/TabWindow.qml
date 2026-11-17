@@ -40,7 +40,7 @@ PanelWindow {
         // The tab is a tiny live readout: each mini ring is filled to its dial's real value (outer ring = first dial).
         Repeater {
             id: miniRings
-            model: customIcon.visible ? [] : tab.tabStyle === "rings3" ? [32,24,16] : [32,21]
+            model: customIcon.visible ? [] : tab.tabStyle === "rings2knob" ? [32,21] : [32,24,16]
             Shape {
                 id: miniRing
                 required property real modelData
@@ -64,7 +64,8 @@ PanelWindow {
         Rectangle {   // the knob rides the outer ring's value
             readonly property var outer: miniRings.count > 0 ? miniRings.itemAt(0) : null
             readonly property var pos: Geometry.fromCanonical(Geometry.knobPos(32, outer ? outer.endAngle : 48, tab.height), tab.width, tab.height, tab.corner)
-            visible: !customIcon.visible && tab.tabStyle !== "rings3"; x: pos.x-4; y: pos.y-4; width: 8; height: 8; radius: 4; color: tabPalette.accent
+            visible: !customIcon.visible && tab.tabStyle !== "rings3";  // knob for rings2knob and rings3knob
+            x: pos.x-4; y: pos.y-4; width: 8; height: 8; radius: 4; color: tabPalette.accent
         }
         Image {
             id: customIcon

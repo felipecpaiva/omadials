@@ -11,7 +11,7 @@ ColumnLayout {
         model: [
             {p:"corner", l:"Corner", c:["top-left","top-right","bottom-left","bottom-right"]},
             {p:"size", l:"Size", c:["S","M","L"]},
-            {p:"tabStyle", l:"Corner tab", c:["rings2knob","rings3"]},
+            {p:"tabStyle", l:"Corner tab", c:["rings2knob","rings3","rings3knob"]},
             {p:"cornerIcon.mode", l:"Icon mode", c:["always","onApproach","never"]},
             {p:"cornerIcon.source", l:"Corner icon", c:[]},
             {p:"cornerIcon.aboveWindows", l:"Above windows", k:"bool"},

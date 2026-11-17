@@ -44,3 +44,7 @@ for (const entry of catalog) {
         if (option.max !== undefined) assert.ok(option.default <= option.max);
     }
 }
+// sysfs reads (no process): percent like brightnessctl, 1% floor.
+{ const {readFileSync:r}=await import('node:fs');const src=r(new URL('./spec.js',import.meta.url),'utf8');const n=[...src.matchAll(/^(?:const|function)\s+(\w+)/gm)].map(m=>m[1]);
+  const B=new Function(src.replace(/^\.pragma library\s*\n/,'')+';return {'+n.join(',')+'};')();
+  assert.equal(B.fromSys('53083\n','65535\n').value,81); assert.equal(B.fromSys('0','65535').value,1); assert.equal(B.fromSys('x','65535').availability,'error'); }

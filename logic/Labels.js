@@ -3,7 +3,7 @@
 const LABELS = Object.freeze({
     'bottom-left': 'Bottom left', 'bottom-right': 'Bottom right', 'top-left': 'Top left', 'top-right': 'Top right',
     S: 'Compact', M: 'Normal', L: 'Large',
-    rings2knob: '2 rings and a knob', rings3: '3 rings',
+    rings2knob: '2 rings and a knob', rings3: '3 rings', rings3knob: '3 rings and a knob',
     always: 'Always', onApproach: 'On approach', never: 'Never',
     all: 'All screens', focused: 'Focused screen', named: 'Named screens',
     solid: 'Solid', dashed: 'Dashed', dotted: 'Dotted', segmented: 'Segmented',

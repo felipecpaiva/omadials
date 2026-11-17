@@ -19,3 +19,10 @@ function probe(options) { return read(options); }
 function detect(text, code) {
     return code ? '' : text.trim().split(/\s+/).filter(n => /^[^/]*kbd_backlight[^/]*$/.test(n)).sort()[0] || '';
 }
+// Read from sysfs (no process): the level index and the steps from max_brightness.
+function sysfs(options) { const d = '/sys/class/leds/' + (options.device || 'asus::kbd_backlight'); return {path: d + '/brightness', max: d + '/max_brightness'}; }
+function fromSys(raw, maxText) {
+    const n = Number(String(raw).trim()), max = Number(String(maxText).trim());
+    if (!Number.isInteger(n) || !Number.isInteger(max) || max <= 0 || n < 0 || n > max) return bad('Cannot read the keyboard light', 0);
+    return Object.assign(good(n), {range: {min:0, max:max, floor:0, step:1, unit:""}, steps: Array.from({length:max+1}, (_,i) => ({key:i,label:String(i)}))});
+}

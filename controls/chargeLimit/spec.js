@@ -10,3 +10,6 @@ function parse(text, code) {
 function write(v) { return Number.isInteger(v) && v >= 20 && v <= 100 ? ['asusctl','battery','limit',String(v)] : null; }
 
 function normalize(v) { return Number.isFinite(v) ? Math.round(Math.max(20, Math.min(100, v))) : null; }
+// Read from sysfs (no process).
+function sysfs() { return {path: '/sys/class/power_supply/BAT0/charge_control_end_threshold'}; }
+function fromSys(raw) { return parse(String(raw), 0); }

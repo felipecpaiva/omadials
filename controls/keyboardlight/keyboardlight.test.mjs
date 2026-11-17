@@ -33,3 +33,6 @@ console.log('PASS command backend');
 assert.equal(S.detect('other\nfoo::kbd_backlight\n',0),'foo::kbd_backlight');
 assert.equal(S.detect('other',0),'');
 assert.equal(S.detect('foo::kbd_backlight',1),'');
+{ const {readFileSync:r}=await import('node:fs');const src=r(new URL('./spec.js',import.meta.url),'utf8');const n=[...src.matchAll(/^(?:const|function)\s+(\w+)/gm)].map(m=>m[1]);
+  const K=new Function(src.replace(/^\.pragma library\s*\n/,'')+';return {'+n.join(',')+'};')();
+  assert.equal(K.fromSys('2','3').value,2); assert.equal(K.fromSys('2','3').steps.length,4); assert.equal(K.fromSys('9','3').availability,'error'); }
