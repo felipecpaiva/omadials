@@ -8,6 +8,8 @@ CommandControl {
     kind: "picker"
     detailKind: "rows"
     steps: detailRows.map(r => ({key: r.key, label: r.label}))
+    readonly property var names: ({ "balanced": "Balanced", "performance": "Performance", "power-saver": "Power saver" })
+    valueText: value === null ? "unknown" : (names[value] || String(value))
     property Connections profileEvents: Connections {
         target: backend.active ? PowerProfiles : null
         function onProfileChanged() { backend.refresh() }

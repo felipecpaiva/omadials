@@ -15,7 +15,7 @@ FocusScope {
     Text {
         id: copy; x: 12; y: 10; width: parent.width-24
         text: (row.rowData.icon ? row.rowData.icon+" " : "") + row.rowData.label + (row.rowData.sub ? "\n"+row.rowData.sub : "") + (row.rowData.state ? " · "+row.rowData.state : "")
-        wrapMode: Text.WrapAnywhere; color: row.theme.text; font.family: row.theme.font; font.pixelSize: 14
+        wrapMode: Text.Wrap; color: row.theme.text; font.family: row.theme.font; font.pixelSize: 14
     }
     function pick() { control.activate(rowData.key); model.activity() }
     MouseArea { anchors.fill: parent; onClicked: row.pick() }

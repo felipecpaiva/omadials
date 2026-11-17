@@ -34,7 +34,7 @@ Item {
         id: heading
         x: 76; y: 16; width: parent.width-92
         text: host.shownControl ? host.shownControl.label : ""
-        wrapMode: Text.WrapAnywhere; color: host.theme.text; font.family: host.theme.font; font.pixelSize: 18
+        wrapMode: Text.Wrap; color: host.theme.text; font.family: host.theme.font; font.pixelSize: 18
     }
     Flickable {
         x: 16; y: Math.max(80,heading.y+heading.implicitHeight+16); width: parent.width-32; height: Math.max(0,parent.height-y-16)
@@ -53,7 +53,7 @@ Item {
                 width: parent.width
                 visible: host.shownControl && host.shownControl.detailRows.length === 0
                 text: host.shownControl ? host.shownControl.valueText : ""
-                color: host.theme.text; font.family: host.theme.font; font.pixelSize: 14; wrapMode: Text.WrapAnywhere
+                color: host.theme.text; font.family: host.theme.font; font.pixelSize: 14; wrapMode: Text.Wrap
             }
         }
     }

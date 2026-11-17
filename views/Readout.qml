@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../logic/Glyphs.js" as Glyphs
 import "../logic/Geometry.js" as Geometry
 import "../logic/Layout.js" as Layout
 
@@ -18,9 +19,9 @@ Item {
     function measure(text,width) {
         return width === Layout.SHORT_WIDTH ? shortMeasure.implicitHeight : width === Layout.LONG_WIDTH ? longMeasure.implicitHeight : noticeMeasure.implicitHeight
     }
-    Text { id: shortMeasure; visible: false; width: Layout.SHORT_WIDTH; text: readout.model.status; wrapMode: Text.WrapAnywhere; font.family: readout.theme.font; font.pixelSize: 14; lineHeightMode: Text.FixedHeight; lineHeight: Layout.LINE }
-    Text { id: longMeasure; visible: false; width: Layout.LONG_WIDTH; text: readout.model.status; wrapMode: Text.WrapAnywhere; font.family: readout.theme.font; font.pixelSize: 14; lineHeightMode: Text.FixedHeight; lineHeight: Layout.LINE }
-    Text { id: noticeMeasure; visible: false; width: Layout.NOTICE_WIDTH; text: readout.model.status; wrapMode: Text.WrapAnywhere; font.family: readout.theme.font; font.pixelSize: 14; lineHeightMode: Text.FixedHeight; lineHeight: Layout.LINE }
+    Text { id: shortMeasure; visible: false; width: Layout.SHORT_WIDTH; text: readout.model.status; wrapMode: Text.Wrap; font.family: readout.theme.font; font.pixelSize: 12; lineHeightMode: Text.FixedHeight; lineHeight: Layout.LINE }
+    Text { id: longMeasure; visible: false; width: Layout.LONG_WIDTH; text: readout.model.status; wrapMode: Text.Wrap; font.family: readout.theme.font; font.pixelSize: 12; lineHeightMode: Text.FixedHeight; lineHeight: Layout.LINE }
+    Text { id: noticeMeasure; visible: false; width: Layout.NOTICE_WIDTH; text: readout.model.status; wrapMode: Text.Wrap; font.family: readout.theme.font; font.pixelSize: 12; lineHeightMode: Text.FixedHeight; lineHeight: Layout.LINE }
     Connections { target: readout.model; function onStatusAtChanged() { readout.elapsed = 0; noticeTimer.restart() } }
     Timer { id: noticeTimer; interval: Layout.NOTICE_HOLD; onTriggered: readout.elapsed = Layout.NOTICE_HOLD }
     Text {
@@ -30,14 +31,14 @@ Item {
         visible: !readout.layout.hideBattery && !!readout.model.battery
         text: readout.model.battery ? readout.model.battery.valueText : ""
         color: readout.theme.text; font.family: readout.theme.font; font.pixelSize: readout.layout.batteryFont; lineHeightMode: Text.FixedHeight; lineHeight: readout.layout.batteryFont
-        wrapMode: Text.WrapAnywhere
+        wrapMode: Text.Wrap
     }
     Text {
         readonly property var b: Geometry.batteryLineBox(readout.screenWidth,readout.screenHeight,readout.corner)
         x: b.x; y: b.y; width: b.width
         visible: readout.layout.batteryLine && !!readout.model.battery
         text: readout.model.batteryLine
-        color: readout.theme.secondary; font.family: readout.theme.font; font.pixelSize: 12; wrapMode: Text.WrapAnywhere
+        color: readout.theme.secondary; font.family: readout.theme.font; font.pixelSize: 12; wrapMode: Text.Wrap
     }
     Rectangle {
         readonly property var b: readout.layout.status
@@ -48,8 +49,8 @@ Item {
         Text {
             id: statusCopy; width: parent.width; text: readout.model.status
             color: readout.model.statusError ? readout.theme.warn : readout.theme.text
-            font.family: readout.theme.font; font.pixelSize: 14; lineHeightMode: Text.FixedHeight; lineHeight: Layout.LINE
-            wrapMode: Text.WrapAnywhere
+            font.family: readout.theme.font; font.pixelSize: 12; lineHeightMode: Text.FixedHeight; lineHeight: Layout.LINE
+            wrapMode: Text.Wrap
         }
     }
     ReadoutButton {
@@ -58,7 +59,7 @@ Item {
         onClicked: if (readout.model.profile) readout.model.openDetail(readout.model.profile)
     }
     ReadoutButton {
-        theme: readout.theme; box: readout.boxes.gear; text: "⚙"
+        theme: readout.theme; box: readout.boxes.gear; text: Glyphs.glyph("settings")
         onClicked: { readout.model.activity(); readout.model.settingsRequested() }
     }
 }
