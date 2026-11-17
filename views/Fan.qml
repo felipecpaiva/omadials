@@ -8,7 +8,7 @@ Item {
   required property var theme
   required property var model
   required property string corner
-  required property real R
+  required property real fanRadius
   required property var radii
   required property var origin
   required property real screenWidth
@@ -22,7 +22,7 @@ Item {
   Behavior on opacity { NumberAnimation { duration: fan.theme.duration(fan.open ? 180 : 120); easing.type: Easing.BezierSpline; easing.bezierCurve: fan.theme.easeOut } }
 
   Rectangle {   // the quarter disc: a circle centred on the corner, the screen edges cut the rest
-    x: fan.origin.x - fan.R; y: fan.origin.y - fan.R; width: 2 * fan.R; height: width; radius: fan.R
+    x: fan.origin.x - fan.fanRadius; y: fan.origin.y - fan.fanRadius; width: 2 * fan.fanRadius; height: width; radius: fan.fanRadius
     color: fan.theme.surface; border.color: fan.theme.edge; border.width: 1
   }
 

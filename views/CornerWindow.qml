@@ -11,12 +11,12 @@ PanelWindow {
   property string corner: "bottom-left"
   property string size: "M"
 
-  readonly property real W: width
-  readonly property real H: height
-  readonly property var cap: Geometry.capacity(size, Math.min(W, H))
-  readonly property real R: cap.R
-  readonly property var origin: Geometry.fromCanonical({ x: 0, y: H }, W, H, corner)
-  readonly property var radii: Geometry.ringRadii(R, model.rings.length)
+  readonly property real outW: width
+  readonly property real outH: height
+  readonly property var cap: Geometry.capacity(size, Math.min(outW, outH))
+  readonly property real fanRadius: cap.R
+  readonly property var origin: Geometry.fromCanonical({ x: 0, y: outH }, outW, outH, corner)
+  readonly property var radii: Geometry.ringRadii(fanRadius, model.rings.length)
 
   WlrLayershell.namespace: "omadials"
   WlrLayershell.layer: WlrLayer.Top
@@ -27,17 +27,17 @@ PanelWindow {
   mask: Region { item: win.model.open ? catcher : zone }
 
   Item { id: catcher; anchors.fill: parent }
-  Item { id: zone; width: 32; height: 32; x: win.corner.indexOf("right") >= 0 ? win.W - 32 : 0; y: win.corner.indexOf("top") >= 0 ? 0 : win.H - 32 }
+  Item { id: zone; width: 32; height: 32; x: win.corner.indexOf("right") >= 0 ? win.outW - 32 : 0; y: win.corner.indexOf("top") >= 0 ? 0 : win.outH - 32 }
 
   Fan {
     id: fan
     anchors.fill: parent
     theme: win.theme; model: win.model; corner: win.corner
-    R: win.R; radii: win.radii; origin: win.origin; screenWidth: win.W; screenHeight: win.H
+    fanRadius: win.fanRadius; radii: win.radii; origin: win.origin; screenWidth: win.outW; screenHeight: win.outH
   }
 
   FanInput {
     anchors.fill: parent
-    model: win.model; corner: win.corner; R: win.R; radii: win.radii; screenWidth: win.W; screenHeight: win.H
+    model: win.model; corner: win.corner; fanRadius: win.fanRadius; radii: win.radii; screenWidth: win.outW; screenHeight: win.outH
   }
 }

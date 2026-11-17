@@ -7,7 +7,7 @@ MouseArea {
   id: input
   required property var model
   required property string corner
-  required property real R
+  required property real fanRadius
   required property var radii
   required property real screenWidth
   required property real screenHeight
@@ -38,7 +38,7 @@ MouseArea {
   onReleased: (m) => {
     const p = polarOf(m.x, m.y), quick = Date.now() - pressedAt <= 400 && Math.hypot(m.x - start.x, m.y - start.y) < 10
     if (!dragging && quick && p.d <= 32) model.toggle()
-    else if (!dragging && model.open && p.d > R) model.close()
+    else if (!dragging && model.open && p.d > fanRadius) model.close()
     ring = -1; dragging = false
   }
 }
