@@ -7,6 +7,7 @@
 <style>
 :root { color-scheme:dark; --surface:#20262c; --edge:#59626b; --text:#f0ede7; --secondary:#b7b9ba; --track:#646c73; --accent:#dbb28a; --ink:#20262c; --off:#30383f; --warn:#ffad99; --desk:#141c22; }
 * { box-sizing:border-box } body { margin:0; background:var(--desk); color:var(--text); font:14px system-ui,sans-serif } header, footer { max-width:1100px; margin:auto; padding:20px } h1 { font-size:24px; font-weight:450; margin:0 0 8px } p { line-height:1.5; color:var(--secondary); margin:8px 0 } .tools { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-top:14px } button,select { font:inherit; color:var(--text); background:var(--off); border:1px solid var(--edge); border-radius:8px; padding:9px 12px; min-height:44px; cursor:pointer } button:focus-visible, select:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:3px } label { display:flex; align-items:center; gap:6px; min-height:44px } input { accent-color:var(--accent) } .viewport { overflow:auto; border-block:1px solid var(--edge) } #stage { position:relative; width:100%; min-width:850px; height:min(72vh,760px); min-height:850px; overflow:hidden; background:radial-gradient(ellipse at 65% 25%,var(--off),var(--desk) 75%) } .wall { position:absolute; top:36%; left:42%; pointer-events:none; opacity:.35; font-size:clamp(28px,5vw,72px); letter-spacing:-2px; font-weight:250 } .wall small { display:block; font-size:13px; letter-spacing:2px; margin-top:14px } #scene { width:100%; height:100%; position:absolute; inset:0; touch-action:none; user-select:none } #detail { position:absolute; display:none; overflow:auto; padding:16px; pointer-events:none; } #detail button { width:100%; min-height:48px; text-align:left; margin:0 0 4px; border:0; border-bottom:1px solid var(--edge); border-radius:0; background:transparent } #detail .head { display:flex; align-items:center; gap:12px; min-height:48px; margin-bottom:8px } #detail .head button { width:48px; margin:0; text-align:center } #detail h2 { font-size:20px; font-weight:450; margin:0 } #live { min-height:24px; color:var(--text) } .note { font-size:12px } #legend { display:flex; flex-wrap:wrap; gap:8px } #legend span { padding:5px 9px; border:1px solid var(--edge); border-radius:20px; color:var(--secondary) } @media(max-width:700px) { header,footer{padding:14px} .viewport{max-height:72vh} #stage{height:850px} }
+#settings-panel {padding:16px;border:1px solid var(--edge);margin-top:12px} #settings-panel fieldset {margin:12px 0;display:flex;flex-wrap:wrap;gap:8px} #settings-panel .config-row {display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%} #detail input {width:100%;min-height:48px;font:inherit;background:var(--off);color:var(--text)} #detail button,#detail h2 {overflow-wrap:anywhere;white-space:normal} .fan-copy {position:absolute;pointer-events:none;font-size:12px;line-height:18px;overflow-wrap:anywhere;color:var(--text)} .fan-copy p {margin:0;color:inherit} .status-box {position:absolute;pointer-events:none;box-sizing:border-box;padding:8px 12px;background:var(--surface);border:1px solid var(--edge);font:12px/18px system-ui;overflow-wrap:anywhere;color:var(--text)}
 </style>
 </head>
 <body>
@@ -21,11 +22,12 @@
 <label><input id="slow" type="checkbox">Slow motion x0.25</label>
 </div>
 <div class="tools">
-<label>Detail <select id="kind"><option>Wi-Fi</option><option>Outputs</option><option>Displays</option></select></label>
-<button id="details">Open detail</button><button id="page">Toggle page</button><button id="external">External volume +5</button>
-<label><input id="missing" type="checkbox">Mic unavailable</label><button id="settings">Settings placement question</button>
+<label>Detail <select id="kind"><option>Wi-Fi</option><option>Outputs</option><option>Displays</option><option>Media</option><option>Theme</option></select></label>
+<button id="details">Open detail</button><button id="external">External volume +5</button>
+<label><input id="missing" type="checkbox">Mic unavailable</label><button id="settings">Settings</button>
 </div>
 <p class="note">Tap the corner to open. Drag a ring, or scroll it. Tap Wi-Fi for a slow command, Bluetooth for a failure. Hold a toggle or dial label for detail. Escape goes back, then closes. Phone: scroll the demo viewport to reach another corner.</p>
+<section id="settings-panel" hidden></section>
 </header>
 <div class="viewport" id="viewport">
 <div id="stage">
@@ -37,16 +39,16 @@
 <footer>
 <div id="live" role="status" aria-live="polite">Closed. Tap the corner or play the storyboard.</div>
 <div id="legend"><span>180 ms entry</span><span>20 ms ring stagger</span><span>120 ms exit</span><span>200 ms detail</span></div>
-<p class="note">Illustrative M geometry. The desktop caps R at 45% of the shorter side. This scrollable browser stage keeps targets usable on phones. No system commands run. Settings gear placement is an open design question.</p>
+<p class="note">Illustrative M geometry. The desktop caps R at 45% of the shorter side. This scrollable browser stage keeps targets usable on phones. No system commands run. Settings apply live. Readout rings count toward the M cap of three.</p>
 </footer>
 <script>
 'use strict';
 // All motion numbers live here. Base milliseconds match experience.md.
 const C = Object.freeze({
-  open:180, close:120, stagger:20, hint:80, press:80, pressReturn:120,
+  frame:16, open:180, close:120, stagger:20, hint:80, press:80, pressReturn:120,
   fill:120, value:120, bubble:80, bubbleHold:600, tickIn:40, tickOut:80,
   pending:900, pendingPeriod:12, detail:200, detailOut:80, detailIn:120,
-  page:160, theme:160, holdStart:150, hold:450, dwell:150, leave:600,
+  snap:160, theme:160, holdStart:150, hold:450, dwell:150, leave:600,
   idle:10000, tap:400, drag:6, cancelHold:10, openThreshold:.4,
   slowFactor:4, scaleStart:.6, scaleClose:.8, scalePress:.92,
   radius:380, cap:.45, band:44, stroke:4, knob:7, knobOutline:2,
@@ -55,6 +57,8 @@ const C = Object.freeze({
   start:6, end:84, bubbleDistance:56, clearance:8, detailRadius:14,
   fakeSlow:1500, fakeFailure:900, fakeFast:450, step:5, fineStep:1,
   ease:[.23,1,.32,1], circleK:.55228475,
+  demoApps:[65,40,80], demoProgress:40, fineNear:22, fineFar:66, fineGain:.25, finerGain:.1, detentStep:25, snapWindow:2, batteryFont:40, statusWidth:176, statusDepth:124, statusShortWidth:100, readoutWidth:136, readoutDepth:112, labelInset:4, markSize:4, percent:100,
+  textWidth:220, textInset:12,iconSize:28,iconInset:4,iconRest:.7,iconReveal:80,windowW:300,windowH:220,textGap:8,statusLongWidth:124,statusLongLines:4,noticeWidth:260, statusHeight:54, textLine:18, labelWidth:96, labelHeight:40, thin:2, normal:4, bold:6, dash:10, gap:6, dot:1, segment:18, bar:12, maxRings:3, fadeSlots:.6,
   storyboardPause:650, storyboardDrag:850, storyboardHold:1100
 });
 const PALETTES = {
@@ -65,16 +69,32 @@ const $ = id => document.getElementById(id);
 const svg=$('scene'), stage=$('stage'), detail=$('detail');
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
 const rad=deg=>deg*Math.PI/180;
-const S={state:'closed',corner:'bl',opacity:0,scale:C.scaleStart,hint:0,morph:0,
+const S={iconReveal:0,state:'closed',corner:'bl',opacity:0,scale:C.scaleStart,hint:0,morph:0,
   fanAlpha:1,detailAlpha:0,rings:[0,0,0],values:[72,40,15],shown:[72,40,15],
-  ticks:[0,0,0],endpointLatch:[null,null,null],bubble:0,bubblePoint:null,bubbleIndex:0,page:0,pageMix:1,
-  oldPage:0,detailKind:'Wi-Fi',status:'',reduced:false,slow:false,missing:false,
-  muted:[false,false,false],pending:new Map(),pendingAlpha:Array(8).fill(0),failures:new Set(),on:[true,true,false,false,true,false,false,false],
-  proposed:[true,true,false,false,true,false,false,false],presses:Array(8).fill(1),
+  ticks:[0,0,0],endpointLatch:[null,null,null],bubble:0,bubblePoint:null,bubbleIndex:0,detailKind:'Wi-Fi',status:'',reduced:false,slow:false,missing:false,
+  muted:[false,false,false],pending:new Map(),pendingAlpha:Array(11).fill(0),failures:new Set(),on:[true,true,false,false,true,false,false,false],
+  proposed:[true,true,false,false,true,false,false,false],presses:Array(11).fill(1),
   fills:[1,1,0,0,1,0,0,0],colours:{...PALETTES.dark},focus:0};
 let width=0,height=0,R=C.radius,ratio=1,frame=0,drag=null,holdTimer=0,holdStartTimer=0,
  bubbleTimer=0,idleTimer=0,leaveTimer=0,dwellTimer=0,playToken=0,lastPending=0;
 const tracks=new Map();
+const config={iconMode:'always',iconAbove:true,demoWindow:false,toggles:[0,1,2,3,4,5,6,7,8,9,10],enabled:new Set([0,1,2,3,4,5,6,7,8,9,10]),wifiTap:'switchRadio',styles:Array.from({length:C.maxRings},()=>({track:'solid',knob:'round',thickness:'normal'})),readouts:[null,null,null],snap:true,fine:true,lightTheme:"Paper Light",darkTheme:"Midnight",game:{animations:true,blur:true,shadows:true,gaps:true},apps:[...C.demoApps],keyboard:true};
+S.arcOffset=0;
+const copy=document.createElement('div');copy.className='fan-copy';stage.append(copy);
+const statusBox=document.createElement('div');statusBox.className='status-box';stage.append(statusBox);
+function placeBox(el,x,depth,w,h){
+ const right=S.corner.includes('r'),top=S.corner.includes('t');
+ Object.assign(el.style,{left:(right?width-x-w:x)+'px',top:(top?depth:height-depth-h)+'px',width:w+'px',height:h+'px',textAlign:right?'right':'left'});
+}
+const devices={headphones:{label:'WH-1000XM5 headphones',value:80,connected:true},pen:{label:'Pen',value:45,connected:true},disconnected:{label:'Very long Bluetooth device name belonging to disconnected headphones',value:null,connected:false},signal:{label:'Wi-Fi signal',value:76,connected:true}};
+function items(){return config.toggles.filter(id=>config.enabled.has(id))}
+function slotStep(){return C.target/toggleRadius()*180/Math.PI}
+function visibleSlots(){return Math.floor(rad(C.end-C.start)*toggleRadius()/C.target)}
+function maxOffset(){return Math.max(0,items().length-visibleSlots())}
+function scrollArc(direction=0){tracks.delete('arcOffset');prop('arcOffset',clamp(Math.round(S.arcOffset)+direction,0,maxOffset()),C.snap);activity()}
+function tapToggle(id){if(id===10){enterDetail('Media');return}if(id===9){$('light').checked=!$('light').checked;theme($('light').checked);say('Theme: '+( $('light').checked?config.lightTheme:config.darkTheme)+' (demo)');return}if(id===8){S.on[id]=!S.on[id];S.fills[id]=+S.on[id];say('Game mode: '+(S.on[id]?'runtime options applied':'exact baseline restored')+' (demo)');return}if(id===0&&config.wifiTap==='quickDetail')enterDetail('Wi-Fi');else if(id===0&&config.wifiTap==='fullWindow')say('Demo: open full Omarchy Wi-Fi window');else toggle(id)}
+function readoutDetail(i){const d=devices[config.readouts[i]];enterDetail(config.readouts[i]==='signal'?'Wi-Fi':d.label)}
+
 function visual(ms){return S.reduced?0:ms*(S.slow?C.slowFactor:1)}
 // Solve x(t) before evaluating y(t), so this is the exact CSS/Qt Bezier.
 function ease(x){
@@ -130,21 +150,21 @@ function surfacePath(){
   return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y} L${pts[2].x},${pts[2].y} C${pts[3].x},${pts[3].y} ${pts[4].x},${pts[4].y} ${pts[5].x},${pts[5].y} L${pts[6].x},${pts[6].y} Z`;
 }
 const names=['Brightness','Volume','Mic'];
-const toggleNames=['Wi-Fi','Bluetooth','Night light','DND','Keep awake','Keyboard light','Airplane','Touchpad'];
-const glyphs=['Wi','Bt','☾','D','☕','⌨','✈','T'];
-function pageItems(page){return page===0?[0,1,2,3,4,'more']:[5,6,7,'back']}
-function slotAngle(i){return C.start+(C.target/Math.min(C.toggleR,R-3*C.band-C.target/2))*180/Math.PI*i+C.target/2/Math.min(C.toggleR,R-3*C.band-C.target/2)*180/Math.PI}
-function toggleRadius(){return Math.min(C.toggleR,R-3*C.band-C.target/2)}
+const toggleNames=['Wi-Fi','Bluetooth','Night light','DND','Keep awake','Keyboard light','Airplane','Touchpad','Game mode','Theme','Media'];
+const glyphs=['Wi','Bt','☾','D','☕','⌨','✈','T','G','◐','♫'];
+function slotAngle(i){return C.start+slotStep()*(i-S.arcOffset+.5)}
+function toggleRadius(){return Math.min(C.toggleR,R-C.maxRings*C.band-C.target/2)}
 function toggleLayer(page,alpha,offset){
   if(alpha<=0)return '';
   const tr=toggleRadius();
   let out=`<g opacity="${alpha}">`;
-  pageItems(page).forEach((id,i)=>{
+  items().forEach((id,i)=>{
     const a=slotAngle(i)+offset,p=point(tr,a);
-    if(a<C.start||a>C.end)return;
+    if(a<C.start+slotStep()/2||a>C.end-slotStep()/2)return;
     const isNumber=typeof id==='number',pending=isNumber&&S.pending.has(id),fill=isNumber?S.fills[id]:0;
     const scale=isNumber?S.presses[id]:1;
-    out+=`<g transform="translate(${p.x} ${p.y}) scale(${scale})"><circle r="${C.toggleSize/2}" fill="var(--off)" stroke="var(--edge)"/><circle r="${C.toggleSize/2}" fill="var(--accent)" opacity="${fill}"/>`;
+    const edgeAlpha=Math.min(1,Math.max(.2,(a-C.start)/slotStep()/C.fadeSlots),Math.max(.2,(C.end-a)/slotStep()/C.fadeSlots));
+    out+=`<g opacity="${edgeAlpha}" transform="translate(${p.x} ${p.y}) scale(${scale})"><circle r="${C.toggleSize/2}" fill="var(--off)" stroke="var(--edge)"/><circle r="${C.toggleSize/2}" fill="var(--accent)" opacity="${fill}"/>`;
     out+=`<text text-anchor="middle" dominant-baseline="central" font-size="14" fill="var(--text)">${isNumber?glyphs[id]:(id==='more'?'••':'‹')}</text>`;
     if(fill)out+=`<text text-anchor="middle" dominant-baseline="central" font-size="14" fill="var(--ink)" opacity="${fill}">${isNumber?glyphs[id]:''}</text>`;
     if(isNumber&&S.pendingAlpha[id]>0)out+=`<circle r="23" fill="none" stroke="var(--text)" stroke-width="2" opacity="${S.pendingAlpha[id]}" stroke-dasharray="6 6" stroke-dashoffset="${S.reduced?0:-(lastPending/visual(C.pending)%1)*C.pendingPeriod}"/>`;
@@ -156,6 +176,7 @@ function toggleLayer(page,alpha,offset){
     out+='</g>';
   });return out+'</g>';
 }
+const ICON='<path d="M0.8 2.2V13.3Q0.8 15.2 2.7 15.2H13.8" stroke-width="0.85"/><path d="M2 3A11 11 0 0 1 13 14" stroke-width="0.48"/><path d="M2 3A11 11 0 0 1 8.62 5.215" stroke-width="1.25"/><circle cx="8.62" cy="5.215" r="1.05" fill="var(--accent)" stroke="none"/><path d="M2 6.7A7.3 7.3 0 0 1 9.3 14" stroke-width="0.48"/><path d="M9.3 14A7.3 7.3 0 0 0 5.085 7.384" stroke-width="1.25"/><circle cx="5.085" cy="7.384" r="1.05" fill="var(--accent)" stroke="none"/><circle cx="5.09" cy="12.36" r=".7" fill="var(--accent)" stroke="none"/><circle cx="3.08" cy="10.67" r=".7" fill="var(--accent)" stroke="none"/>';
 function render(){
   const o=origin(),transform=`translate(${o.x} ${o.y}) scale(${S.scale}) translate(${-o.x} ${-o.y})`;
   let out=`<g font-family="system-ui, sans-serif"><path d="${arcPath(C.hintRadius,C.start,C.end)}" fill="none" stroke="var(--accent)" stroke-width="2" opacity="${S.hint}"/>`;
@@ -163,31 +184,57 @@ function render(){
     out+=`<g opacity="${S.opacity}" transform="${transform}"><path d="${surfacePath()}" fill="var(--surface)" stroke="var(--edge)" stroke-width="1"/><g opacity="${S.fanAlpha}">`;
     for(let i=0;i<3;i++){
       if(i===2&&S.missing)continue;
-      const r=ringRadius(i),q=S.rings[i],end=C.start+(C.end-C.start)*q,v=clamp(S.shown[i]/100),a=C.start+(C.end-C.start)*v,p=point(r,a);
-      if(q>0)out+=`<path d="${arcPath(r,C.start,Math.max(C.start+.001,end))}" fill="none" stroke="var(--track)" stroke-width="${C.stroke}" stroke-linecap="round"/><path d="${arcPath(r,C.start,Math.max(C.start+.001,Math.min(end,a)))}" fill="none" stroke="var(--accent)" stroke-width="${C.stroke}" stroke-linecap="round"/>`;
-      out+=`<circle cx="${p.x}" cy="${p.y}" r="${C.knob}" fill="var(--accent)" stroke="var(--ink)" stroke-width="${C.knobOutline+S.ticks[i]}" opacity="${q}"/>`;
-      out+=`<g opacity="${q}">${text(14,R-r+22,`${S.muted[i]?'⊘':['☀','♪','●'][i]} ${S.values[i]}`,16)}</g>`;
+      const rd=devices[config.readouts[i]],style=config.styles[i],stroke=C[style.thickness],dash=style.track==='solid'?'':style.track==='dotted'?`${C.dot} ${C.gap}`:style.track==='segmented'?`${C.segment} ${C.gap}`:`${C.dash} ${C.gap}`;
+      const r=ringRadius(i),q=S.rings[i]*(rd&&!rd.connected?.4:1),end=C.start+(C.end-C.start)*q,v=clamp((rd?(rd.value??0):S.shown[i])/100),a=C.start+(C.end-C.start)*v,p=point(r,a);
+      if(q>0)out+=`<path d="${arcPath(r,C.start,Math.max(C.start+.001,end))}" fill="none" stroke="var(--track)" stroke-width="${stroke}" stroke-dasharray="${dash}" stroke-linecap="${rd?'butt':style.track==='dotted'?'round':'butt'}"/><path d="${arcPath(r,C.start,Math.max(C.start+.001,Math.min(end,a)))}" fill="none" stroke="var(--accent)" stroke-width="${stroke}" stroke-dasharray="${dash}" stroke-linecap="${rd?'butt':style.track==='dotted'?'round':'butt'}"/>`;
+      if(!rd)for(let detent=0;detent<=C.percent;detent+=C.detentStep){const a=C.start+(C.end-C.start)*detent/C.percent,u=point(r-C.markSize,a),v=point(r+C.markSize,a);out+=`<path d="M${u.x},${u.y} L${v.x},${v.y}" stroke="var(--text)" opacity="${q}"/>`;}
+      if(!rd&&style.knob!=='none')out+=style.knob==='bar'?`<rect x="${p.x-C.bar/2}" y="${p.y-stroke/2}" width="${C.bar}" height="${stroke}" fill="var(--accent)" opacity="${q}"/>`:`<circle cx="${p.x}" cy="${p.y}" r="${C.knob}" fill="var(--accent)" stroke="var(--ink)" stroke-width="${C.knobOutline+S.ticks[i]}" opacity="${q}"/>`;
+
     }
-    const slot=C.target/toggleRadius()*180/Math.PI;
-    if(S.pageMix<1)out+=toggleLayer(S.oldPage,1-S.pageMix,slot*S.pageMix);
-    out+=toggleLayer(S.page,S.pageMix,-slot*(1-S.pageMix));
-    out+=text(20,R-135,S.status.length>32?S.status.slice(0,30)+'…':S.status,11,'start','secondary');
-    out+=text(20,R-110,'On battery, 2 h 50 m',11,'start','secondary');
-    out+=text(20,R-53,'72%',50);
-    const cp=loc(20,R-46);
-    out+=`<rect x="${S.corner.includes('r')?cp.x-104:cp.x}" y="${S.corner.includes('t')?cp.y-48:cp.y}" width="104" height="48" rx="8" fill="var(--off)"/>`;
-    out+=text(28,R-16,'Balanced',13);
-    out+=text(R-45,R-20,S.page===0?'1 / 2':'2 / 2',11,'middle','secondary');
+    for(let i=0;i<C.maxRings;i++){
+      if(i===2&&S.missing)continue;
+      const d=devices[config.readouts[i]],caption=d?('Read only '+(d.connected?d.value+'%':'not connected')):['☀','♪','●'][i]+' '+names[i]+' '+S.values[i]+'%';
+      out+=text(C.labelInset,R-ringRadius(i)+C.band/2,caption,C.textInset);
+    }
+    out+=toggleLayer(0,1,0);
+    for(const [a,show] of [[C.start,S.arcOffset>0],[C.end,S.arcOffset<maxOffset()]])if(show){const p=point(toggleRadius(),a);out+=`<circle cx="${p.x}" cy="${p.y}" r="${C.target/2}" fill="var(--surface)" opacity=".65"/>`}
     out+='</g></g>';
   }
   // The invisible trigger remains a true radius-32 quarter disc.
-  if(S.opacity===0)out+=`<circle cx="${o.x}" cy="${o.y}" r="${C.trigger}" fill="var(--accent)" fill-opacity=".04"/>`;
+  if(S.opacity===0){
+    // Demo window that covers the corner, to show the icon above or behind windows.
+    const win=config.demoWindow?`<rect x="${S.corner.includes('r')?width-C.windowW:0}" y="${S.corner.includes('t')?0:height-C.windowH}" width="${C.windowW}" height="${C.windowH}" fill="var(--off)" stroke="var(--edge)"/>`:'';
+    const alpha=config.iconMode==='never'?0:config.iconMode==='always'?C.iconRest:C.iconRest*S.iconReveal;
+    const sx=S.corner.includes('r')?-1:1,sy=S.corner.includes('t')?-1:1,k=C.iconSize/16;
+    // The mark has no text, so mirroring it toward each corner is safe.
+    const icon=alpha>0?`<g opacity="${alpha}" transform="translate(${o.x} ${o.y}) scale(${sx*k} ${sy*k}) translate(${C.iconInset/k} ${-16-C.iconInset/k})" fill="none" stroke="var(--accent)" stroke-linecap="round">${ICON}</g>`:'';
+    out+=config.iconAbove?win+icon:icon+win;
+  }
   if(S.bubble>0&&S.bubblePoint&&S.opacity>0){
     let p=S.bubblePoint,dx=width/2-p.x,dy=height/2-p.y,d=Math.hypot(dx,dy)||1;
     const x=clamp(p.x+C.bubbleDistance*dx/d,C.clearance+30,width-C.clearance-30),y=clamp(p.y+C.bubbleDistance*dy/d,C.clearance+16,height-C.clearance-16);
-    out+=`<g opacity="${S.bubble}"><rect x="${x-30}" y="${y-16}" width="60" height="32" rx="16" fill="var(--accent)"/><text x="${x}" y="${y+5}" text-anchor="middle" fill="var(--ink)">${S.values[S.bubbleIndex]}%</text></g>`;
+    out+=`<g opacity="${S.bubble}"><rect x="${x-30}" y="${y-16}" width="60" height="32" rx="16" fill="var(--accent)"/><text x="${x}" y="${y+5}" text-anchor="middle" fill="var(--ink)">${S.values[S.bubbleIndex]}%${drag?.fine?" Fine":""}</text></g>`;
   }
   out+='</g>';svg.innerHTML=out;
+  const right=S.corner.includes('r'),top=S.corner.includes('t');
+  copy.style.display=S.opacity>0&&S.fanAlpha>0?'block':'none';copy.style.opacity=S.opacity*S.fanAlpha;
+  placeBox(copy,C.textInset,C.textInset,C.readoutWidth,C.readoutDepth);
+  copy.innerHTML=`<div style="font-size:${C.batteryFont}px;line-height:1">72%</div><p class="battery-line">On battery, 2 h 50 m</p><button style="min-height:${C.target}px;width:100%" id="profile-chip">Balanced</button>`;
+  copy.style.pointerEvents='auto';$('profile-chip').onclick=()=>enterDetail('Power profile');
+  statusBox.style.display=S.opacity>0&&S.fanAlpha>0?'block':'none';statusBox.style.opacity=S.opacity*S.fanAlpha;
+  placeBox(statusBox,C.textInset,C.statusDepth,C.statusShortWidth,C.textLine*2);
+  statusBox.style.padding='0';statusBox.style.border='0';statusBox.style.background='transparent';statusBox.textContent=S.status;
+  // Measure before choosing the readout priority. No clipping or ellipsis.
+  let long=statusBox.scrollHeight>C.textLine;
+  statusBox.style.pointerEvents='none';statusBox.onclick=null;
+  // Long status: the battery lines give way and the status takes their room above the chip.
+  if(long){placeBox(copy,C.textInset,C.textInset,C.readoutWidth,C.target);copy.querySelector('.battery-line').hidden=true;copy.firstElementChild.hidden=true;
+    placeBox(statusBox,C.textInset,C.textInset+C.target+C.textGap,C.statusLongWidth,C.textLine*C.statusLongLines);}
+  // Still too long for the corner: show it whole as a notice beside the fan, along the same screen edge. Never cut it.
+  if(long&&statusBox.scrollHeight>C.textLine*C.statusLongLines){
+    statusBox.style.height='auto';placeBox(statusBox,R+C.textGap,C.textInset,C.noticeWidth,0);statusBox.style.height='auto';
+    Object.assign(statusBox.style,{padding:'8px 12px',border:'1px solid var(--edge)',background:'var(--surface)',borderRadius:'10px'});
+    if(!S.corner.includes('t')){statusBox.style.top='';statusBox.style.bottom=C.textInset+'px'}}
   detail.style.width=R+'px';detail.style.height=R+'px';
   detail.style.left=(S.corner.includes('r')?width-R:0)+'px';
   detail.style.top=(S.corner.includes('t')?0:height-R)+'px';
@@ -198,9 +245,10 @@ function render(){
   detail.style.pointerEvents=S.state==='detail'?'auto':'none';
 }
 function openFan(stagger=true){
+  tracks.delete("arcOffset");S.arcOffset=0;
   clearTimeout(leaveTimer);clearTimeout(dwellTimer);prop('hint',0,C.hint);
   const fresh=S.state==='closed'||S.state==='hinting';
-  if(fresh){S.scale=C.scaleStart;S.opacity=0;S.rings.fill(0);S.morph=0;S.fanAlpha=1;S.detailAlpha=0;S.pageMix=1}
+  if(fresh){S.scale=C.scaleStart;S.opacity=0;S.rings.fill(0);S.morph=0;S.fanAlpha=1;S.detailAlpha=0}
   S.state='opening';
   if(!fresh){prop('morph',0,C.detail);prop('detailAlpha',0,C.detailOut);prop('fanAlpha',1,C.detailIn)}
   const remain=fresh?1:Math.max(1-S.opacity,(1-S.scale)/(1-C.scaleStart),...S.rings.map(q=>1-q));
@@ -211,6 +259,7 @@ function openFan(stagger=true){
 function closeFan(){
   if(drag){drag.dismiss=true;return}
   if(S.state==='closed')return;
+  const password=$('wifi-password');if(password)password.value='';
   S.state='closing';S.pushSuppressed=true;clearTimeout(idleTimer);clearTimeout(leaveTimer);
   for(let i=0;i<3;i++)tracks.delete('rings'+i);
   prop('bubble',0,C.bubble);
@@ -244,16 +293,26 @@ function toggle(id){
     render();
   },id===0?C.fakeSlow:id===1?C.fakeFailure:C.fakeFast);
 }
-function page(){
-  if(S.pageMix<1)return;
-  S.oldPage=S.page;S.page=1-S.page;S.pageMix=0;prop('pageMix',1,C.page);say(`Toggle page ${S.page+1}`);activity();
-}
 function buildDetail(){
-  const rows=S.detailKind==='Wi-Fi'?['Radio: on','Studio / connected','Workshop / saved','Guest / open','Private network / open stock settings']:
+  const rows=S.detailKind==='Wi-Fi'?['Radio: on',"Workshop very long wireless network 5G / connected",'Workshop / saved','Guest / open','Private network / secured']:
     S.detailKind==='Power profile'?['Saver','Balanced / selected','Performance']:
     S.detailKind==='Outputs'?['Speakers / selected','Headphones','USB audio','Mute output']:
     ['Internal display / selected','Brightness: 72%','Refresh rate','Scale','Display changes need confirm and revert'];
   detail.innerHTML='<div class="head"><button id="back" aria-label="Back">‹</button><h2>'+escapeText(S.detailKind)+'</h2></div>'+rows.map(t=>'<button class="row">'+escapeText(t)+'</button>').join('');
+  if(S.detailKind==='Outputs'){
+    detail.insertAdjacentHTML('beforeend','<h3>Playing apps</h3>'+['Spotify','Firefox','Call app'].map((name,i)=>`<label>${name}<input type="range" min="0" max="${C.percent}" value="${config.apps[i]}" data-app="${i}" aria-label="${name} volume"></label>`).join('')+'<button id="media-open">Media controls</button>');
+    detail.querySelectorAll('[data-app]').forEach(el=>el.oninput=()=>{config.apps[el.dataset.app]=Number(el.value);activity()});$('media-open').onclick=()=>enterDetail('Media');
+  }
+  if(S.detailKind==='Media')detail.innerHTML='<div class="head"><button id="back">‹</button><h2>Media</h2></div><p>Evening Signals</p><p>Demo artist / Spotify</p><label>Track progress<input type="range" aria-label="Track progress" value=""></label><button class="row">Previous</button><button class="row">Play / pause</button><button class="row">Next</button><button id="app-volumes">App volumes and output</button>';
+  if(S.detailKind==='Media'){detail.querySelector('[type=range]').value=C.demoProgress;$('app-volumes').onclick=()=>enterDetail('Outputs');}
+  if(S.detailKind==='Theme')detail.innerHTML='<div class="head"><button id="back">‹</button><h2>Themes (demo)</h2></div>'+[config.lightTheme,config.darkTheme,'Forest Ink','Warm Sand'].map((name,i)=>`<button data-theme-choice="${i}">${escapeText(name)}</button>`).join('');
+  detail.querySelectorAll('[data-theme-choice]').forEach(el=>el.onclick=()=>{const light=Number(el.dataset.themeChoice)%2===0;$('light').checked=light;theme(light);say('Theme: '+el.textContent+' (demo)')});
+  if(S.detailKind==='Status')detail.innerHTML='<div class="head"><button id="back">‹</button><h2>Status</h2></div><p>'+escapeText(S.status)+'</p>';
+  if(S.detailKind==='Wi-Fi'){
+    detail.insertAdjacentHTML('beforeend','<label><input id="demo-keyboard" type="checkbox" '+(config.keyboard?'checked':'')+'>Physical keyboard attached</label><p id="keyboard-note"></p><form id="wifi-form"><label>Password for Private network<input type="password" id="wifi-password" autocomplete="off"></label><button>Connect (demo)</button></form><button id="full-wifi">Open full Wi-Fi window</button>');
+    const keyboard=()=>{config.keyboard=$('demo-keyboard').checked;$('wifi-form').hidden=!config.keyboard;$('keyboard-note').textContent=config.keyboard?'Demo only. Nothing is sent or stored.':'No physical keyboard attached. The Z13 has no on-screen keyboard. Open the full window.'};keyboard();$('demo-keyboard').onchange=keyboard;
+    $('wifi-form').onsubmit=e=>{e.preventDefault();$('wifi-password').value='';say('Private network: connected (demo only)')};$('full-wifi').onclick=()=>say('Demo: open full Omarchy Wi-Fi window');
+  }
   $('back').onclick=back;
   for(const b of detail.querySelectorAll('.row'))b.onclick=()=>{say(b.textContent+' / demo only');activity()};
 }
@@ -261,9 +320,10 @@ function enterDetail(kind=$('kind').value){
   if(['closed','hinting','closing'].includes(S.state))openFan(false);
   S.state='detail';S.detailKind=kind;buildDetail();
   prop('morph',1,C.detail);prop('fanAlpha',0,C.detailOut);
-  prop('detailAlpha',1,C.detailIn,C.detailOut,()=>{if(S.state==='detail')$('back').focus()});say(kind+' detail');activity();
+  prop('detailAlpha',1,C.detailIn,C.detailOut,()=>{if(S.state==='detail')$('back').focus()});if(kind!=='Status')say(kind+' detail');activity();
 }
 function back(){
+  const password=$('wifi-password');if(password)password.value='';
   S.state='open';prop('morph',0,C.detail);prop('detailAlpha',0,C.detailOut);
   prop('fanAlpha',1,C.detailIn,C.detailOut);svg.focus();say('Back to dials');activity();
 }
@@ -276,17 +336,17 @@ function hit(p){
   for(let i=0;i<3;i++){
     if(i===2&&S.missing)continue;
     const label=loc(C.target/2,R-ringRadius(i)+22);
-    if(Math.abs(p.x-label.x)<C.target/2&&Math.abs(p.y-label.y)<C.target/2)return{type:'label',i};
+    if(Math.abs(p.x-label.x)<C.target/2&&Math.abs(p.y-label.y)<C.target/2)return{type:config.readouts[i]?'readout':'label',i};
   }
-  for(const [slot,id] of pageItems(S.page).entries()){
+  for(const [slot,id] of items().entries()){
     const pt=point(toggleRadius(),slotAngle(slot));
-    if(Math.hypot(p.x-pt.x,p.y-pt.y)<=C.target/2&&S.pageMix===1)return{type:'toggle',id};
+    if(Math.hypot(p.x-pt.x,p.y-pt.y)<=C.target/2&&slotAngle(slot)>=C.start+slotStep()/2&&slotAngle(slot)<=C.end-slotStep()/2)return{type:'toggle',id};
   }
   const profile=loc(72,R-24);
   if(Math.abs(p.x-profile.x)<52&&Math.abs(p.y-profile.y)<C.target/2)return{type:'profile'};
   if(z.a>=C.start-4&&z.a<=C.end+4){
     const i=[0,1,2].find(i=>!(i===2&&S.missing)&&Math.abs(z.d-ringRadius(i))<=C.band/2);
-    if(i!==undefined)return{type:'ring',i};
+    if(i!==undefined)return{type:config.readouts[i]?'readout':'ring',i};
   }
   if(Math.abs(z.d-toggleRadius())<C.target/2)return{type:'arc'};
   return{type:z.d>R?'outside':'surface'};
@@ -300,7 +360,7 @@ function setupHold(d){
   },C.holdStart);
   holdTimer=setTimeout(()=>{
     if(drag!==d)return;d.consumed=true;clearHold();
-    const kind=d.type==='label'?(d.i===0?'Displays':'Outputs'):(d.id===0?'Wi-Fi':d.id===1?'Wi-Fi':'Outputs');
+    const kind=d.type==='label'?(d.i===0?'Displays':d.i===1?'Media':'Outputs'):(d.id===0?'Wi-Fi':d.id===1?'Bluetooth':toggleNames[d.id]);
     enterDetail(kind);
   },C.hold);
 }
@@ -308,10 +368,10 @@ svg.tabIndex=0;
 svg.addEventListener('pointerdown',e=>{
   if(e.button!==0)return;playToken++;activity();clearTimeout(idleTimer);
   const p=pointer(e),h=hit(p);if(h.type==='outside'){closeFan();return}
-  drag={...h,start:p,last:p,time:performance.now(),moved:false,previousState:S.state};
+  drag={...h,start:p,last:p,time:performance.now(),moved:false,previousState:S.state,arcStart:S.arcOffset,angleStart:polar(p).a};
   svg.setPointerCapture(e.pointerId);
   if(h.type==='ring'){
-    drag.previous=S.values[h.i];tracks.delete('shown'+h.i);S.state='dragging';bubble(h.i,p);
+    drag.previous=S.values[h.i];drag.raw=S.values[h.i];drag.lastAngle=polar(p).a;drag.gain=1;tracks.delete('shown'+h.i);S.state='dragging';bubble(h.i,p);
   }else if(h.type==='corner'){
     if(['closed','hinting'].includes(S.state)){S.state='dragging';drag.openGesture=true}
   }else if(h.type==='label'||(h.type==='toggle'&&typeof h.id==='number')){
@@ -324,6 +384,10 @@ svg.addEventListener('pointermove',e=>{
   if(!drag){
     const z=canonical(p),inPush=z.x<=C.push&&z.y<=C.push;
     if(!inPush)S.pushSuppressed=false;
+    // onApproach: the icon shows only while the pointer is in the tap zone; it never opens by itself.
+    const inZone=polar(p).d<=C.trigger,want=config.iconMode==='onApproach'&&inZone&&S.state==='closed'?1:0;
+    if(want!==S.iconTarget){S.iconTarget=want;prop('iconReveal',want,C.iconReveal)}
+    if(config.iconMode==='onApproach'){}else
     if(['closed','hinting'].includes(S.state)&&inPush&&!e.buttons&&!S.pushSuppressed){
       if(S.state==='closed'){S.state='hinting';prop('hint',C.hintOpacity,C.hint);dwellTimer=setTimeout(()=>{if(S.state==='hinting'){S.pointerSession=true;openFan()}},C.dwell)}
     }else if(S.state==='hinting'){clearTimeout(dwellTimer);S.state='closed';prop('hint',0,C.hint)}
@@ -333,13 +397,21 @@ svg.addEventListener('pointermove',e=>{
     }return;
   }
   drag.last=p;const moved=Math.hypot(p.x-drag.start.x,p.y-drag.start.y);
-  if(moved>=C.cancelHold)clearHold();
+  if(moved>=(drag.type==='toggle'||drag.type==='arc'?C.drag:C.cancelHold))clearHold();
   if(moved>=C.drag)drag.moved=true;
   if(drag.consumed)return;
-  if(drag.type==='corner'&&drag.openGesture&&drag.moved){
+  if((drag.type==='toggle'||drag.type==='arc')&&drag.moved){
+    tracks.delete('arcOffset');S.state='dragging';S.arcOffset=clamp(drag.arcStart-(polar(p).a-drag.angleStart)/slotStep(),0,maxOffset());render();
+  }else if(drag.type==='corner'&&drag.openGesture&&drag.moved){
     const progress=clamp(polar(p).d/R);drag.progress=progress;S.opacity=progress;S.scale=C.scaleStart+(1-C.scaleStart)*progress;S.rings.fill(progress);render();
   }else if(drag.type==='ring'&&drag.moved){
-    const z=polar(p);value(drag.i,(z.a-C.start)/(C.end-C.start)*100,true);bubble(drag.i,p);
+    const z=polar(p),distance=z.d-ringRadius(drag.i),gain=config.fine?(distance>C.fineFar?C.finerGain:distance>C.fineNear?C.fineGain:1):1;
+    if(!drag.started){drag.raw=(z.a-C.start)/(C.end-C.start)*C.percent;drag.started=true;drag.lastAngle=z.a;}
+    if(gain===drag.gain)drag.raw=clamp(drag.raw+(z.a-drag.lastAngle)/(C.end-C.start)*C.percent*gain);
+    drag.lastAngle=z.a;drag.gain=gain;drag.fine=gain<1;
+    const detent=Math.round(drag.raw/C.detentStep)*C.detentStep,snapped=config.snap&&Math.abs(drag.raw-detent)<=C.snapWindow;
+    if(snapped&&drag.detent!==detent)tickMark(drag.i);drag.detent=snapped?detent:null;
+    value(drag.i,snapped?detent:drag.raw,true);bubble(drag.i,p);
   }
 });
 function release(e,cancel=false){
@@ -348,7 +420,7 @@ function release(e,cancel=false){
   if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);
   if(d.type==='toggle'&&typeof d.id==='number')arrayProp('presses',d.id,1,C.pressReturn);
   if(d.consumed){activity();return}
-  if(d.type==='corner'){
+  if((d.type==='toggle'||d.type==='arc')&&d.moved){S.state='open';scrollArc()}else if(d.type==='corner'){
     if(d.openGesture){
       if(cancel)closeFan();else if(performance.now()-d.time<=C.tap&&Math.hypot(d.last.x-d.start.x,d.last.y-d.start.y)<C.cancelHold&&polar(d.last).d<=C.trigger)openFan();else if(d.moved){if((d.progress||0)>C.openThreshold)openFan(false);else closeFan()}
       else if(performance.now()-d.time<=C.tap)openFan();else closeFan();
@@ -358,12 +430,13 @@ function release(e,cancel=false){
     else if(d.moved&&d.i===0)say('Brightness: '+S.values[0]+'%, committed on release');
     hideBubble();
   }else if(!cancel&&!d.moved){
-    if(d.type==='toggle'){if(typeof d.id==='number')toggle(d.id);else page()}
+    if(d.type==='toggle'){tapToggle(d.id)}
     if(d.type==='label'){
       bubble(d.i,d.last);hideBubble();if(d.i>0)S.muted[d.i]=!S.muted[d.i];say(d.i===0?'Brightness value':names[d.i]+(S.muted[d.i]?': muted':': unmuted'));
     }
+    if(d.type==='readout')readoutDetail(d.i);
     if(d.type==='profile')enterDetail('Power profile');
-  }else if(!cancel&&d.type==='arc'&&d.moved)page();
+  }
   if(d.dismiss)closeFan();activity();render();
 }
 svg.addEventListener('pointerup',e=>release(e));
@@ -376,23 +449,23 @@ svg.addEventListener('pointerleave',()=>{
 svg.addEventListener('wheel',e=>{
   const p=pointer(e),h=hit(p);if(h.type==='ring'){
     e.preventDefault();value(h.i,S.values[h.i]+(e.deltaY<0?1:-1)*(e.shiftKey?C.fineStep:C.step));bubble(h.i,p);hideBubble();activity();
-  }else if(h.type==='toggle'||h.type==='arc'){e.preventDefault();page()}
+  }else if(h.type==='toggle'||h.type==='arc'){e.preventDefault();scrollArc(e.deltaY>0?1:-1)}
 },{passive:false});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){e.preventDefault();playToken++;if(S.state==='detail')back();else closeFan();return}
   if(document.activeElement!==svg)return;
-  if(e.key==='Tab'){S.focus=(S.focus+(e.shiftKey?-1:1)+9)%9;say(S.focus<3?names[S.focus]+' focused':toggleNames[pageItems(S.page)[S.focus-3]]||'More focused');e.preventDefault();return}
+  if(e.key==='Tab'){S.focus=(S.focus+(e.shiftKey?-1:1)+9)%9;say(S.focus<3?names[S.focus]+' focused':toggleNames[items()[S.focus-3]]||'More focused');e.preventDefault();return}
   if(S.focus<3&&S.opacity>0){
-    const i=S.focus,step=e.shiftKey?C.fineStep:C.step;
+    const i=S.focus;if(config.readouts[i]){if(e.key==='Enter')readoutDetail(i);return}const step=e.shiftKey?C.fineStep:C.step;
     let v=S.values[i];
     if(['ArrowUp','ArrowRight'].includes(e.key))v+=step;
     else if(['ArrowDown','ArrowLeft'].includes(e.key))v-=step;
     else if(e.key==='PageUp')v+=25;else if(e.key==='PageDown')v-=25;
     else if(e.key==='Home')v=i===0?1:0;else if(e.key==='End')v=100;
-    else if(e.key==='Enter'&&e.shiftKey){enterDetail(i===0?'Displays':'Outputs');e.preventDefault();return}else return;
+    else if(e.key==='Enter'&&e.shiftKey){enterDetail(i===0?'Displays':i===1?'Media':'Outputs');e.preventDefault();return}else return;
     e.preventDefault();value(i,v);bubble(i,point(ringRadius(i),C.start+(C.end-C.start)*S.values[i]/100));hideBubble();activity();
   }else if(e.key==='Enter'||e.key===' '){
-    e.preventDefault();const id=pageItems(S.page)[S.focus-3];if(e.shiftKey)enterDetail();else if(typeof id==='number')toggle(id);else page();
+    e.preventDefault();const id=items()[S.focus-3];if(e.shiftKey)enterDetail();else if(typeof id==='number')tapToggle(id);
   }
 });
 function colourRGB(hex){return hex.match(/[a-f\d]{2}/gi).map(v=>parseInt(v,16))}
@@ -405,7 +478,7 @@ function theme(light){
       S.colours[key]=hex;document.documentElement.style.setProperty('--'+key,hex);
     },1,C.theme);
   }
-  document.documentElement.style.colorScheme=light?'light':'dark';
+
 }
 function reduced(on){
   S.reduced=on;
@@ -421,9 +494,9 @@ function resize(){
 }
 $('open').onclick=toggleFan;
 $('details').onclick=()=>{playToken++;enterDetail()};
-$('page').onclick=()=>{playToken++;if(S.opacity===0)openFan();page()};
+
 $('external').onclick=()=>{playToken++;if(S.opacity===0)openFan();value(1,(S.values[1]+C.step)%101);activity()};
-$('settings').onclick=()=>say('Open question: six arc slots leave no extra 48 px gear slot. Recommendation: put gear in the readout.');
+$('settings').onclick=()=>{$('settings-panel').hidden=!$('settings-panel').hidden};
 $('corner').onchange=()=>{
   playToken++;if(drag){clearHold();drag=null}S.corner=$('corner').value;render();
   const vp=$('viewport');vp.scrollLeft=S.corner.includes('r')?stage.clientWidth:0;vp.scrollTop=S.corner.includes('t')?0:stage.clientHeight;
@@ -444,13 +517,21 @@ async function storyboard(){
     say('Dragging: pointer owns the knob, no easing.');
     const start=performance.now(),from=S.values[1];
     while(performance.now()-start<C.storyboardDrag){
-      const p=clamp((performance.now()-start)/C.storyboardDrag);value(1,from+(100-from)*p,true);bubble(1,point(ringRadius(1),C.start+(C.end-C.start)*S.values[1]/100));await pause(16);
+      const p=clamp((performance.now()-start)/C.storyboardDrag);value(1,from+(100-from)*p,true);bubble(1,point(ringRadius(1),C.start+(C.end-C.start)*S.values[1]/100));await pause(C.frame);
     }
     value(1,100,true);tickMark(1,true);hideBubble();await pause(C.storyboardPause);
     say('A stepped value: one local tick.');tickMark(2);await pause(C.storyboardPause);
     toggle(0);await pause(C.fakeSlow+C.storyboardPause);
     toggle(1);await pause(C.fakeFailure+visual(C.fill)+C.storyboardPause);
-    page();await pause(C.page+C.storyboardPause,true);
+    scrollArc(1);say('Arc scroll: direct capture, then nearest slot snap.');await pause(C.snap+C.storyboardPause,true);
+    drag={type:'ring',i:1,fine:true};
+    const fineFrom=S.values[1];
+    value(1,fineFrom-C.detentStep*C.fineGain,true);bubble(1,point(ringRadius(1)+C.fineFar,C.end));
+    say('Fine: outward clutch, reduced angle gain.');await pause(C.storyboardPause);
+    drag=null;value(1,C.detentStep*2,true);tickMark(1);hideBubble();await pause(C.storyboardPause);
+    enterDetail('Outputs');await pause(C.detail+C.storyboardHold);
+    enterDetail('Media');await pause(C.storyboardHold);
+    enterDetail('Theme');await pause(C.storyboardHold);
     enterDetail('Wi-Fi');await pause(C.detail,true);await pause(C.storyboardHold);
     back();await pause(C.detail+C.storyboardPause,true);
     value(1,65);await pause(C.value+C.storyboardPause,true);
@@ -460,6 +541,20 @@ async function storyboard(){
 }
 $('play').onclick=()=>{if($('play').textContent.startsWith('Playing')){playToken++;$('play').textContent='Play storyboard';activity()}else storyboard()};
 new ResizeObserver(resize).observe(stage);
+function settingsPanel(){
+  const panel=$('settings-panel');panel.innerHTML='<h2>Settings (live demo)</h2><fieldset id="toggle-config"><legend>Toggle order and visibility</legend></fieldset><label>Wi-Fi tap <select id="wifi-action"><option value="switchRadio">Switch radio</option><option value="quickDetail">Quick Wi-Fi detail</option><option value="fullWindow">Full Omarchy Wi-Fi window</option></select></label><fieldset id="ring-config"><legend>Ring styles and readouts (M: three total, choose a readout to replace a slider)</legend></fieldset><button id="stress">Long text stress</button>';
+  panel.insertAdjacentHTML('beforeend','<fieldset id="round3-settings"><legend>Corner and extras</legend><label>Corner icon <select id="icon-mode"><option value="always">Always</option><option value="onApproach">On approach</option><option value="never">Never</option></select></label><label><input id="icon-above" type="checkbox">Icon above windows</label><label><input id="demo-window" type="checkbox">Demo: a window covers the corner</label><p>The tap zone always works, in every mode.</p><label><input id="snap-on" type="checkbox">Magnetic snap</label><label><input id="fine-on" type="checkbox">Outward fine control</label><label>Light theme<input id="light-name"></label><label>Dark theme<input id="dark-name"></label><p>Order changes only here. Scroll resets on open.</p></fieldset>');
+  $('icon-mode').value=config.iconMode;$('icon-mode').onchange=()=>{config.iconMode=$('icon-mode').value;render()};
+  for(const [id,key] of [['icon-above','iconAbove'],['demo-window','demoWindow']]){$(id).checked=config[key];$(id).onchange=()=>{config[key]=$(id).checked;render()}}
+  for(const [id,key] of [['snap-on','snap'],['fine-on','fine']]){$(id).checked=config[key];$(id).onchange=()=>config[key]=$(id).checked;}
+  for(const [id,key] of [['light-name','lightTheme'],['dark-name','darkTheme']]){$(id).value=config[key];$(id).onchange=()=>config[key]=$(id).value;}
+  for(const key of Object.keys(config.game)){const label=document.createElement('label');label.textContent='Game mode: '+key;const input=document.createElement('input');input.type='checkbox';input.checked=config.game[key];input.onchange=()=>config.game[key]=input.checked;label.prepend(input);$('round3-settings').append(label);}
+  for(const id of config.toggles){const row=document.createElement('div');row.className='config-row';row.innerHTML=`<label><input type="checkbox" ${config.enabled.has(id)?'checked':''}>${toggleNames[id]}</label><button>Up</button><button>Down</button>`;row.querySelector('input').onchange=e=>{if(e.target.checked)config.enabled.add(id);else config.enabled.delete(id);S.arcOffset=clamp(S.arcOffset,0,maxOffset());render()};row.querySelectorAll('button').forEach((b,j)=>b.onclick=()=>{const at=config.toggles.indexOf(id),to=clamp(at+(j?1:-1),0,config.toggles.length-1);[config.toggles[at],config.toggles[to]]=[config.toggles[to],config.toggles[at]];settingsPanel();render()});$('toggle-config').append(row)}
+  $('wifi-action').value=config.wifiTap;$('wifi-action').onchange=e=>config.wifiTap=e.target.value;
+  for(const target of ['All',0,1,2]){const row=document.createElement('div');row.className='config-row';row.append(document.createTextNode(target==='All'?'All rings':names[target]));for(const [key,options] of Object.entries({track:['solid','dashed','dotted','segmented'],knob:['round','bar','none'],thickness:['thin','normal','bold']})){const select=document.createElement('select');select.setAttribute('aria-label',target+' '+key);select.innerHTML=options.map(v=>`<option>${v}</option>`).join('');select.value=config.styles[target==='All'?0:target][key];select.onchange=()=>{for(const i of target==='All'?[0,1,2]:[target])config.styles[i][key]=select.value;render()};row.append(select)}if(target!=='All'){const select=document.createElement('select');select.setAttribute('aria-label',names[target]+' source');select.innerHTML='<option value="">Slider</option>'+Object.entries(devices).map(([id,d])=>`<option value="${id}">${d.label} ${d.connected?d.value+'%':'not connected'}</option>`).join('');select.value=config.readouts[target]||'';select.onchange=()=>{config.readouts[target]=select.value||null;render()};row.append(select)}$('ring-config').append(row)}
+  $('stress').onclick=()=>{if(!S.opacity)openFan();say("Workshop very long wireless network 5G · WH-1000XM5 headphones with a very long translated device name");enterDetail('Wi-Fi')};
+}
+settingsPanel();
 resize();
 $('viewport').scrollTop=stage.clientHeight;
 </script>

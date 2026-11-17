@@ -35,25 +35,31 @@ The trigger zone is a layer input mask, and a mask cannot tell touch from mouse.
 
 From the outside in, around the corner origin:
 
-- **Dial rings.** Each ring is a 4 px track in a 44 px band. The ring listed first in settings is the outermost. A level label (icon and number) sits at the ring's start, on the side edge.
+- **Dial rings.** Each ring defaults to a 4 px track in a 44 px band. The ring listed first in settings is the outermost. A level label (icon and number) sits at the ring's start, on the side edge.
 - **Toggle arc.** Round toggles, 40 px drawn, 48 px hit area, pitch 48 px along the arc.
 - **Corner readout.** Large battery %, "On battery, 2 h 50 m", and a 48 px power profile chip.
 - **Status line.** Above the readout, names the last touched control ("Wi-Fi: on, HomeNet"). Replaces hover tips.
-- **Settings gear.** 48 px, at the end of the toggle arc.
+- **Settings gear.** Separate 48 px target in the readout; never consumes an arc slot.
 
 Every arc sweeps 6 to 84 degrees, inset so no target touches a bezel.
 
 **Capacity.** Radius R is S 300, M 380 (default), L 460, capped at 45% of the output's shorter side so portrait works. Toggles that fit = floor(r_toggle x 1.36 rad / 48).
 
-| Size | Dials | Toggle arc radius | Toggles per page |
+| Size | Dials | Toggle arc radius | Visible toggle slots |
 |---|---|---|---|
 | S | 2 | 180 | 5 |
 | M | 3 | 216 | 6 |
 | L | 4 | 252 | 7 |
 
-**Overflow.** Dials have a hard cap per size; settings refuse more and suggest a larger size (rings cannot page: a swipe across rings is a drag). Extra toggles go to page 2: the last slot becomes "more" with a page dot; wheel or a swipe along the arc also pages. A second arc would crowd the readout, and a flick-scroll on a thin arc misfires.
+**Overflow.** Rings, including readouts, have a hard cap: S 2, M 3, L 4. Settings refuse extra rings with a size hint. Toggles form one ordered scrollable strip on the arc. Press and slide after 6 px, following tangential finger travel 1:1 without inertia. Movement at 6 px cancels hold. Release snaps to the nearest slot over 160 ms using the shared E curve, without overshoot. Wheel scrolls one slot. Theme-only end fades indicate remaining items. No More slot, pages or page dots.
 
-**Drill-down.** Long-press a toggle or a dial label (or Shift+Enter) and the quarter disc morphs into a rounded square of R x R anchored to the same corner. Header with back button and name, then 48 px rows (6 at M before scrolling).
+**Text geometry.** Geometry returns a reserved box for status, battery line, dial labels, toggle names in details, detail rows and readout labels. Text wraps inside that box, never truncates, never uses ellipsis, and never overlaps another box or target. Minimum font size is 12 px. Status has up to two lines. Rows grow with wrapped text above their 48 px minimum. If measured text still cannot fit, layout gives way: the battery line hides, then the large number yields; unfit full text opens a scrollable status detail inside the corner. No font shrinking below 12 px. Support 32-byte SSIDs, long Bluetooth names and translations 1.4 times longer.
+
+**Ring settings.** Global style defaults and per-ring overrides: track solid, dashed, dotted or segmented (ticks at steps); knob round, bar or none; thickness thin 2 px, normal 4 px or bold 6 px. All stay inside the 44 px band with 48 px touch targets and theme roles only.
+
+**Readout rings.** Existing kind `readout`, no knob, flat end caps and an explicit read-only label. Tap opens related detail; drag, wheel and adjustment keys never write. Choices: selected Bluetooth device battery, Wi-Fi signal, laptop battery and UPower pen battery. A disconnected device stays dimmed with "not connected", value null, never a fake 0%. All count toward the ring cap.
+
+**Drill-down.** Long-press a toggle or a dial label (or Shift+Enter) and the quarter disc morphs into a rounded square of R x R anchored to the same corner. Header with back button and name, then rows at least 48 px tall. Rows wrap and grow; scroll when their measured heights exceed the detail.
 
 | From | Detail |
 |---|---|
@@ -84,7 +90,7 @@ Still open: replace the bar's audio, network and power widgets, or sit beside th
 - Arrows change the focused dial by 5% (Shift 1%). Page Up and Page Down change it by 25%. Home and End set the floor and 100.
 - Enter or Space toggles. Shift+Enter or the Menu key opens the detail. Escape goes back from a detail, then closes.
 
-**Toggles.** Tap flips. Long-press (450 ms, a fill ring grows from 150 ms, 10 px of movement cancels) opens the detail. A pending outline shows until the read-back confirms; on failure the old state stays and the status line says why.
+**Toggles.** Settings choose tap and hold actions from each control's closed catalog set. Defaults: tap switches, hold opens quick detail. Wi-Fi supports switchRadio, quickDetail and fullWindow for either action. Long-press is 450 ms, with a fill ring from 150 ms; 6 px movement cancels hold and starts arc scroll. A pending outline shows until the read-back confirms; on failure the old state stays and the status line says why.
 
 **Value bubble** (feedback in place of haptics). During a drag or scroll a pill shows the value 56 px from the contact point, toward the screen center, clear of the thumb. It fades 600 ms after the last change.
 
@@ -93,6 +99,10 @@ Still open: replace the bar's audio, network and power widgets, or sit beside th
 - Never color alone: on is filled, off is outlined, muted has a slashed icon. Text follows `Style.font`.
 
 ## 5. Corners, monitors, rotation
+
+- **Corner choice.** Settings pick the corner (bottom-left default) with a live preview.
+- **Corner icon.** A small mark shows where omadials lives. Default: the omadials icon, one colour from the theme accent, 28 px, 4 px from both edges, 70% opacity. It mirrors toward its corner (it has no text). `cornerIcon.mode` is a closed set: `always`, `onApproach` (hidden until the pointer enters the 32 px tap zone, fades in over 80 ms, a click opens; push-to-open is off in this mode), `never`. `cornerIcon.aboveWindows`: on, the icon floats over windows; off, it sits behind windows and shows only on an empty desktop. `cornerIcon.source`: `default`, an icon theme name, or a local SVG or PNG file (read only, size limited, validated; invalid falls back to default and is reported).
+- **The tap zone always works.** In every icon mode, and with the icon behind a window, the 32 px zone stays above windows and a tap opens. Only the icon moves. The reveal area is the tap zone itself, never larger, because a layer mask that sees the pointer also catches clicks (spike S3). The icon hides over fullscreen windows and on the lock screen, like the zone.
 
 - All 4 corners mirror the geometry (`x -> width - x`, `y -> height - y`). List order runs from the side edge toward the top or bottom edge.
 - One fan at a time. A corner trigger opens on its own output; keybind and IPC on the focused output. Trigger outputs: all (default), focused, or a named list. Unplugging the output closes the fan.
@@ -143,7 +153,7 @@ Durations go through `Style.duration(ms)` with `Style.easeOut`.
 | External value change | Knob glides 120 ms. During a drag it tracks 1:1. |
 | Toggle press | Scale 0.92 in 80 ms, fill cross-fades 120 ms. |
 | Drill-down | Disc to square morph, 200 ms. |
-| Page change | Toggles slide along the arc, 160 ms. |
+| Arc release | Nearest slot snap, 160 ms, shared E, no overshoot. |
 
 **Reduced motion** (`Style.reduceMotion`, set when Hyprland animations are off): everything snaps; the pending outline is a static dashed ring.
 
@@ -160,8 +170,8 @@ A shell `panel` (`platform.md` 7a), opened from the gear or IPC. It writes `~/.c
 
 **Controls page.**
 - Rows: 48 px drag handle, up and down buttons (keyboard, and touch without dragging), enable switch, name, options chevron.
-- A counter shows "6 of 6 fit at M" and marks page 2 items. Missing hardware is greyed: "Not found on this machine".
-- Per-control options: wheel step, brightness monitor, default detail.
+- A counter shows "6 of 6 fit at M" and shows the visible slot count and scrollable total. Missing hardware is greyed: "Not found on this machine".
+- Per-control options: wheel step, brightness monitor, tapAction and holdAction from the control catalog, ring style and readout device picker.
 
 **Live preview.** The right half draws the real corner component at 60% scale; "Show on screen" opens the real fan.
 
@@ -184,7 +194,7 @@ Open corner, bottom-left, size M:
 |  Wi-Fi: on, HomeNet  (moon)    |        o
 |              (dnd)    |         |        |
 |  On battery, 2 h 50 m  (cup)   |        |
-|  72%      [Balanced]   (more) (gear)    |
+|  72%      [Balanced]   (next) (gear)    |
 +-----------------------------------------+--
 ```
 
@@ -213,7 +223,7 @@ Settings window:
 |  = [x] Volume       ^ v  >       |   .--.                    |
 |  = [x] Mic          ^ v  >       |   |   `.                  |
 |  = [ ] Kbd light    ^ v  >       |   | o  \                  |
-| Toggles (6 of 6, 2 on page 2)    |   +-----+                 |
+| Toggles (6 of 6, 2 off arc)    |   +-----+                 |
 |  = [x] Wi-Fi        ^ v  >       |                           |
 |  = [x] Bluetooth    ^ v  >       |   [Show on screen]        |
 |  = [ ] GPU mode  Not found here  |                           |
@@ -234,7 +244,7 @@ Settings window:
 9. A drag that drifts into another band keeps adjusting the first ring.
 10. Brightness never goes below 1%; volume never above 100.
 11. Every target measures 48 px or more; every ring band 44 px or more.
-12. Long-press at 450 ms opens the detail, and 10 px of movement cancels it.
+12. Long-press at 450 ms opens the detail, and 6 px of toggle movement cancels it.
 13. The value bubble is never under the contact point.
 14. Tab reaches every control in the documented order; arrows, Page keys, Home and End work.
 15. A screen reader reads names and values on the layer surface (verify by hand).
@@ -242,7 +252,29 @@ Settings window:
 17. A live switch White to Tokyo Night to Flexoki Light recolors with no reload and passes the contrast rules.
 18. No hard-coded color exists in QML (grep for `#` color literals outside tests).
 19. With animations off, open, close and drill-down are instant.
-20. Enabling a 7th toggle at M creates page 2; enabling a 4th dial at M is refused with a size hint.
+20. Enabling a 7th toggle at M makes it reachable by arc scroll; a 4th ring at M is refused with a size hint.
 21. Missing hardware hides its control in the corner and greys it in settings.
 22. Settings changes show in the preview and in the open corner within 1 s.
 23. Reset all, then Undo, restores the old config exactly.
+
+
+## Round 2 acceptance (continues experience.md)
+
+41. In all four corners, test all text boxes together with a 32-byte SSID, "Felipe's very long home network 5G", a 64-character Bluetooth name, and labels expanded to 1.4x. No clipping, ellipsis, overlap or font below 12 px. Status is at most two lines; longer status displaces the battery line inside the toggle arc; text exceeding two lines opens the full status detail. Detail rows grow and remain scrollable.
+42. At 5 px a toggle can still tap or hold; at 6 px hold cancels and arc scroll owns capture. At 449 ms no hold action; at 450 ms one hold action, release never taps. Drag tracks tangential distance 1:1, snaps in 160 ms with E, wheel moves one slot, end fades match available direction. Repeat at both ends, all corners, touch, mouse, reduced and slow motion.
+43. Toggle enable/order and every allowed tap/hold action apply live. Unknown actions report validation errors. Wi-Fi quick detail supports inline connect; no keyboard shows a reason and full-window action. S7 must prove no credential in argv or logs before real secured connections ship.
+44. Exercise every track, knob and thickness globally and per ring. Bands remain 44 px, targets 48 px, theme-only colours; dash changes update shader uniforms without path rebuilds.
+45. Selected readouts show real source values or explicit unknown/not connected. No knob or drag writes; tap opens related detail. Adding a readout at the cap is refused with a size hint.
+
+Round 2 changes: replaces page overflow and More with arc scroll, moves gear into a separate readout target, replaces fixed tap/hold behavior with catalog actions, adds measured wrapping boxes and fallback rows, configurable styles and capped readout rings. Secured Wi-Fi remains inline as intended, with the S7 security gate.
+
+
+## Round 3 acceptance
+
+46. In every corner, normal drag has no easing. Cross outward 22 and 66 px to get 0.25 and 0.1 gain. The Fine bubble shows. Return across both thresholds with no value jump. Pointer capture keeps the original ring.
+47. Marks show 0/25/50/75/100. Snap within 2 points, escape using the unsnapped draft, one visual tick per detent entry. Disable snap in settings. Brightness still floors at 1%. No haptics.
+48. Usage never reorders rings or toggles. Settings alone changes order. Close and reopen after scrolling: the first toggle is visible.
+49. Volume detail lists playing apps with separate named sliders and the output picker. Removing a stream removes its row safely. Holding Volume opens Media; Shift+Enter follows the same path. Media detail shows title, progress and previous/play/next with 48 px targets.
+50. Game mode applies only selected runtime options. Off, logout and shell restart restore exact typed baseline values. Failed partial applies roll back. S8 gates release.
+51. Theme tap alternates the configured light/dark pair. Hold opens the theme picker. Only a successful stock command read-back confirms the selection. S9 gates release.
+52. At M in bl/br/tl/tr, long Wi-Fi status stays inside the toggle arc, wraps to at most two lines, and displaces battery copy. Battery number and 48 px power chip return for short status. No ellipsis or text under 12 px. Larger text yields to full status detail.

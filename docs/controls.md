@@ -68,7 +68,7 @@ Tags: [verified Z13] = a read command was run here. [from source] = read in `/us
 
 ### Wi-Fi radio and network list
 - Read [verified Z13]: `nmcli radio` shows `WIFI enabled`; `nmcli -t -f SSID,SIGNAL,IN-USE dev wifi list` lists networks (one in use). Quickshell 0.3.2 has `Quickshell.Networking` [verified Z13 on disk, API not exercised].
-- Write: `nmcli radio wifi on|off` [from source of research table, untested]. Connect to a saved network: `nmcli con up <name>`; a new secured network needs a password, so open the stock panel instead (`detailsTarget`).
+- Write: `nmcli radio wifi on|off` [from source of research table, untested]. Connect to a saved network: `nmcli con up <name>`; a new secured network uses the quick detail password field through a secure stdin flow, UNVERIFIED S7 in architecture.md. Never put passwords in argv. Without a keyboard offer the stock panel.
 - Detection: `nmcli -t -f TYPE dev` contains `wifi` [verified Z13: `wlp194s0`]. If NetworkManager is absent (Omarchy may use iwd on some builds), `Quickshell.Networking` or `iwctl` is the fallback [untested].
 
 ### Bluetooth power and devices
@@ -159,3 +159,28 @@ Rules:
 3. A failed read makes `available` false, never a plausible default. Show "unknown", not 0.
 4. Dangerous writes (touchscreen off, display off, charge limit, GPU mode) need a confirm and a lockout guard.
 5. A group with no hardware (battery on a desktop) disappears whole.
+
+
+## Round 2 readout ring sources
+
+All use existing kind `readout`, ring placement, null for unknown/disconnected, no writes or knob, flat caps and read-only labels. Tap opens related detail. Selected device identity is configurable and preserved when disconnected.
+
+| Readout | Value source | Parameter and events | Verification |
+|---|---|---|---|
+| Bluetooth headset battery | UPower device percentage, matched to chosen Bluetooth device | deviceAddress; Bluetooth connection events and UPower device changes | UNVERIFIED: device-address mapping and headset battery support on this machine |
+| Wi-Fi signal | `nmcli -t -f SSID,SIGNAL,IN-USE dev wifi list` or Quickshell.Networking signal | selected interface (auto default); Networking updates, bounded open-only fallback refresh | CLI list previously verified; Quickshell signal property and mapping UNVERIFIED |
+| Laptop battery | Quickshell UPower displayDevice percentage | display device; UPower events | Earlier UPower CLI read verified; live QML binding UNVERIFIED |
+| Pen battery | UPower devices percentage for selected stylus | devicePath; UPower events | Device enumeration previously verified; unknown-state mapping UNVERIFIED |
+
+A disconnected device says "not connected", never 0%. An attached device without battery telemetry says "unknown". Do not interpret the earlier pen 0% sample as a reliable empty battery without a known state. No new machine commands were run for this design round.
+
+
+## Round 3 service contracts
+
+Per-app volume: use `Quickshell.Services.Pipewire` nodes for playing output streams, track each with PwObjectTracker, read and write its audio.volume. Keep node identity rather than app name as the row key; several streams from one app get distinct rows. Filter out devices and capture streams. Keep the output picker using the stock device helper described above. API filtering and stream lifetime handling remain UNVERIFIED on the Z13.
+
+Media: `Quickshell.Services.Mpris` supplies players, title, artist, playback state, position, length and supported actions. Detail exposes previous, play/pause and next only when supported. Seek only when supported. Unknown length is explicit, never a fake zero. Prefer the playing player; keep an explicit selection until it disappears. Live Mpris binding is UNVERIFIED.
+
+Game mode: read exact typed runtime option values, journal before writes, apply only selected allowlisted options, restore on off/logout/shell death. See architecture S8, UNVERIFIED. Never change config files.
+
+Theme: use Omarchy's own `omarchy-theme-set` with one validated installed theme argument, then read back the active theme. See S9, UNVERIFIED. Prototype names and actions are fake.

@@ -3,7 +3,7 @@
 Status: design only, no plugin code yet (2026-11-17). Inputs: [research.md](research.md), [references.md](references.md),
 [platform.md](platform.md), [controls.md](controls.md), [ux.md](ux.md), [engineering-standards.md](engineering-standards.md),
 plus the house patterns in `omahop/docs/architecture.md`, `omahop/docs/file-contract.md` and `OmaBarConfigurator/docs/architecture.md`.
-Claims nobody has checked on the machine are marked UNVERIFIED and point at a spike (S1 to S6, section 13).
+Claims nobody has checked on the machine are marked UNVERIFIED and point at a spike (S1 to S7, section 13).
 
 ## 1. Goals and non-goals
 
@@ -29,7 +29,7 @@ Claims nobody has checked on the machine are marked UNVERIFIED and point at a sp
 | Invalid config | platform.md section 5, standards: "fall back, log once" | Report, skip, show (this brief): default at runtime, listed in the settings banner, warning dot on the gear, one journal line. The file is untouched until the user edits that field. |
 | Control interface | controls.md: boolean `available`, 4 kinds | Superseded by section 4: closed `availability` set and a fifth kind, `stepped`. |
 | Keyboard light | research.md step 1: a toggle. controls.md: a stepped dial | Kind `stepped`, placeable on a ring (snaps) or on the toggle arc (tap goes to the next level). |
-| Wi-Fi password | ux.md section 3: inline. controls.md: stock panel | Inline only for open and saved networks; a new secured one opens the stock panel. A password in `nmcli` argv is readable in `/proc`, and the Z13 has no on-screen keyboard. |
+| Wi-Fi password | ux.md section 3: inline. controls.md: stock panel | Quick detail includes inline password entry. UNVERIFIED S7: use `nmcli --ask` with credentials fed through process stdin, never argv, shell interpolation, journal, config or diagnostics. Without a physical keyboard show a reason and offer the stock network window. |
 | Ring tolerance, trigger | references.md: 28 px, 12 px zone, 120 ms | ux.md wins: 44 px band, 32 px tap zone, 2 px pointer corner, 150 ms push. |
 | Off state colour | references.md table: "muted" alpha | ux.md section 6 wins: never `muted` for text or off states. |
 | Idle cost | standards: zero idle cost | The trigger zone is a static mask, no timer. Polls, processes, file watches and streams run only while open. Quickshell services are already live in the shell. |
@@ -57,7 +57,7 @@ Claims nobody has checked on the machine are marked UNVERIFIED and point at a sp
                       |                                     |
   +-------------------v--------------------+   +------------+------+
   | View models: vm/FanModel.qml           |   | theme/Theme.qml   |
-  |  rings, toggle pages, readout, status  |   | sole reader of    |
+  |  rings, toggle strip, readout, status  |   | sole reader of    |
   +-------------------+--------------------+   | Commons.*         |
                       |                        +---------+---------+
   +-------------------v--------------------+             |
@@ -144,8 +144,8 @@ All files are `.pragma library`, have no Qt calls, have no cross-imports, and st
 |---|---|
 | `Geometry.js` | `toCanonical` and `fromCanonical` (4-corner mirroring, positions only, never a negative scale; references.md, Mirroring), `polar(x, y, H)`, `angleToFraction` over the 6 to 84 degree sweep, `fractionToAngle`, `ringRadii(R, n)`, `hitRing(d, radii, band)`, `knobPos`, `arcSlots(r, pitch)`, `capacity(size, shortSide)` (R = S 300, M 380, L 460, clamped to 45% of the short side; toggles = floor(r x 1.36 / 48); ux.md section 3), `bubblePos` (56 px toward the screen centre). |
 | `ValueMap.js` | Native value, fraction and angle conversions. Stepped snapping. `floor`. The over-cap case. Wheel steps (5%, 1% with Shift, pixel deltas into whole steps). Keyboard steps (5, 1, 25, Home, End). |
-| `Gesture.js` | Reducer for tap, drag-open (past 40%), 6 px drag start, ring lock, long press (450 ms, fill from 150 ms, 10 px cancels), push dwell. Every threshold is a named constant from ux.md sections 2 and 4. |
-| `Layout.js` | Config, catalog, availability and capacity in; rings outer to inner, toggle pages with the "more" slot, readout, over-capacity errors out. |
+| `Gesture.js` | Reducer for tap, drag-open (past 40%), 6 px drag start, ring lock, long press (450 ms, fill from 150 ms, 6 px cancels toggle hold, 10 px dial label hold), push dwell. Every threshold is a named constant from ux.md sections 2 and 4. |
+| `Layout.js` | Config, catalog, availability and capacity in; rings outer to inner, toggle strip offset and scroll bounds, readout, over-capacity errors out. |
 | `ConfigSchema.js` | `DEFAULTS` (the one place), `LIMITS`, closed enums, `validate(obj, catalog)` to `{config, errors}`, `patch(text, path, value)`, which keeps unknown keys. |
 | `ConfigMigrate.js` | Ordered pure steps `vN -> vN+1`. |
 | `CommandMachine.js` | Command backend reducer (section 4). |
@@ -155,7 +155,7 @@ Test runner: house style, `node` with no npm packages. `test/load.mjs` strips `.
 
 ## 6. Config contract
 
-Path `~/.config/omadials/config.json` (platform.md section 5, option B). Full v1 with defaults:
+Path `~/.config/omadials/config.json` (platform.md section 5, option B). Draft v1 with defaults (not frozen until v0.5):
 
 ```json
 {
@@ -164,14 +164,20 @@ Path `~/.config/omadials/config.json` (platform.md section 5, option B). Full v1
   "size": "M",
   "outputs": { "mode": "all", "names": [] },
   "trigger": { "tapZone": true, "pushDelayMs": 150 },
+  "cornerIcon": { "mode": "always", "aboveWindows": true, "source": "default" },
   "behavior": { "idleTimeoutS": 10, "closeOnPointerLeave": true },
+  "ringStyle": { "track": "solid", "knob": "round", "thickness": "normal" },
+  "readoutRings": [
+    { "id": "headphones", "kind": "readout", "source": "bluetoothBattery", "deviceAddress": "AA:BB:CC:DD:EE:FF", "enabled": false, "order": 2 },
+    { "id": "signal", "kind": "readout", "source": "wifiSignal", "interface": "auto", "enabled": false, "order": 3 }
+  ],
   "dials": [
     { "id": "brightness", "enabled": true },
     { "id": "volume", "enabled": true },
     { "id": "mic", "enabled": true }
   ],
   "toggles": [
-    { "id": "wifi", "enabled": true },
+    { "id": "wifi", "enabled": true, "tapAction": "switchRadio", "holdAction": "quickDetail" },
     { "id": "bluetooth", "enabled": true },
     { "id": "nightlight", "enabled": true },
     { "id": "dnd", "enabled": true },
@@ -224,7 +230,7 @@ Size budget: QML at most 150 lines (hard cap 200, standards); JS at most 250. Ch
 | `views/FanSurface.qml` | Quarter-disc and detail-square shape (80) |
 | `views/RingStack.qml`, `Ring.qml`, `Knob.qml` | Track and fill drawing, one knob (60 to 90 each) |
 | `views/RingInput.qml` | Press, drag, wheel, keys on the rings (130) |
-| `views/ToggleArc.qml`, `ToggleButton.qml` | Paged arc, one toggle with long press fill (100 each) |
+| `views/ToggleArc.qml`, `ToggleButton.qml` | Scrollable arc, one toggle with long press fill (100 each) |
 | `views/Readout.qml`, `ProfileChip.qml`, `StatusLine.qml`, `ValueBubble.qml` | Corner texts and feedback (60 to 90 each) |
 | `views/DetailHost.qml`, `DetailRows.qml` | Loader for the detail, generic row list (90 each) |
 | `views/ConfirmRevert.qml` | Confirm plus revert countdown (section 10) (80) |
@@ -347,8 +353,8 @@ Every milestone is shippable from the public repo. "Z13" means a live hand test 
 |---|---|---|
 | v0.1 Corner | Logic modules with tests, ConfigStore (read only, defaults), runner, registry, bottom-left M fan, 3 dials, 6 toggles, readout, IPC, keybind docs. Spikes S1 singleton, S2 FileView on a created file, S3 mask regions switching closed and open | `run-all.sh` green, validate passes. Z13: acceptance 2, 4, 8, 9, 10, 17, 18 |
 | v0.2 Touch | Tap and drag-open, push dwell, long press, value bubble, status line, keyboard order, accessibility, reduced motion. S4: screen reader on a layer surface | Z13: acceptance 1, 3, 5, 6, 7, 11 to 15, 19 |
-| v0.3 Settings | Panel, all 4 corners, 3 sizes, paging, outputs, problems banner, Undo, preview | Z13: 16, 20 to 23, portrait rotation |
-| v0.4 Details | Wi-Fi rows (open and saved inline, secured to the stock panel), Bluetooth, audio devices, power profile, brightness per monitor | Contract tests per detail. Z13: each detail by hand |
+| v0.3 Settings | Panel, all 4 corners, 3 sizes, arc scrolling, outputs, problems banner, Undo, preview | Z13: 16, 20 to 23, portrait rotation |
+| v0.4 Details | Wi-Fi rows and secured inline connect (S7), keyboard fallback, Bluetooth, audio devices, power profile, brightness per monitor | Contract tests per detail. Z13: each detail by hand |
 | v0.5 Extras | Keyboard light, charge limit, pen battery, touchpad, touchscreen guard, airplane restore, recording, refresh and scale with revert (S5). Schema v1 frozen, `docs/file-contract.md` | Z13: every guard in section 11 tried by hand |
 | v0.6 Listing | README with written-files list, preview, marketplace notes, validate commit | Marketplace issue filed |
 | v0.7 App | Standalone `omadials-settings` (C++/Qt Quick, qmake), reuses logic JS, fixtures pass | App edits apply live to the plugin. Z13: theme switch in the app |
@@ -362,4 +368,35 @@ Every milestone is shippable from the public repo. "Z13" means a live hand test 
 | 2 | Replace the bar's audio, network and power widgets, or sit beside them (open since research.md) | Sit beside. Removing stock widgets is the user's choice and OmaBar already does it. |
 | 3 | Volume above 100% | Default cap 100, setting up to 150, truthful display above the cap (section 2). |
 | 4 | `bar-widget` kind | Leave out. With it, install prompts for a bar section and places an entry (OmaBar section 6), which breaks "installing changes nothing you can see". Tap, keybind and IPC cover it; revisit on request. |
+| 6 | Thinner readout bands for more rings? | Keep 44 px bands, 48 px targets and S 2 / M 3 / L 4 cap. Thin strokes do not make more touch room. |
 | 5 | Default toggle set at M | Wi-Fi, Bluetooth, night light, DND, keep awake, keyboard light (research.md step 1). Airplane, touchpad, touchscreen and recording are available but off by default. |
+
+
+### Round 2 contract additions (sections 4 and 6)
+
+Catalog exposes closed `tapActions` and `holdActions` per control. Wi-Fi: `switchRadio | quickDetail | fullWindow`; Bluetooth: `switchPower | quickDetail | fullWindow`; stepped keyboard light: `nextStep | quickDetail`; other boolean toggles: `switch | quickDetail`. Both action fields use the respective control set. Defaults are the first action for tap and quickDetail for hold. These are identifiers resolved in backend code, never commands in config.
+
+Toggle array order is display order; enabled controls alone form the scrollable strip. Every toggle stores tapAction and holdAction. Ring array order is outer to inner. During the draft period, dials and readoutRings merge by explicit `order` (add order to each dial when mixing); duplicate positions report duplicate_control, never reorder silently. A ring may override `style: {track, knob, thickness}`; omitted fields inherit ringStyle. Track is `solid | dashed | dotted | segmented`, knob `round | bar | none`, thickness `thin | normal | bold` mapping to 2/4/6 px. Readouts force no knob by contract: a non-none explicit override is a reported wrong_placement error. Render dash patterns as shader uniforms.
+
+readoutRings source is `bluetoothBattery | wifiSignal | laptopBattery | penBattery`. Bluetooth requires deviceAddress; pen requires devicePath from UPower; Wi-Fi interface is auto or a detected interface; laptop uses UPower display device. Selected source identity persists across disconnects. Extend ControlBase with `connected` bool and `parameter` validated catalog data. Disconnected selected readout remains visible, dimmed with value null and valueText "not connected"; unknown value stays null with "unknown". This is a specific exception to missing-hardware slot removal. Tap opens related detail; set/drag/wheel are unsupported. Geometry reserves label rectangles and wrapping row heights per ux.md. Combined dial/readout cap is S 2, M 3, L 4.
+
+Validation reports unknown values and incompatible fields in the problems banner, keeps the original file and never silently fixes it. Settings expose all fields above. Schema remains draft until v0.5.
+
+### S7, secured Wi-Fi stdin spike (v0.4 exit gate)
+
+UNVERIFIED. Prototype is simulation only. Verify Quickshell Process stdin lifecycle with `nmcli --ask` for a new secured network, successful connect, wrong password, cancellation, timeout and device removal. Password must never enter argv, environment, config, logs or error text. Use fixed argv with network identity as a separate argument, feed only the credential to stdin after the expected prompt, close stdin and clear the input on completion/cancel. Audit process argv and diagnostic paths without recording the secret. If stdin prompting cannot be made reliable, spike a NetworkManager secret-agent API instead. Do not ship real inline credentials until verified. No physical keyboard: explain that the Z13 has no on-screen keyboard and offer the full stock network window.
+
+Section 14 open question: should readouts use thinner bands to fit more? Recommendation: keep the same 44 px band, 48 px target and ring cap for now. A thinner stroke is already supported; it does not create more safe touch capacity.
+
+
+## Round 3 config and recovery
+
+Draft config adds `dialInteraction: {snap: true, snapWindowPercent: 2, fineEnabled: true, fineDistancesPx: [22,66], fineGains: [0.25,0.1]}`, `toggleScroll: "resetOnOpen"`, `themePair: {light: "Paper Light", dark: "Midnight"}`, and `gameMode: {animations: false, blur: false, shadows: false, gapsIn: 0, gapsOut: 0}`. Theme names in the prototype are fake; real choices come from installed themes. Distances are increasing nonnegative numbers, gains are greater than zero and at most one, snap window is 0 to 2. Game fields are optional typed allowlisted options, never commands. Theme ids must match installed entries. Settings expose snap, fine enable, the theme pair, game option selection and values. Media is an optional toggle and a volume detail action. Per-app sliders are transient Pipewire node state, never persisted.
+
+Only settings changes order. Reset scroll on open. FanModel owns the continuous unsnapped draft, last angle and fine gain. Geometry supplies the inside-fan reserved boxes. Gain changes rebase before integrating. Snap is presentation plus the submitted value, not a mutation of the continuous draft.
+
+S8 game runtime writes, UNVERIFIED: confirm the installed Hyprland runtime read/write API and exact typed read-back for animations, blur, shadows and both gap values. Do not assume keyword syntax on a Lua-config build. Before any write, atomically persist a versioned restore journal under `~/.local/state/omadials/game-restore.json`, with compositor instance id, baseline and intended values. Apply serially and read back. On partial failure restore all changed values. Off restores the baseline exactly, verifies, then deletes the journal. A shell-independent user-session recovery helper watches shell exit and logout, restores before compositor exit when possible, and shares a lock with the writer. On restart, recover the journal before allowing new writes. Same compositor: restore before accepting input; new compositor: discard old runtime journal because runtime overrides died with it. Unknown instance or failed restore leaves a visible recovery error, journal intact and game mode disabled. Never edit Hyprland config. Spike must test forced shell death, logout, partial writes and concurrent external option changes. Baseline restoration intentionally replaces external changes to options owned during game mode.
+
+S9 theme command, UNVERIFIED: verify installed `omarchy-theme-set <installed-name>` via fixed argv, read-back, errors and event propagation. No source or machine checks were run. Tap selects the opposite configured theme (if neither is active, choose dark); hold lists installed themes. Never write theme files directly.
+
+Written-files inventory additionally includes the game restore journal. Recovery is the narrow exception to closed-state inactivity: it runs only while a restore journal exists.

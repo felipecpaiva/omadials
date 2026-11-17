@@ -86,10 +86,11 @@ code { font:13px var(--display) }
 .loop li, .limits li { margin:4px 0 }
 @media (max-width:600px) { .row { grid-template-columns:1fr } }
 @media (prefers-reduced-motion: reduce) { * { transition:none !important } }
+#settings-panel {color:var(--fg);background:var(--panel);padding:16px;border:1px solid var(--line);border-radius:10px;margin-top:4px;flex-basis:100%;max-height:300px;overflow:auto} #settings-panel fieldset {border:1px solid var(--line);margin:12px 0;display:flex;flex-wrap:wrap;gap:8px} #settings-panel .config-row {display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%} #settings-panel input:not([type="checkbox"]) {font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);min-height:40px;max-width:100%} #detail input {width:100%;min-height:48px;font:inherit;background:var(--off);color:var(--text)} #detail button,#detail h2 {overflow-wrap:anywhere;white-space:normal} #stage .fan-copy {position:absolute;pointer-events:none;font-size:12px;line-height:18px;overflow-wrap:anywhere;color:var(--text)} #stage .fan-copy p {margin:0;color:inherit} #stage .status-box {position:absolute;pointer-events:none;box-sizing:border-box;padding:8px 12px;background:var(--surface);border:1px solid var(--edge);font:12px/18px system-ui;overflow-wrap:anywhere;color:var(--text)}
 </style>
 
 <div class="wrap">
-  <div class="eyebrow">Design round 1 · 2026-11-17</div>
+  <div class="eyebrow">Design round 3 · 2026-11-17</div>
   <h1>oma<span>dials</span> experience review</h1>
   <p class="lede">Quick settings as you drag or tap from a screen corner. Play with the corner below, then go through the goal board. Every number in the simulation comes from <code>docs/experience.md</code>.</p>
 
@@ -102,9 +103,9 @@ code { font:13px var(--display) }
       <label><input id="light" type="checkbox">Light Omarchy theme</label>
     </div>
     <div class="bar">
-      <label>Detail <select id="kind"><option>Wi-Fi</option><option>Outputs</option><option>Displays</option></select></label>
-      <button id="details">Open detail</button><button id="page">Toggle page</button><button id="external">Volume key +5</button>
-      <label><input id="missing" type="checkbox">Mic unavailable</label><button id="settings">Where is the gear?</button>
+      <label>Detail <select id="kind"><option>Wi-Fi</option><option>Outputs</option><option>Displays</option><option>Media</option><option>Theme</option></select></label>
+      <button id="details">Open detail</button><button id="external">Volume key +5</button>
+      <label><input id="missing" type="checkbox">Mic unavailable</label><button id="settings">Settings</button><section id="settings-panel" hidden></section>
     </div>
     <p class="how">Tap the faint dot in the corner to open, or press there and drag outward. Drag a ring to change it; a tap alone never changes a value. Tap Wi-Fi for a slow command and Bluetooth for a failure. Hold a toggle or a dial label for its detail. Escape goes back, then closes.</p>
     <div class="viewport" id="viewport">
@@ -147,6 +148,24 @@ code { font:13px var(--display) }
 <script>
 // Goal board data. Status: ok = decided in the docs, call = needs the maintainer, hw = only a Z13 test can settle it.
 const AREAS = [
+ {name:'Round 3',note:'Decided interactions, simulated here. Hardware gates stay open.',rows:[
+ ['ok','Outward fine control','22 px: 0.25 gain. 66 px: 0.1 gain. Angle deltas, no jump on return.','','ux.md 46'],
+ ['ok','Visible detents and optional snap','0, 25, 50, 75, 100. Attraction within 2 points, visual tick only.','','ux.md 47'],
+ ['ok','Stable order and reset on open','Only settings changes order. Each open starts at the first toggle.','','ux.md 48'],
+ ['ok','Per-app volume and output picker','Playing streams have independent sliders.','','ux.md 49'],
+ ['ok','Media fits in a detail','Hold Volume or tap Media. Keeps all three dial slots.','','experience.md fit study'],
+ ['ok','Game mode restores the exact baseline','Runtime options only. Journal and independent recovery helper.','','ux.md 50'],
+ ['ok','Theme tap pair and hold picker','Two installed themes chosen in settings.','','ux.md 51'],
+ ['ok','Inside-fan text priority','Long status displaces battery copy. Upright text in every corner.','','ux.md 52'],
+ ['ok','Ring styles, actions and readouts','Global and per-ring styles, configured Wi-Fi action and selected readout sources.','','ux.md 43 to 45'],
+ ['hw','S8 game mode runtime writes','Verify typed writes, exact restore, shell death and logout.','','architecture.md S8'],
+ ['hw','S9 stock theme command','Verify installed command, read-back and theme events.','','architecture.md S9'],
+ ['hw','Pipewire app streams and Mpris','Verify node filtering, lifetime and supported transport actions.','','controls.md'],
+ ['ok','Corner icon: always, on approach, or never','Default is the omadials icon in the theme accent, 28 px, 70% opacity. On approach shows it only when the pointer reaches the corner.','','ux.md 5'],
+  ['ok','Icon above or behind windows','Behind windows it shows only on an empty desktop. Try the demo window in Settings.','','ux.md 5'],
+  ['ok','The tap zone always works','Even with the icon hidden or covered. Only the icon moves.','','ux.md 5'],
+  ['call','Custom corner icons','A local SVG or PNG file, or an icon theme name.','Allow both, read only, size limited, and fall back to the default icon with a warning.','ux.md 5'],
+ ]},
  { name:'Opening from the corner', note:'It grows out of the corner and never jumps.', rows:[
   ['ok','Tap the 32 px corner zone to open','Press and release within 400 ms, under 10 px of movement.','','ux.md 2'],
   ['ok','Drag outward to open','The fan follows the finger. Released past 40% it opens, else it closes.','','ux.md 2, experience.md'],
@@ -169,13 +188,14 @@ const AREAS = [
   ['ok','Press shrinks to 0.92 in 80 ms','The 48 px hit area never shrinks.','','experience.md'],
   ['ok','Slow command shows a moving dashed ring','Only that toggle waits. Everything else still works.','','experience.md'],
   ['ok','A failure rolls back in 120 ms with a reason','No shake. No silent retry.','','experience.md'],
-  ['call','Default toggles at size M','Six slots fit on the arc.','Wi-Fi, Bluetooth, night light, do not disturb, keep awake, keyboard light.','architecture.md decision 5'],
-  ['call','Where the settings gear goes','Six 48 px slots fill the arc. There is no room left for a gear.','Put the gear in the readout, beside the power chip.','experience.md open questions'],
+  ['ok','Default toggles at size M','Six slots fit on the arc.','Wi-Fi, Bluetooth, night light, do not disturb, keep awake, keyboard light.','architecture.md decision 5'],
+  ['ok','Settings placement','Round 2 reserves the arc for scrolling toggles.','Separate readout target; demo settings are outside the stage.','experience.md open questions'],
  ]},
  { name:'Pages and details', note:'Details open inside the corner, never in a new window.', rows:[
-  ['ok','Toggle pages slide one slot in 160 ms','A 7th toggle at M makes page 2.','','ux.md 3, experience.md'],
+  ['ok','Toggle arc snaps one slot in 160 ms','Extra toggles scroll along the arc with press and slide or wheel.','','ux.md 3, experience.md'],
   ['ok','Hold 450 ms to open a detail','The quarter circle morphs to a rounded square in 200 ms.','','ux.md acceptance 12'],
-  ['ok','A new secured Wi-Fi opens the stock panel','A password in a command line is visible to other programs.','','architecture.md'],
+  ['ok','Secured Wi-Fi uses inline detail with keyboard fallback','No keyboard offers the full stock window.','','architecture.md S7'],
+  ['hw','S7 Wi-Fi password via stdin','Prove success, failure, cancel and no secret in argv or logs.','','architecture.md S7'],
  ]},
  { name:'Closing and interruptions', note:'Never jump. Reverse from where it is.', rows:[
   ['ok','Close in 120 ms, scaling to 0.8','Outside tap, Escape, corner tap, keybind, workspace switch, 10 s idle.','','ux.md 2, experience.md'],
