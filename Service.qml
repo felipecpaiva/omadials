@@ -34,6 +34,18 @@ Item {
     onSettingsRequested: root.openSettings()
   }
 
+  // Leave smoothly when the desktop moves under the corner: a workspace switch (3 finger swipe), a special
+  // workspace, or another overview opening (Mission Control on 4 fingers). Uses the normal 120 ms close.
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+      if (!fanModel.open) return
+      const n = event.name
+      if (n === "workspacev2" || n === "activespecialv2" || (n === "openlayer" && /mission-control|overview|expo/.test(event.data)))
+        fanModel.close()
+    }
+  }
+
   function openSettings() { if (root.shell) root.shell.summon("io.github.felipecpaiva.omadials", "{}") }
   function showFan() { fanModel.show(false) }
   function focusedScreen() {
