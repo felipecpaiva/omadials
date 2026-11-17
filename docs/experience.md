@@ -248,8 +248,8 @@ Closed is no longer an empty corner when the icon is on. `cornerIcon.mode` (ux.m
 
 | Mode | Closed look | Pointer enters the 32 px zone | Opens by |
 |---|---|---|---|
-| `always` | Icon at 70% opacity | No change; push dwell and hint arc as before | Tap, click, push dwell, keybind, IPC |
-| `onApproach` | Nothing | Icon fades 0 to 70% in 80 ms, E; fades out in 80 ms on leave. Replaces the hint arc. Push dwell is off | Tap, click, keybind, IPC |
+| `always` | Corner tab visible | No change; push dwell and hint arc as before | Tap, click, push dwell, keybind, IPC |
+| `onApproach` | Nothing | Tab fades 0 to 1 in 80 ms, E; fades out in 80 ms on leave. Replaces the hint arc. Push dwell is off | Tap, click, keybind, IPC |
 | `never` | Nothing | Hint arc and push dwell as before | Tap, click, push dwell, keybind, IPC |
 
 On open the icon fades out with the hint timing (80 ms) while the fan enters; on close it returns after the close completes. `aboveWindows: false` moves only the icon behind windows; the tap zone stays above them. Reduced motion shows and hides the icon instantly.

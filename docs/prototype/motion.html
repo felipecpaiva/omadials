@@ -58,7 +58,7 @@ const C = Object.freeze({
   fakeSlow:1500, fakeFailure:900, fakeFast:450, step:5, fineStep:1,
   ease:[.23,1,.32,1], circleK:.55228475,
   demoApps:[65,40,80], demoProgress:40, fineNear:22, fineFar:66, fineGain:.25, finerGain:.1, detentStep:25, snapWindow:2, batteryFont:40, statusWidth:176, statusDepth:124, statusShortWidth:100, readoutWidth:136, readoutDepth:112, labelInset:4, markSize:4, percent:100,
-  textWidth:220, textInset:12,iconSize:28,iconInset:4,iconRest:.7,iconReveal:80,windowW:300,windowH:220,textGap:8,statusLongWidth:124,statusLongLines:4,noticeWidth:260, statusHeight:54, textLine:18, labelWidth:96, labelHeight:40, thin:2, normal:4, bold:6, dash:10, gap:6, dot:1, segment:18, bar:12, maxRings:3, fadeSlots:.6,
+  textWidth:220, textInset:12,labelOffset:14,labelPad:10,tabRadius:42,tabArcs:[16,24,32],tabFill:[.3,.55,.8],iconSize:28,iconInset:4,iconRest:.7,iconReveal:80,windowW:300,windowH:220,textGap:8,statusLongWidth:124,statusLongLines:4,noticeWidth:260, statusHeight:54, textLine:18, labelWidth:96, labelHeight:40, thin:2, normal:4, bold:6, dash:10, gap:6, dot:1, segment:18, bar:12, maxRings:3, fadeSlots:.6,
   storyboardPause:650, storyboardDrag:850, storyboardHold:1100
 });
 const PALETTES = {
@@ -194,7 +194,10 @@ function render(){
     for(let i=0;i<C.maxRings;i++){
       if(i===2&&S.missing)continue;
       const d=devices[config.readouts[i]],caption=d?('Read only '+(d.connected?d.value+'%':'not connected')):['☀','♪','●'][i]+' '+names[i]+' '+S.values[i]+'%';
-      out+=text(C.labelInset,R-ringRadius(i)+C.band/2,caption,C.textInset);
+      // Label follows the ring, on its corner side. The path always runs left to right so glyphs stay upright.
+      const rl=ringRadius(i)-C.labelOffset,a1=point(rl,C.start),a2=point(rl,C.end),m=point(rl,(C.start+C.end)/2);
+      const [p1,p2]=a1.x<a2.x?[a1,a2]:[a2,a1],sw=((m.x-p1.x)*(p2.y-m.y)-(m.y-p1.y)*(p2.x-m.x))>0?1:0,left=!S.corner.includes('r');
+      out+=`<path id="lbl${i}" d="M${p1.x},${p1.y} A${rl},${rl} 0 0 ${sw} ${p2.x},${p2.y}" fill="none"/><text font-size="${C.textInset}" fill="var(--text)" opacity="${S.rings[i]}" dominant-baseline="middle"><textPath href="#lbl${i}" startOffset="${left?C.labelPad:'calc(100% - '+C.labelPad+'px)'}" text-anchor="${left?'start':'end'}">${escapeText(caption)}</textPath></text>`;
     }
     out+=toggleLayer(0,1,0);
     for(const [a,show] of [[C.start,S.arcOffset>0],[C.end,S.arcOffset<maxOffset()]])if(show){const p=point(toggleRadius(),a);out+=`<circle cx="${p.x}" cy="${p.y}" r="${C.target/2}" fill="var(--surface)" opacity=".65"/>`}
@@ -204,10 +207,12 @@ function render(){
   if(S.opacity===0){
     // Demo window that covers the corner, to show the icon above or behind windows.
     const win=config.demoWindow?`<rect x="${S.corner.includes('r')?width-C.windowW:0}" y="${S.corner.includes('t')?0:height-C.windowH}" width="${C.windowW}" height="${C.windowH}" fill="var(--off)" stroke="var(--edge)"/>`:'';
-    const alpha=config.iconMode==='never'?0:config.iconMode==='always'?C.iconRest:C.iconRest*S.iconReveal;
-    const sx=S.corner.includes('r')?-1:1,sy=S.corner.includes('t')?-1:1,k=C.iconSize/16;
-    // The mark has no text, so mirroring it toward each corner is safe.
-    const icon=alpha>0?`<g opacity="${alpha}" transform="translate(${o.x} ${o.y}) scale(${sx*k} ${sy*k}) translate(${C.iconInset/k} ${-16-C.iconInset/k})" fill="none" stroke="var(--accent)" stroke-linecap="round">${ICON}</g>`:'';
+    const alpha=config.iconMode==='never'?0:config.iconMode==='always'?1:S.iconReveal;
+    // Default corner mark: a small quarter tab with a mini dial, the closed shape of the fan itself.
+    const tab=C.tabRadius,t0=point(0,0),tA=point(tab,0),tB=point(tab,90),sweepTab=(S.corner.includes('r')!==S.corner.includes('t'))?0:1;
+    const mini=C.tabArcs.map((r,k)=>{const a0=C.start+6,a1=C.end-6,f=a0+(a1-a0)*C.tabFill[k];
+      return `<path d="${arcPath(r,a0,a1)}" stroke="var(--track)" stroke-width="2.5" stroke-linecap="round"/><path d="${arcPath(r,a0,f)}" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>`}).join('');
+    const icon=alpha>0?`<g opacity="${alpha}" fill="none"><path d="M${t0.x},${t0.y} L${tA.x},${tA.y} A${tab},${tab} 0 0 ${sweepTab} ${tB.x},${tB.y} Z" fill="var(--surface)" stroke="var(--edge)"/>${mini}</g>`:'';
     out+=config.iconAbove?win+icon:icon+win;
   }
   if(S.bubble>0&&S.bubblePoint&&S.opacity>0){
