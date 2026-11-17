@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "directions": 3,
+  "required_files_per_direction": 13,
+  "svg_renders": 28,
+  "text_files_scanned": 48,
+  "contrast": "All accents >= 3:1 on graphite; all deep variants >= 4.5:1 on paper",
+  "raster_dimensions": "passed",
+  "masters": "path-only icons; eight outlined glyphs per wordmark",
+  "dash_scan": "passed"
+}

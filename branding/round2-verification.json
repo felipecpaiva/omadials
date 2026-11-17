@@ -1,0 +1,22 @@
+{
+  "v1b-track": {
+    "required_files": 13,
+    "sizes_checked": [
+      16,
+      32,
+      512
+    ],
+    "svg_rendering": "passed",
+    "visual_review": "Opposing fills and displaced knobs read as controls. No primary RSS or Wi-Fi reading at 16 px; frame is stronger."
+  },
+  "v1c-frame": {
+    "required_files": 13,
+    "sizes_checked": [
+      16,
+      32,
+      512
+    ],
+    "svg_rendering": "passed",
+    "visual_review": "Opposing fills and displaced knobs read as controls. No primary RSS or Wi-Fi reading at 16 px; frame is stronger."
+  }
+}

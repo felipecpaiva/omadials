@@ -1,0 +1,20 @@
+{
+  "v1-quadrant": {
+    "accent": "#ff8c78",
+    "on_graphite": 7.843018266562124,
+    "deep": "#a83e2c",
+    "on_paper": 5.581993178181227
+  },
+  "v2-knob": {
+    "accent": "#52d9e8",
+    "on_graphite": 10.527733070563324,
+    "deep": "#006b78",
+    "on_paper": 5.608617945937723
+  },
+  "v3-monogram": {
+    "accent": "#c2a0ff",
+    "on_graphite": 8.25886467744277,
+    "deep": "#7041ac",
+    "on_paper": 6.223770102872801
+  }
+}
