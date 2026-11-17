@@ -48,9 +48,9 @@ Item {
     model: root.text.length
     Text {
       required property int index
-      readonly property var glyph: root.layout.glyphs[index]
+      readonly property var glyph: root.layout.glyphs[index] || ({center: 0, line: 0})  // text and layout update in two steps
       readonly property real glyphRadius: root.pathGeometry.radius-glyph.line*(root.size+2)
-      readonly property real along: root.rightCorner ? root.layout.totals[glyph.line]-glyph.center : glyph.center
+      readonly property real along: root.rightCorner ? (root.layout.totals[glyph.line] || 0)-glyph.center : glyph.center
       readonly property real angle: root.startAngle + (root.pad + along) * Geometry.DEGREES/Math.PI/Math.max(1,glyphRadius)
       readonly property var p: Geometry.fromCanonical(Geometry.knobPos(glyphRadius, angle, root.screenHeight), root.screenWidth, root.screenHeight, root.corner)
       text: root.text[index]
