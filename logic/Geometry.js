@@ -90,6 +90,14 @@ function detailRows(R,heights,width,height,corner) {
     const rows=heights.map(function(h){const row={x:left+DETAIL_INSET,y:y,width:R-DETAIL_INSET-DETAIL_INSET,height:Math.max(TARGET,h)};y+=row.height;return row;});
     return {rows:rows,contentHeight:y-top+DETAIL_INSET,scrollable:y+DETAIL_INSET>top+R};
 }
+// Qt PathAngleArc angles: 0 points right, positive turns clockwise on screen. Our angle a is measured from the side edge.
+const QT_BASE=Object.freeze({'bottom-left':[-90,1],'bottom-right':[-90,-1],'top-left':[90,-1],'top-right':[90,1]});
+function qtArc(a0,a1,corner) {
+    const b=QT_BASE[corner];
+    if (!b) throw new Error('Unknown corner');
+    return {start:b[0]+b[1]*a0,sweep:b[1]*(a1-a0)};
+}
+
 function batteryLineBox(width,height,corner) {
     const bounds=textBoxes(width,height,corner).readout;
     return {x:bounds.x,y:corner.indexOf('top')>=0 ? bounds.y+TARGET : height-TEXT_INSET-TARGET-TEXT_LINE,width:READOUT_WIDTH,height:TEXT_LINE};

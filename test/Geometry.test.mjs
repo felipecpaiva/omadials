@@ -52,3 +52,12 @@ test('label reservations and growing detail rows stay upright in every corner an
         assert.equal(G.batteryLineBox(1800,1200,corner).height,18);
     }
 });
+// The Qt arc for a ring angle points the same way as knobPos in every corner.
+test('qtArc matches knobPos in all corners',()=>{
+    const W=1600,H=1000,r=200;
+    for(const corner of G.CORNERS)for(const a of [3,45,87]){
+        const q=G.qtArc(a,a,corner).start*Math.PI/180, o=G.fromCanonical({x:0,y:H},W,H,corner);
+        const p=G.fromCanonical(G.knobPos(r,a,H),W,H,corner);
+        near(o.x+r*Math.cos(q),p.x); near(o.y+r*Math.sin(q),p.y);
+    }
+});
