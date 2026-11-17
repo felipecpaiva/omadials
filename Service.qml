@@ -12,25 +12,25 @@ Item {
   property string omarchyPath: ""
   property var shell: null
 
-  Theme { id: theme }
-  Volume.Control { id: volume }
-  FanModel { id: fan; rings: [volume] }
+  Theme { id: omadialsTheme }
+  Volume.Control { id: volumeControl }
+  FanModel { id: fanModel; rings: [volumeControl] }
 
   Variants {
     model: Quickshell.screens
     CornerWindow {
       required property var modelData
       screen: modelData
-      theme: theme
-      model: fan
+      theme: omadialsTheme
+      model: fanModel
     }
   }
 
   ShellIpc {
     target: "omadials"
-    function open(): string { fan.show(true); return "ok" }
-    function close(): string { fan.close(); return "ok" }
-    function toggle(): string { if (fan.open) fan.close(); else fan.show(true); return "ok" }
-    function status(): string { return JSON.stringify({ version: "0.1.0", open: fan.open, volume: volume.percent }) }
+    function open(): string { fanModel.show(true); return "ok" }
+    function close(): string { fanModel.close(); return "ok" }
+    function toggle(): string { if (fanModel.open) fanModel.close(); else fanModel.show(true); return "ok" }
+    function status(): string { return JSON.stringify({ version: "0.1.0", open: fanModel.open, volume: volumeControl.percent }) }
   }
 }
