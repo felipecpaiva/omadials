@@ -28,10 +28,6 @@ ColumnLayout {
         Label { text: qsTr("Maximum: %1 %").arg(page.store.config.options.volume.maxPercent); color: page.theme.secondary; font.pixelSize: 12 }
     }
     SettingsCard {
-        theme: page.theme; title: qsTr("Theme toggle")
-        ThemeChoices { store: page.store; theme: page.theme }
-    }
-    SettingsCard {
         theme: page.theme; title: qsTr("Game mode")
         Label { text: qsTr("When game mode is on, turn off:"); wrapMode: Text.WordWrap; Layout.fillWidth: true }
         Repeater {

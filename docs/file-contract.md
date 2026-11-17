@@ -182,7 +182,7 @@ The following is the complete default file. Object keys are fixed except the cat
     },
     {
       "id": "theme",
-      "tapAction": "togglePair",
+      "tapAction": "quickDetail",
       "holdAction": "quickDetail"
     },
     {
@@ -268,7 +268,7 @@ The following is the complete default file. Object keys are fixed except the cat
 | dialInteraction.snapWindowPercent | Number 0 to 2 |
 | dialInteraction.fineDistancesPx | Exactly two finite nonnegative numbers in increasing order |
 | dialInteraction.fineGains | Exactly two finite numbers greater than 0 and at most 1 |
-| themePair.light, themePair.dark | Empty string or an installed theme id |
+| themePair.light, themePair.dark | Deprecated 2026-11-17, kept so old files load. Empty string or an installed theme id |
 | gameMode.gapsIn, gameMode.gapsOut | Finite nonnegative numbers |
 
 All other literal booleans retain boolean type. No additional constraints apply to the remaining literal fields. Unknown keys are reported, preserved in the source text and excluded from the runtime config. Validation errors are {path, code, message}; codes: parse_error, newer_version, wrong_type, out_of_range, unknown_value, unknown_control, duplicate_control, wrong_placement, over_capacity. Disk failures additionally report io_error.
@@ -279,7 +279,7 @@ All three lists default as above. Each entry is an object. Ids are strings, uniq
 
 Dials accept only id, order and optional style. An omitted style inherits ringStyle; a supplied partial style fills from ringStyle. Readout rings additionally require source, one of bluetoothBattery, wifiSignal, laptopBattery, penBattery. Bluetooth requires deviceAddress (six colon-separated hexadecimal octets); pen requires devicePath starting /org/freedesktop/UPower/devices/; Wi-Fi interface defaults to auto and must be nonempty. Device fields are strings, cannot contain placeholders with <, and fields belonging to a different source are rejected. Readout ids are independent of source ids.
 
-Toggles accept only id, tapAction and holdAction. Both actions are strings validated against the corresponding catalog action list, with schema fallback actions switch and quickDetail. Tap defaults to the first schema action; hold defaults to quickDetail. Special schema sets are wifi: switchRadio/quickDetail/fullWindow, bluetooth: switchPower/quickDetail/fullWindow, kbdlight: nextStep/quickDetail, theme: togglePair/quickDetail, media: quickDetail. Catalog hold actions currently permit only quickDetail. Touchpad and touchscreen are listed but hidden by default; chargeLimit is hidden and can be added as a ring.
+Toggles accept only id, tapAction and holdAction. Both actions are strings validated against the corresponding catalog action list, with schema fallback actions switch and quickDetail. Tap defaults to the first schema action; hold defaults to quickDetail. Special schema sets are wifi: switchRadio/quickDetail/fullWindow, bluetooth: switchPower/quickDetail/fullWindow, kbdlight: nextStep/quickDetail, theme: quickDetail (an old togglePair reads as quickDetail, no error), media: quickDetail. Catalog hold actions currently permit only quickDetail. Touchpad and touchscreen are listed but hidden by default; chargeLimit is hidden and can be added as a ring.
 
 ## Catalog option extensions
 

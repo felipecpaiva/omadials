@@ -51,7 +51,9 @@ Item {
   readonly property string localApp: decodeURIComponent(Qt.resolvedUrl("app/omadials-settings").toString().replace(/^file:\/\//, ""))
   function openSettings() {
     controlRegistry.runner.run("settings:which", ["which", "omadials-settings"], 3000, (out, code) => {
-      const launch = code === 0 ? "uwsm-app -- omadials-settings" : "uwsm-app -- " + root.localApp
+      // setsid -f: the launcher returns at once. Without it the app replaced the launcher process, and the runner's
+      // 10 s deadline killed the app after about 9 s (the "crash", 2026-11-17).
+      const launch = "setsid -f uwsm-app -- " + (code === 0 ? "omadials-settings" : root.localApp)
       controlRegistry.runner.run("settings:open", ["omarchy-launch-or-focus", "omadials-settings", launch], 10000, (o, c) => {
         if (c !== 0) fanModel.say("Settings app not found. Install omadials-settings (see the README).", true, false)
       })

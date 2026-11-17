@@ -278,13 +278,12 @@
     "defaultPlacement": "arc",
     "options": {},
     "tapActions": [
-      "togglePair",
       "quickDetail"
     ],
     "holdActions": [
       "quickDetail"
     ],
-    "defaultTapAction": "togglePair",
+    "defaultTapAction": "quickDetail",
     "defaultHoldAction": "quickDetail"
   },
   {

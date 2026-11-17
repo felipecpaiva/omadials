@@ -28,7 +28,7 @@ const DEFAULTS = {
     "ringStyle": {"track":"solid","knob":"round","thickness":"normal"},
     "readoutRings": [],
     "dials": [{"id":"brightness","order":0,"style":{"track":"solid","knob":"round","thickness":"normal"}},{"id":"volume","order":1,"style":{"track":"solid","knob":"round","thickness":"normal"}},{"id":"mic","order":2,"style":{"track":"solid","knob":"round","thickness":"normal"}}],
-    "toggles": [{"id":"wifi","tapAction":"switchRadio","holdAction":"quickDetail"},{"id":"bluetooth","tapAction":"switchPower","holdAction":"quickDetail"},{"id":"nightlight","tapAction":"switch","holdAction":"quickDetail"},{"id":"dnd","tapAction":"switch","holdAction":"quickDetail"},{"id":"keepawake","tapAction":"switch","holdAction":"quickDetail"},{"id":"kbdlight","tapAction":"nextStep","holdAction":"quickDetail"},{"id":"airplane","tapAction":"switch","holdAction":"quickDetail"},{"id":"gameMode","tapAction":"switch","holdAction":"quickDetail"},{"id":"theme","tapAction":"togglePair","holdAction":"quickDetail"},{"id":"media","tapAction":"quickDetail","holdAction":"quickDetail"},{"id":"touchpad","tapAction":"switch","holdAction":"quickDetail"},{"id":"touchscreen","tapAction":"switch","holdAction":"quickDetail"}],
+    "toggles": [{"id":"wifi","tapAction":"switchRadio","holdAction":"quickDetail"},{"id":"bluetooth","tapAction":"switchPower","holdAction":"quickDetail"},{"id":"nightlight","tapAction":"switch","holdAction":"quickDetail"},{"id":"dnd","tapAction":"switch","holdAction":"quickDetail"},{"id":"keepawake","tapAction":"switch","holdAction":"quickDetail"},{"id":"kbdlight","tapAction":"nextStep","holdAction":"quickDetail"},{"id":"airplane","tapAction":"switch","holdAction":"quickDetail"},{"id":"gameMode","tapAction":"switch","holdAction":"quickDetail"},{"id":"theme","tapAction":"quickDetail","holdAction":"quickDetail"},{"id":"media","tapAction":"quickDetail","holdAction":"quickDetail"},{"id":"touchpad","tapAction":"switch","holdAction":"quickDetail"},{"id":"touchscreen","tapAction":"switch","holdAction":"quickDetail"}],
     "readout": {"battery":true,"powerProfile":true,"penBattery":true},
     "options": {"brightness":{"wheelStep":5,"monitor":"auto"},"volume":{"wheelStep":5,"maxPercent":100},"mic":{"wheelStep":5}},
     "tabStyle": "rings2knob",
@@ -42,7 +42,7 @@ const VERSION=1, INDENT=2, MAX_RINGS=Object.freeze({S:2,M:3,L:4});
 const LIMITS=Object.freeze({pushDelayMs:[0,500],idleTimeoutS:[0,120],maxPercent:[100,150],snapWindowPercent:[0,2],gain:[0,1],speed:[0.5,2],bounce:[0,0.35]});
 const ENUMS=Object.freeze({corner:['top-left','top-right','bottom-left','bottom-right'],size:['S','M','L'],mode:['all','focused','named'],iconMode:['always','onApproach','never'],track:['solid','dashed','dotted','segmented'],knob:['round','bar','none'],thickness:['thin','normal','bold'],source:['bluetoothBattery','wifiSignal','laptopBattery','penBattery'],tabStyle:['rings2knob','rings3','rings3knob'],toggleScroll:['resetOnOpen'],style:['morph','hybrid','lens','cascade','minimal','fan']});
 const ERROR_CODES=Object.freeze(['parse_error','newer_version','wrong_type','out_of_range','unknown_value','unknown_control','duplicate_control','wrong_placement','over_capacity']);
-const ACTIONS=Object.freeze({wifi:['switchRadio','quickDetail','fullWindow'],bluetooth:['switchPower','quickDetail','fullWindow'],kbdlight:['nextStep','quickDetail'],theme:['togglePair','quickDetail'],media:['quickDetail']});
+const ACTIONS=Object.freeze({wifi:['switchRadio','quickDetail','fullWindow'],bluetooth:['switchPower','quickDetail','fullWindow'],kbdlight:['nextStep','quickDetail'],theme:['quickDetail'],media:['quickDetail']});
 const ORDER_LIMITS=Object.freeze([0,Number.MAX_SAFE_INTEGER]), WHEEL_MIN=0;
 const UPOWER_PREFIX="/org/freedesktop/UPower/devices/";
 const SAFE_KEYS=Object.freeze(['__proto__','prototype','constructor']);
@@ -129,7 +129,8 @@ function validate(obj,catalog,resources) {
             const out={id:e.id};
             if(key==='toggles') {
                 const actions=ACTIONS[e.id]||['switch','quickDetail'];
-                out.tapAction=scalar(e.tapAction,actions[0],p+'.tapAction',c.tapActions||actions);
+                // togglePair was removed 2026-11-17 (no light and dark pair); old files read as the theme list, no error.
+                out.tapAction=scalar(e.id==='theme'&&e.tapAction==='togglePair' ? 'quickDetail' : e.tapAction,actions[0],p+'.tapAction',c.tapActions||actions);
                 out.holdAction=scalar(e.holdAction,'quickDetail',p+'.holdAction',c.holdActions||actions);
             } else {
                 out.order=scalar(e.order,i,p+'.order',null,ORDER_LIMITS);

@@ -8,7 +8,7 @@ CommandControl {
     spec: Spec
     kind: "toggle"
     property string currentTheme: machine.value || ""
-    value: currentTheme === (configuration.themePair || {}).dark
+    value: false
     valueText: currentTheme || "unknown"
     detailKind: "custom"
     property url detailComponent: Qt.resolvedUrl("../../views/details/ThemeDetail.qml")
@@ -30,9 +30,7 @@ CommandControl {
         if (detailRows.some(r => r.key === name)) dispatch({type: "SET", value: name, argv: Spec.write(name, options)})
         else { lastError = "Configured theme is not installed"; changed(lastError) }
     }
-    function set(v) {
-        const pair = configuration.themePair || {}
-        choose(currentTheme === pair.dark ? pair.light : pair.dark)
-    }
-    function activate(key) { if (key === "togglePair" || key === "tap") set(true); else choose(key) }
+    // No light and dark pair: omadials follows whatever Omarchy theme is active. A tap opens the installed theme list.
+    function set(v) { }
+    function activate(key) { if (key !== "quickDetail" && key !== "tap") choose(key) }
 }

@@ -231,7 +231,7 @@ Path `~/.config/omadials/config.json` (platform.md section 5, option B). Draft v
     {"id": "kbdlight", "tapAction": "nextStep", "holdAction": "quickDetail"},
     {"id": "airplane", "tapAction": "switch", "holdAction": "quickDetail"},
     {"id": "gameMode", "tapAction": "switch", "holdAction": "quickDetail"},
-    {"id": "theme", "tapAction": "togglePair", "holdAction": "quickDetail"},
+    {"id": "theme", "tapAction": "quickDetail", "holdAction": "quickDetail"},
     {"id": "media", "tapAction": "quickDetail", "holdAction": "quickDetail"},
     {"id": "touchpad", "tapAction": "switch", "holdAction": "quickDetail"},
     {"id": "touchscreen", "tapAction": "switch", "holdAction": "quickDetail"},

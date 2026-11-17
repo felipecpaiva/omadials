@@ -42,10 +42,6 @@ Item {
         if (!reload() || readOnly) { problem("Config is read only. Fix the file or Reset all."); return false }
         try {
             changes = changes.slice();
-            ["light","dark"].forEach(function(k) {
-                let suggested=validationResources[k+"Theme"];
-                if (!config.themePair[k] && suggested && !changes.some(function(c) { return c.path==="themePair."+k })) changes.push({path:"themePair."+k,value:suggested});
-            });
             let next = rawText;
             changes.forEach(function(c) { next = Schema.patch(next,c.path,c.value) });
             validationResources = io.resources(next);

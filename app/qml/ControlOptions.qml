@@ -21,7 +21,7 @@ ColumnLayout {
             help: modelData === "tapAction" ? qsTr("A quick press on this toggle.") : qsTr("Press and hold for more options.")
             kind: "choice"
             choices: options.catalogEntry[modelData === "tapAction" ? "tapActions" : "holdActions"] || ["switch","quickDetail"]
-            words: choices.map(function(v) { return ({switchRadio:qsTr("Switch on or off"),switchPower:qsTr("Switch on or off"),switch:qsTr("Switch on or off"),quickDetail:qsTr("Open the quick list"),fullWindow:qsTr("Open the full window"),nextStep:qsTr("Choose the next level"),togglePair:qsTr("Switch light or dark theme")})[v] })
+            words: choices.map(function(v) { return ({switchRadio:qsTr("Switch on or off"),switchPower:qsTr("Switch on or off"),switch:qsTr("Switch on or off"),quickDetail:qsTr("Open the quick list"),fullWindow:qsTr("Open the full window"),nextStep:qsTr("Choose the next level")})[v] })
         }
     }
     // "Off" has no form in the config until a style is picked, so it only reveals the choices here.

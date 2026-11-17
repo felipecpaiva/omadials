@@ -49,8 +49,8 @@ the preview on one page only.
 - Card "Closing": "Close after" (Never, 5, 10, 20, 30 s), "Close when the pointer leaves".
 - Card "Dials": "Fine control when you drag away from the ring", "Snap to 0, 25, 50, 75 and 100 %",
   "Volume can go above 100 %" with the maximum (up to 150).
-- Card "Theme toggle": "Light theme" and "Dark theme" pickers, pre-filled with the current theme and a sensible
-  opposite (a light and a dark installed theme), never left empty.
+- No theme card (removed 2026-11-17): omadials and the app follow the active Omarchy theme. The theme toggle opens the
+  installed theme list.
 - Card "Game mode": "When game mode is on, turn off:" with switches Animations, Blur, Shadows, and "Window gaps
   become 0". Wording always says what game mode does.
 

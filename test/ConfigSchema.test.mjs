@@ -122,3 +122,8 @@ test('theme pair names match the installed list loosely and are kept before the 
     assert.ok(C.validate({version:1,themePair:{dark:'nope'}},catalog,res).errors.some(e=>e.path==='themePair.dark'));
     assert.deepEqual(C.validate({version:1,themePair:{light:'catppuccin-latte'}},catalog,{themes:[]}).errors,[]);
 });
+test('theme toggle: an old togglePair tap reads as the theme list, with no error', ()=>{
+    const r=validate({version:1,toggles:[{id:'theme',tapAction:'togglePair',holdAction:'quickDetail'}]});
+    assert.equal(r.config.toggles.find(t=>t.id==='theme').tapAction,'quickDetail');
+    assert.deepEqual(r.errors.filter(e=>e.path.startsWith('toggles')),[]);
+});
