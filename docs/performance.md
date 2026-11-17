@@ -23,8 +23,16 @@ control, a timer or an animation.
 Reading: closed costs nothing measurable in CPU (within noise) and starts nothing. Loading the plugin adds about
 33 MB of memory. Open costs about 1.8 % CPU, almost all from the reads each open triggers (one process per read).
 
+## After sysfs reads (2026-11-17, 45 s settle)
+
+Brightness, keyboard light and charge limit now read a watched sysfs file (no process, no polling, live while
+closed). Closed: 1.17 % against 1.47 % with the plugin off (noise), no processes. Open (reopened every 8 s): 3.40 %,
+22 processes in 30 s, now only from reads that still start a process on each open: power profile
+(`omarchy-powerprofiles` and `powerprofilesctl`), airplane (`rfkill`), night light and do not disturb. A settle under
+about 40 s measures start-up probes, not use.
+
 ## Next savings
 
-1. Read sysfs values with a watched file instead of a process where the value lives in a file: internal panel
-   brightness, keyboard light, charge limit. Fewer processes per open.
+1. Power profile from Quickshell's UPower PowerProfiles service, airplane from `/sys/class/rfkill/*/soft`, do not
+   disturb from the notifications state file, night light from its state: no process on open.
 2. Measure memory per part (views, controls, settings) and load details and rarely used controls only when needed.
