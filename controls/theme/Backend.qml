@@ -10,7 +10,8 @@ CommandControl {
     property string currentTheme: machine.value || ""
     value: currentTheme === (configuration.themePair || {}).dark
     valueText: currentTheme || "unknown"
-    detailKind: "rows"
+    detailKind: "custom"
+    property url detailComponent: Qt.resolvedUrl("../../views/details/ThemeDetail.qml")
     property FileView themeWatch: FileView {
         path: backend.active ? Quickshell.env("HOME") + "/.local/state/omarchy/current/theme.name" : ""
         watchChanges: backend.active

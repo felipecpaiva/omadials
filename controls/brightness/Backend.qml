@@ -4,6 +4,9 @@ import "spec.js" as Spec
 CommandControl {
     id: backend
     spec: Spec
+    detailKind: "custom"
+    property url detailComponent: Qt.resolvedUrl("../../views/details/DisplaysDetail.qml")
+    property DisplaySession displays: DisplaySession { runner: backend.runner; jobPrefix: backend.controlId + ":displays" }
     range: ({min: 0, max: 100, floor: 1, step: 1, unit: "%"})
     function refresh() {
         const monitor = options.monitor || "auto"

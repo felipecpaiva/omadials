@@ -11,7 +11,8 @@ ControlBase {
     reason: player ? "" : "No media player"
     value: player ? player.isPlaying : null
     valueText: player ? player.trackTitle || player.identity : "No media player"
-    detailKind: "rows"
+    detailKind: "custom"
+    property url detailComponent: Qt.resolvedUrl("../../views/details/MediaDetail.qml")
     detailRows: Map.rows(players).concat(player ? [
         {key: "previous", label: "Previous", sub: "", state: player.canGoPrevious, icon: ""},
         {key: "play", label: player.isPlaying ? "Pause" : "Play", sub: "", state: player.canTogglePlaying, icon: ""},
