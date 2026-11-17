@@ -4,7 +4,7 @@ A control corner for [Omarchy](https://omarchy.org). Quick settings as you drag 
 with your hardware quick settings: brightness, volume and mic as arcs you drag, plus toggles for Wi-Fi,
 Bluetooth, night light, do not disturb, keep awake and power profile. Touch first, mouse fine.
 
-**Status:** design close-out in progress. Next: design freeze ([plan](docs/plan.md)). No plugin code yet.
+**Status:** design frozen (tag `design-1`). Next: phase P1, Z13 spikes ([plan](docs/plan.md)). No plugin code yet.
 
 | Doc | What it holds |
 |---|---|
