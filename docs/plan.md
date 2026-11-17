@@ -159,7 +159,7 @@ Done when (each): contract tests for the detail, plus a hand check on the Z13.
 
 - [ ] **P7.1 Readout rings.** Bluetooth device battery (pick the device), Wi-Fi signal, laptop and pen battery; not
   connected shown truthfully.
-- [ ] **P7.2 Game mode toggle** with exact revert (P1.7).
+- [x] **P7.2 Game mode toggle** (2026-11-17, on and off verified live, docs/spikes.md) with exact revert (P1.7).
 - [ ] **P7.3 Hardware extras.** Keyboard light, charge limit, touchpad, touchscreen guard, airplane restore.
 - [ ] **P7.4 Schema v1 freeze.** `docs/file-contract.md`, migration rule for later versions.
 - [ ] **P7.5 Release v0.5** with GIF.

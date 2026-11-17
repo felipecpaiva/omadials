@@ -18,6 +18,14 @@ real shell was never at risk. Every system change was restored and read back.
 | P1.8 | Per-app volume and media players | **Pass for audio; players untested** | `spikes/p18-pipewire`: default sink and its volume (1.10) read; a silent `pw-play` stream showed as an app stream with its own volume. Mpris loaded; no player was running | Per-app volume detail is buildable. Mpris discovery needs a running player to confirm |
 | P1.9 | Rendering budget | **Pass** | `spikes/p19-render`: three ring arcs (one dashed) changing every frame with `Shape.CurveRenderer` at 180 Hz: 1081 frames, average 5.56 ms, p95 5.94, p99 6.48, max 6.88 | Use `Shape` with `CurveRenderer`. No custom shader needed |
 
+## Game mode in the plugin (P7.2)
+
+2026-11-17, through `omarchy-shell omadials activate gameMode switch`: on set animations and shadows off with no
+reload and no scale change; off restored animations and shadows exactly and removed the journal
+(`~/.local/state/omadials/game-mode.json`). Two device findings: Hyprland 0.56 takes css gaps as an integer or a
+`{top,right,bottom,left}` table, never text; and the first design (a detached recovery process plus a lock folder)
+failed silently, so it was replaced by the journal alone.
+
 ## Motion capture (P3.4)
 
 2026-11-17, real plugin, `gpu-screen-recorder` at 60 fps while `omarchy-shell omadials open` then `close` ran, frames
