@@ -35,7 +35,7 @@ ColumnLayout {
         Label { text: qsTr("Settings file"); font.bold: true }
         Label { text: page.store.path; Layout.fillWidth: true; wrapMode: Text.WrapAnywhere; textFormat: Text.PlainText; color: page.theme.secondary }
         Button { text: qsTr("Open folder"); onClicked: backend.openFolder() }
-        SettingField { store: page.store; theme: page.theme; path: "trigger.tapZone"; label: qsTr("Open by tapping the corner"); help: qsTr("Warning: the tap zone can catch clicks intended for a window, even when the tab is hidden."); kind: "bool" }
+        SettingField { store: page.store; theme: page.theme; path: "trigger.tapZone"; label: qsTr("Corner works when the tab is hidden"); help: qsTr("On: a tap, drag or rest opens the corner even when you cannot see the tab. It can catch clicks meant for a window."); kind: "bool" }
     }
     SettingsCard {
         theme: page.theme; title: qsTr("Reset")

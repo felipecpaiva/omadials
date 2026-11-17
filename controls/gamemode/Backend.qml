@@ -72,7 +72,7 @@ ControlBase {
         writeState = "pending"
         readOptions(baseline => {
             let intended
-            try { intended = Map.intended(configuration.gameMode || {}) } catch (e) { fail(String(e)); return }
+            try { intended = Map.intended(configuration.gameMode || {}, baseline) } catch (e) { fail(String(e)); return }
             const data = { version: 1, instance: instance, baseline: baseline, intended: intended }
             run(["mkdir", "-p", journalPath.replace(/\/[^/]*$/, "")], () => {
                 saved = data

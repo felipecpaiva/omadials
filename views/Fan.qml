@@ -80,7 +80,7 @@ Item {
     }
     FanInput {
         id: input; anchors.fill: parent; enabled: fan.model.open; model: fan.model; corner: fan.corner; fanRadius: fan.fanRadius
-        radii: fan.radii; screenWidth: fan.screenWidth; screenHeight: fan.screenHeight; iconMode: fan.iconMode
+        radii: fan.radii; screenWidth: fan.screenWidth; screenHeight: fan.screenHeight
     }
     ToggleArc {
         anchors.fill: parent; opacity: contentMotion.value * fan.frame.alpha; visible: opacity > 0 && body.visible; enabled: !fan.model.detail; reveal: fan.frame.toggles

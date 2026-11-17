@@ -71,7 +71,8 @@ FocusScope {
             Label { Layout.fillWidth: true; text: cm.name; elide: Text.ElideRight; color: controlRow.theme.text; font.pixelSize: 15 }
             Label {
                 Layout.fillWidth: true; elide: Text.ElideRight; color: controlRow.theme.secondary; font.pixelSize: 12
-                text: cm.group !== "readoutRings" ? cm.valueText : controlRow.control?.value == null ? qsTr("Display ring, no value yet") : qsTr("Display ring, %1").arg(cm.valueText)
+                visible: text.length > 0
+                text: cm.group !== "readoutRings" ? cm.valueText : controlRow.control?.value == null ? qsTr("Display ring") : qsTr("Display ring, %1").arg(cm.valueText)
             }
             TapHandler { onLongPressed: controlRow.moveModeToggled(controlRow.controlKey) }
         }

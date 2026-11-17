@@ -4,7 +4,7 @@ const DEFAULTS = {
     "corner": "bottom-left",
     "size": "M",
     "outputs": {"mode":"all","names":[]},
-    "trigger": {"tapZone":true,"pushDelayMs":150},
+    "trigger": {"tapZone":true,"push":true,"pushDelayMs":150},
     "cornerIcon": {"mode":"always","aboveWindows":true,"source":"default"},
     "controls": {
         "touchpad": {"shown":false,"icon":"default"},
@@ -177,7 +177,10 @@ function validate(obj,catalog,resources) {
             });config.options[id]=out;
         });
     }
-    config.gameMode=fields(input.gameMode,DEFAULTS.gameMode,'gameMode');
+    // null gaps mean "leave the gaps alone during game mode" (2026-11-17).
+    const keepGaps=object(input.gameMode)?['gapsIn','gapsOut'].filter(function(k){return input.gameMode[k]===null;}):[];
+    const gameInput=keepGaps.length?Object.assign({},input.gameMode):input.gameMode;keepGaps.forEach(function(k){delete gameInput[k];});
+    config.gameMode=fields(gameInput,DEFAULTS.gameMode,'gameMode');keepGaps.forEach(function(k){config.gameMode[k]=null;});
     ['gapsIn','gapsOut'].forEach(function(k){if(config.gameMode[k]<0){error('gameMode.'+k,'out_of_range');config.gameMode[k]=DEFAULTS.gameMode[k];}});
     ['fineDistancesPx','fineGains'].forEach(function(k){
         const a=config.dialInteraction[k],def=DEFAULTS.dialInteraction[k];

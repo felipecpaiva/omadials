@@ -127,3 +127,8 @@ test('theme toggle: an old togglePair tap reads as the theme list, with no error
     assert.equal(r.config.toggles.find(t=>t.id==='theme').tapAction,'quickDetail');
     assert.deepEqual(r.errors.filter(e=>e.path.startsWith('toggles')),[]);
 });
+test('game mode: null gaps mean leave the gaps alone, with no error', ()=>{
+    const r=validate({version:1,gameMode:{gapsIn:null,gapsOut:null}});
+    assert.equal(r.config.gameMode.gapsIn,null); assert.equal(r.config.gameMode.gapsOut,null);
+    assert.deepEqual(r.errors.filter(e=>e.path.startsWith('gameMode')),[]);
+});

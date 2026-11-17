@@ -57,12 +57,12 @@ ColumnLayout {
             ColumnLayout {
                 Layout.fillWidth: true
                 Label { Layout.fillWidth: true; text: qsTr("Open when the pointer rests in the corner"); wrapMode: Text.WordWrap }
-                Label { Layout.fillWidth: true; text: qsTr("Turning this off also shows the tab only when the pointer is near."); wrapMode: Text.WordWrap; color: page.theme.secondary; font.pixelSize: 12 }
+                Label { Layout.fillWidth: true; text: qsTr("Off: open the corner with a tap or a drag."); wrapMode: Text.WordWrap; color: page.theme.secondary; font.pixelSize: 12 }
             }
-            Switch { checked: page.store.config.cornerIcon.mode !== "onApproach"; Accessible.name: qsTr("Open when the pointer rests in the corner"); onClicked: page.store.set("cornerIcon.mode",checked?"always":"onApproach") }
+            Switch { checked: page.store.config.trigger.push !== false; Accessible.name: qsTr("Open when the pointer rests in the corner"); onClicked: page.store.set("trigger.push",checked) }
         }
         RowLayout {
-            visible: page.store.config.cornerIcon.mode !== "onApproach"
+            visible: page.store.config.trigger.push !== false
             Label { text: qsTr("Delay"); Layout.fillWidth: true }
             Slider { from: 0; to: 500; stepSize: 10; value: page.store.config.trigger.pushDelayMs; Accessible.name: qsTr("Opening delay"); onMoved: page.store.set("trigger.pushDelayMs",Math.round(value)) }
             Label { text: qsTr("%1 ms").arg(page.store.config.trigger.pushDelayMs); Layout.preferredWidth: 55 }

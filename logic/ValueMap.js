@@ -10,10 +10,10 @@ function angle(v,range) {const f=fraction(v,range);return f===null ? null : STAR
 function fromAngle(a,range) {return nativeValue((a-START)/(END-START),range);}
 function reading(v,range) {return {value:v,fraction:fraction(v,range),overCap:v!==null&&v>range.max};}
 function stepped(v,steps) {return clamp(Math.round(v),0,steps.length-1);}
-function wheel(value,delta,shift,range,remainder,pixel) {
+function wheel(value,delta,shift,range,remainder,pixel,step) {
     const total=(remainder || 0)+delta;
     const count=pixel ? Math.trunc(total/PIXELS_PER_STEP) : Math.sign(delta);
-    return {value:input(value-count*(shift ? FINE_STEP : STEP),range),remainder:pixel ? total-count*PIXELS_PER_STEP : 0};
+    return {value:input(value-count*(shift ? FINE_STEP : (step>0 ? step : STEP)),range),remainder:pixel ? total-count*PIXELS_PER_STEP : 0};
 }
 function keyboard(value,key,shift,range) {
     const step=shift ? FINE_STEP : STEP;

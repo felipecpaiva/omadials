@@ -6,8 +6,10 @@ ApplicationWindow {
     id: win
     width: 1200; height: 850; minimumWidth: 720; minimumHeight: 540
     visible: true; title: qsTr("omadials settings"); color: uiTheme.background
-    Material.theme: Material.Dark
-    Material.accent: desktopTheme.accent
+    Material.theme: uiTheme.light ? Material.Light : Material.Dark
+    Material.accent: uiTheme.accent
+    Material.foreground: uiTheme.text
+    Material.background: uiTheme.background
     Material.roundedScale: desktopTheme.radius
     AppTheme { id: uiTheme }
     readonly property bool narrow: width < 1060

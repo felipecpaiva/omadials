@@ -23,7 +23,8 @@ QtObject {
         let chosen = store.config.controls[key]?.icon;
         return chosen && chosen !== "default" ? chosen : group === "readoutRings" ? (entry.source || "laptopBattery") : (control?.icon || key);
     }
-    readonly property string valueText: !control || control.value == null ? qsTr("No value yet")
+    // Some controls are only checked when the corner opens: show nothing rather than a value that looks broken.
+    readonly property string valueText: !control || control.value == null || key === "theme" ? ""
         : typeof control.value === "boolean" ? (control.value ? qsTr("On") : qsTr("Off")) : qsTr("%1 %").arg(Math.round(Number(control.value)))
     function rawList(list) {
         try { let entries = JSON.parse(store.rawText)[list]; return Array.isArray(entries) ? entries : store.config[list]; }

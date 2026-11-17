@@ -26,11 +26,11 @@ for(const owner of ['toggle','label'])test(`${owner} hold deadlines and cancella
     assert.equal(G.release(begin('corner'),401,false,0.40001,true).action,'open');
     assert.equal(G.release(G.move(begin('corner'),{x:10,y:0}),400,false,0.1,true).action,'close');
     assert.equal(G.release(begin('corner'),200,true,1,true).action,'cancel');
-    assert.equal(G.pushAllowed(2,2,0,'always'),true);assert.equal(G.pushAllowed(2.01,2,0,'always'),false);
-    assert.equal(G.pushAllowed(1,1,1,'always'),false);assert.equal(G.pushAllowed(1,1,0,'onApproach'),false);
-    assert.equal(G.dwell(149,true,0,'always'),false);assert.equal(G.dwell(150,true,0,'always'),true);
-    assert.equal(G.dwell(500,false,0,'always'),false);assert.equal(G.dwell(500,true,1,'always'),false);
-    assert.equal(G.dwell(500,true,0,'onApproach'),false);assert.equal(G.dwell(0,true,0,'always',0),true);
+    assert.equal(G.pushAllowed(2,2,0,true),true);assert.equal(G.pushAllowed(2.01,2,0,true),false);
+    assert.equal(G.pushAllowed(1,1,1,true),false);assert.equal(G.pushAllowed(1,1,0,false),false);
+    assert.equal(G.dwell(149,true,0,true),false);assert.equal(G.dwell(150,true,0,true),true);
+    assert.equal(G.dwell(500,false,0,true),false);assert.equal(G.dwell(500,true,1,true),false);
+    assert.equal(G.dwell(500,true,0,false),false);assert.equal(G.dwell(0,true,0,true,0),true);
 });
 // A-DIAL-11, A-DIAL-12
  test('fine boundaries, rebase and continuous unsnapped detent escape',()=>{
@@ -76,7 +76,7 @@ for(const owner of ['toggle','label'])test(`${owner} hold deadlines and cancella
 });
 test('corner session tap and drag destinations, push guard and geometry cancellation',()=>{
     let s=G.reduce(G.initial(),{type:'PUSH_ENTER',buttons:1}).state;assert.equal(s.phase,'closed');
-    s=G.reduce(s,{type:'PUSH_ENTER',mode:'onApproach'}).state;assert.equal(s.phase,'closed');
+    s=G.reduce(s,{type:'PUSH_ENTER',push:false}).state;assert.equal(s.phase,'closed');
     s=G.reduce(s,{type:'PUSH_ENTER'}).state;assert.equal(s.phase,'hinting');
     s=G.reduce(s,{type:'PUSH_LEAVE'}).state;assert.equal(s.phase,'closed');
     s=G.reduce(s,{type:'CORNER_DOWN',point:p,time:0}).state;

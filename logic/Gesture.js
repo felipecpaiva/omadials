@@ -27,8 +27,9 @@ function release(s,time,cancel,progress,insideZone) {
     }
     return {action:s.moved ? (s.owner==='ring' ? 'commit' : 'snap') : 'tap',id:s.id};
 }
-function pushAllowed(x,y,buttons,mode) {return x<=PUSH&&y<=PUSH&&!buttons&&mode!=='onApproach';}
-function dwell(elapsed,inside,buttons,mode,delay) {return inside&&!buttons&&mode!=='onApproach'&&elapsed>=(delay===undefined ? DWELL : delay);}
+// enabled is trigger.push: opening by resting in the corner, separate from when the tab shows (2026-11-17).
+function pushAllowed(x,y,buttons,enabled) {return x<=PUSH&&y<=PUSH&&!buttons&&enabled!==false;}
+function dwell(elapsed,inside,buttons,enabled,delay) {return inside&&!buttons&&enabled!==false&&elapsed>=(delay===undefined ? DWELL : delay);}
 function fineGain(distance,enabled) {return !enabled ? 1 : distance>FINE_FAR ? FINER_GAIN : distance>FINE_NEAR ? FINE_GAIN : 1;}
 function dial(s,angle,distance,options) {
     const gain=fineGain(distance,options.fineEnabled),first=s.lastAngle===null;
@@ -70,7 +71,7 @@ function reduce(previous,event) {
         if(s.capture)endCapture(true);
         if(event.outputLost)transition('closed');effects.push({action:'snapGeometry'});break;
     case 'PUSH_ENTER':
-        if(s.phase==='closed'&&!event.buttons&&event.mode!=='onApproach'){s.phase='hinting';effects.push({after:event.delay===undefined ? DWELL : event.delay,action:'dwell'});}break;
+        if(s.phase==='closed'&&!event.buttons&&event.push!==false){s.phase='hinting';effects.push({after:event.delay===undefined ? DWELL : event.delay,action:'dwell'});}break;
     case 'PUSH_LEAVE':if(s.phase==='hinting')s.phase='closed';break;
     case 'DWELL':if(s.phase==='hinting'&&event.inside&&!event.buttons)transition('opening');break;
     case 'OPEN':case 'CORNER_TAP':

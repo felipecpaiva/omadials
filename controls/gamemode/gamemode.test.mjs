@@ -29,3 +29,9 @@ assert.equal(loadLocal('map.js').parse('{"option": "general:gaps_in", "css": "0 
   assert.ok(lua.includes('gaps_in=0'), lua);
   assert.ok(lua.includes('gaps_out={top=5,right=10,bottom=5,left=10}'), lua);
   assert.ok(!/gaps_(in|out)="/.test(lua), lua); }
+// Switches left off in settings keep the value from before game mode (2026-11-17).
+{
+    const before={animations:true,blur:true,shadows:false,gapsIn:'5',gapsOut:'12'};
+    assert.deepEqual(S.intended({animations:true,blur:false,shadows:false,gapsIn:null,gapsOut:null},before),
+        {animations:true,blur:false,shadows:false,gapsIn:'5',gapsOut:'12'});
+}

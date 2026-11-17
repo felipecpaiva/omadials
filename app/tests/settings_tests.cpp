@@ -9,11 +9,48 @@
 #include <QTemporaryDir>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QAccessible>
 #include "backend.h"
 #include "theme.h"
 class SettingsTests : public QObject {
     Q_OBJECT
 private slots:
+    void sweep() {
+        // Settings sweep (2026-11-17): every page tall and narrow, in the theme named by OMADIALS_SWEEP_THEME, plus a dump
+        // of every named control. Runs only when OMADIALS_SWEEP is set; writes sweep-*.png and sweep-controls.txt.
+        if (!qEnvironmentVariableIsSet("OMADIALS_SWEEP")) QSKIP("set OMADIALS_SWEEP to run");
+        const QString themeName = qEnvironmentVariable("OMADIALS_SWEEP_THEME","tokyo-night");
+        QTemporaryDir state; QDir().mkpath(state.filePath("theme"));
+        QVERIFY(QFile::copy("/usr/share/omarchy/themes/"+themeName+"/colors.toml",state.filePath("theme/colors.toml")));
+        QFile::remove(QDir::homePath()+"/.config/omadials/config.json");
+        Backend backend; Theme theme(state.path());
+        QQmlApplicationEngine engine;
+        engine.rootContext()->setContextProperty("backend", &backend);
+        engine.rootContext()->setContextProperty("desktopTheme", &theme);
+        engine.load(QUrl("qrc:/qml/Main.qml"));
+        QVERIFY(!engine.rootObjects().isEmpty());
+        QObject *root = engine.rootObjects().first();
+        auto window = qobject_cast<QQuickWindow*>(root); QVERIFY(window);
+        auto pages = root->findChild<QObject*>("pages"); QVERIFY(pages);
+        QVERIFY(QTest::qWaitForWindowExposed(window));
+        QFile dump(QString("sweep-%1-controls.txt").arg(themeName)); QVERIFY(dump.open(QIODevice::WriteOnly));
+        std::function<void(QQuickItem*,int)> walk = [&](QQuickItem *item, int page) {
+            if (!item->isVisible()) return;
+            auto *a = QAccessible::queryAccessibleInterface(item);
+            const QString name = a ? a->text(QAccessible::Name) : QString();
+            if (!name.isEmpty() && (item->inherits("QQuickAbstractButton") || item->inherits("QQuickComboBox") || item->inherits("QQuickSlider") || item->inherits("QQuickTextField")))
+                dump.write(QString("%1\t%2\t%3\n").arg(page).arg(item->metaObject()->className(),name).toUtf8());
+            for (auto *child : item->childItems()) walk(child,page);
+        };
+        for (int w : {1200, 720}) {
+            window->resize(w,3200); QTest::qWait(150);
+            for (int i=0;i<5;++i) {
+                pages->setProperty("currentIndex",i); QTest::qWait(150);
+                QVERIFY(window->grabWindow().save(QString("sweep-%1-%2-page-%3.png").arg(themeName).arg(w).arg(i)));
+                if (w == 1200) walk(window->contentItem(),i);
+            }
+        }
+    }
     void ipcUsesFixedArguments() {
         QTemporaryDir tools;
         QFile script(tools.filePath("omarchy-shell")); QVERIFY(script.open(QIODevice::WriteOnly));

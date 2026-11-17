@@ -16,10 +16,13 @@ function parse(text, option) {
     if (option.type === 'gaps' && typeof gaps === 'string' && /^\d+(?:\.\d+)?(?:\s+\d+(?:\.\d+)?){0,3}$/.test(gaps.trim())) return gaps.trim();
     throw new Error('Invalid read-back for ' + option.key);
 }
-function intended(config) {
+// A setting game mode should not touch (a bool left true, gaps left null) keeps the value it had before game mode.
+function intended(config, baseline) {
     const result = {};
     OPTIONS.forEach(o => {
-        const v = config[o.key];
+        const keep = baseline && (o.type === 'bool' ? config[o.key] === true : config[o.key] === null);
+        const v = keep ? baseline[o.key] : config[o.key];
+        if (keep && o.type === 'gaps' && typeof v === 'string') { result[o.key] = v; return; }
         if (o.type === 'bool' && typeof v === 'boolean') result[o.key] = v;
         else if (o.type === 'gaps' && Number.isFinite(v) && v >= 0) result[o.key] = String(v);
         else throw new Error('Invalid game option ' + o.key);

@@ -17,6 +17,7 @@ The following is the complete default file. Object keys are fixed except the cat
   },
   "trigger": {
     "tapZone": true,
+    "push": true,
     "pushDelayMs": 150
   },
   "cornerIcon": {
@@ -252,6 +253,8 @@ The following is the complete default file. Object keys are fixed except the cat
 | size | S, M, L; combined shown dial/readout capacity 2, 3, 4 |
 | outputs.mode | all, focused, named |
 | outputs.names | Array of nonempty strings; named requires at least one |
+| trigger.push | Boolean: open when the pointer rests in the corner (independent of cornerIcon.mode since 2026-11-17) |
+| trigger.tapZone | Boolean: false means the corner catches the pointer only while cornerIcon.mode is always |
 | trigger.pushDelayMs | Number 0 to 500 |
 | behavior.idleTimeoutS | Number 0 to 120; 0 disables timeout |
 | cornerIcon.mode | always, onApproach, never |
@@ -269,7 +272,7 @@ The following is the complete default file. Object keys are fixed except the cat
 | dialInteraction.fineDistancesPx | Exactly two finite nonnegative numbers in increasing order |
 | dialInteraction.fineGains | Exactly two finite numbers greater than 0 and at most 1 |
 | themePair.light, themePair.dark | Deprecated 2026-11-17, kept so old files load. Empty string or an installed theme id |
-| gameMode.gapsIn, gameMode.gapsOut | Finite nonnegative numbers |
+| gameMode.gapsIn, gameMode.gapsOut | Finite nonnegative numbers, or null to leave the gaps alone. A bool set to true keeps the value from before game mode |
 
 All other literal booleans retain boolean type. No additional constraints apply to the remaining literal fields. Unknown keys are reported, preserved in the source text and excluded from the runtime config. Validation errors are {path, code, message}; codes: parse_error, newer_version, wrong_type, out_of_range, unknown_value, unknown_control, duplicate_control, wrong_placement, over_capacity. Disk failures additionally report io_error.
 

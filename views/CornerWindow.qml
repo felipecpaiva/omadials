@@ -19,6 +19,9 @@ PanelWindow {
   readonly property bool selected: !model.output || model.output === screen
   property bool suppressed: false
   property string iconMode: "always"
+  property bool allowed: true
+  // trigger.tapZone off: the corner catches the pointer only while the tab is always drawn (2026-11-17).
+  readonly property bool zoneActive: allowed && (iconMode === "always" || !model.config.trigger || model.config.trigger.tapZone !== false)
   property string tabStyle: "rings2knob"
   property string tabSource: "default"
   // Seam with TabWindow (two layer surfaces commit separately). Opening: this window draws the tab itself first, and
@@ -59,7 +62,7 @@ PanelWindow {
   anchors { top: true; bottom: true; left: true; right: true }
   color: "transparent"
   mask: Region {
-    item: win.selected && !win.suppressed && (win.model.open || fan.presenting) ? catcher : (!win.suppressed && !win.model.open ? zone : emptyZone)
+    item: win.selected && !win.suppressed && (win.model.open || fan.presenting) ? catcher : (!win.suppressed && !win.model.open && win.zoneActive ? zone : emptyZone)
     shape: win.selected && (win.model.open || fan.presenting) ? RegionShape.Rect : RegionShape.Ellipse
   }
 
@@ -83,7 +86,7 @@ PanelWindow {
     enabled: !win.suppressed && !win.model.open
     visible: enabled
     model: win.model; corner: win.corner; fanRadius: win.fanRadius; radii: []
-    screenWidth: win.outW; screenHeight: win.outH; iconMode: win.iconMode
+    screenWidth: win.outW; screenHeight: win.outH
   }
   Item {
     anchors.fill: parent; focus: win.selected && win.model.open && win.model.wantsKeyboard

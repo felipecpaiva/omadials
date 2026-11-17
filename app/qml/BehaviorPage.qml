@@ -53,7 +53,7 @@ ColumnLayout {
             Switch {
                 checked: page.store.config.gameMode.gapsIn===0 && page.store.config.gameMode.gapsOut===0
                 Accessible.name: qsTr("Window gaps become 0")
-                onClicked: page.store.setMany([{path:"gameMode.gapsIn",value:checked?0:5},{path:"gameMode.gapsOut",value:checked?0:10}])
+                onClicked: page.store.setMany([{path:"gameMode.gapsIn",value:checked?0:null},{path:"gameMode.gapsOut",value:checked?0:null}])
             }
         }
     }

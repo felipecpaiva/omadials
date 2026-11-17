@@ -14,7 +14,6 @@ MouseArea {
     required property real screenWidth
     required property real screenHeight
     property var targetScreen: null
-    property string iconMode: "always"
     property bool pushSuppressed: false
     property bool approaching: false
     property int ring: -1
@@ -60,9 +59,9 @@ MouseArea {
         approaching = p.d <= Gesture.TRIGGER
         if (!pressed) {
             const c = Geometry.toCanonical({x:m.x,y:m.y},screenWidth,screenHeight,corner)
-            if (!Gesture.pushAllowed(c.x,screenHeight-c.y,0,iconMode)) pushSuppressed = false
-            if (model.pointerSession && model.open && p.d > fanRadius && !model.captured) { if (!leave.running) leave.start() } else leave.stop()
-            if (!model.open && !pushSuppressed && Gesture.pushAllowed(c.x,screenHeight-c.y,m.buttons,iconMode)) { if (!dwell.running) dwell.start() }
+            if (!Gesture.pushAllowed(c.x,screenHeight-c.y,0,pushEnabled)) pushSuppressed = false
+            if (leaveCloses && model.pointerSession && model.open && p.d > fanRadius && !model.captured) { if (!leave.running) leave.start() } else leave.stop()
+            if (!model.open && !pushSuppressed && Gesture.pushAllowed(c.x,screenHeight-c.y,m.buttons,pushEnabled)) { if (!dwell.running) dwell.start() }
             else dwell.stop()
             return
         }
@@ -92,7 +91,9 @@ MouseArea {
         }
         ring = -1; dragging = false
     }
-    onExited: { approaching = false; dwell.stop(); if (model.pointerSession && model.open && !model.captured) leave.restart() }
+    readonly property bool pushEnabled: !model.config.trigger || model.config.trigger.push !== false
+    readonly property bool leaveCloses: !model.config.behavior || model.config.behavior.closeOnPointerLeave !== false
+    onExited: { approaching = false; dwell.stop(); if (leaveCloses && model.pointerSession && model.open && !model.captured) leave.restart() }
     onCanceled: { hold.stop(); if (model.draftControl) model.commitDial(false,true); else model.releaseCapture(); ring = -1; if (startedClosed) model.close() }
     onWheel: w => {
         const p = polarOf(w.x,w.y), i = Geometry.hitRing(p.d,radii)
@@ -100,7 +101,7 @@ MouseArea {
         const c = model.rings[i]
         if (c.kind === "readout" || c.availability !== "available") return
         const pixel = w.pixelDelta.y !== 0
-        const result = ValueMap.wheel(c.value,pixel ? -w.pixelDelta.y : -w.angleDelta.y,!!(w.modifiers & Qt.ShiftModifier),c.range,remainder,pixel)
+        const result = ValueMap.wheel(c.value,pixel ? -w.pixelDelta.y : -w.angleDelta.y,!!(w.modifiers & Qt.ShiftModifier),c.range,remainder,pixel,c.options ? c.options.wheelStep : 0)
         remainder = result.remainder; c.set(result.value); model.report(c); model.bubble(c,Qt.point(w.x,w.y),result.value); model.releaseCapture()
     }
 }

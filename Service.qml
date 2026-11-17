@@ -74,6 +74,10 @@ Item {
       // Quiet over a fullscreen app on this output. The lock screen needs nothing: session lock covers every layer.
       readonly property var hyprMonitor: Hyprland.monitorFor(modelData)
       readonly property bool fullscreen: !!(hyprMonitor && hyprMonitor.activeWorkspace && hyprMonitor.activeWorkspace.hasFullscreen)
+      // Settings "Screens": all, the focused one, or the names picked in the app.
+      readonly property var outputs: root.config.outputs || ({mode: "all"})
+      readonly property bool allowed: outputs.mode === "focused" ? !!(hyprMonitor && hyprMonitor.focused)
+        : outputs.mode === "named" ? (outputs.names || []).indexOf(modelData.name) >= 0 : true
       CornerWindow {
         id: corner
         screen: perOutput.modelData
@@ -83,6 +87,7 @@ Item {
         size: root.config.size
         iconMode: root.config.cornerIcon ? root.config.cornerIcon.mode : "always"
         suppressed: perOutput.fullscreen
+        allowed: perOutput.allowed
         tabStyle: root.config.tabStyle || "rings2knob"
         tabSource: root.config.cornerIcon ? root.config.cornerIcon.source : "default"
         tabShown: !tabWindow.wanted || tabWindow.shown
@@ -99,7 +104,7 @@ Item {
         tabStyle: root.config.tabStyle || "rings2knob"
         approaching: corner.approaching
         fanPresenting: corner.fanPresenting
-        suppressed: perOutput.fullscreen
+        suppressed: perOutput.fullscreen || !perOutput.allowed
       }
     }
   }
