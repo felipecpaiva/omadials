@@ -18,7 +18,15 @@ real shell was never at risk. Every system change was restored and read back.
 | P1.8 | Per-app volume and media players | **Pass for audio; players untested** | `spikes/p18-pipewire`: default sink and its volume (1.10) read; a silent `pw-play` stream showed as an app stream with its own volume. Mpris loaded; no player was running | Per-app volume detail is buildable. Mpris discovery needs a running player to confirm |
 | P1.9 | Rendering budget | **Pass** | `spikes/p19-render`: three ring arcs (one dashed) changing every frame with `Shape.CurveRenderer` at 180 Hz: 1081 frames, average 5.56 ms, p95 5.94, p99 6.48, max 6.88 | Use `Shape` with `CurveRenderer`. No custom shader needed |
 
-## Still open in P1
+## Motion capture (P3.4)
+
+2026-11-17, real plugin, `gpu-screen-recorder` at 60 fps while `omarchy-shell omadials open` then `close` ran, frames
+compared against the closed frame in the bottom-left corner region. Open: 19, 57, 82, 96 percent of the final look on
+the first four frames (95 percent at about 70 ms), settled by about 100 ms. Close: back to the closed look in about
+5 frames (about 100 ms). Both match the 180 ms open and 120 ms close on the shared ease-out curve
+(0.23, 1, 0.32, 1), which reaches 95 percent at roughly 40 percent of its duration. No stacked compositor fade was
+visible on open (the window stays mapped; only its contents animate).
+
 
 - Keyboard focus after a keybind or IPC open, the Hyprland layer fade on first open, and a 60 fps capture of the open
   motion. Checked in P3 on the real plugin.

@@ -64,7 +64,7 @@ the real plugin. A failed spike is a good result: it changes the design in the d
 - [~] **P1.2 S3 input mask.** (all cases pass live; the 60 fps capture is still open) The 32 px zone switches to a full-screen catcher and back; the icon tab above or behind
   windows; on-approach reveal inside the zone only; outside tap does not reach the app below. Done when: each case
   recorded with a 60 fps capture.
-- [~] **P1.3 Layer fade and focus (S3).** (2026-11-17: pointer opens do not take keyboard focus; IPC focus and first-map fade still open) Hyprland layer fade stacking with ours; OnDemand keyboard focus; old window keeps
+- [~] **P1.3 Layer fade and focus (S3).** (2026-11-17: pointer opens do not take keyboard focus; no stacked compositor fade in the capture; IPC keyboard focus still open) Hyprland layer fade stacking with ours; OnDemand keyboard focus; old window keeps
   focus after close; off over fullscreen and the lock screen. Done when: recorded, design adjusted if needed.
 - [x] **P1.4 S4 screen reader** on a layer surface. Done when: result recorded; fallback written if it fails.
 - [x] **P1.5 S5 display writes** (refresh and scale on the Lua config, with revert) and **S6 power profile D-Bus
@@ -114,7 +114,7 @@ Goal: open the corner on the Z13 and change real values.
 - [x] **P3.3 Toggle arc and readout.** Six toggles with real state, pending and failure states, battery readout,
   profile chip, status line rules (wrap, give way, notice). Done when: each toggle switches real hardware; no text
   overlaps in the long-text test.
-- [~] **P3.4 Corner tab and open motion.** (tab and motion live; 60 fps capture still open) Tab in all icon modes, 180 ms open with ring stagger, 120 ms close,
+- [x] **P3.4 Corner tab and open motion.** (2026-11-17: tab live; 60 fps capture matches 180/120 ms, docs/spikes.md) Tab in all icon modes, 180 ms open with ring stagger, 120 ms close,
   reduced motion. Done when: a 60 fps capture matches `experience.md` timings.
 - [ ] **P3.5 Release v0.1.** Tag, GIF, README status. Done when: pushed and the GIF is in the release.
 
