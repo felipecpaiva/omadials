@@ -34,12 +34,13 @@ const DEFAULTS = {
     "tabStyle": "rings2knob",
     "dialInteraction": {"snap":true,"snapWindowPercent":2,"fineEnabled":true,"fineDistancesPx":[22,66],"fineGains":[0.25,0.1]},
     "toggleScroll": "resetOnOpen",
+    "animation": {"style":"morph","speed":1,"bounce":0.06},
     "themePair": {"light":"","dark":""},
     "gameMode": {"animations":false,"blur":false,"shadows":false,"gapsIn":0,"gapsOut":0}
 };
 const VERSION=1, INDENT=2, MAX_RINGS=Object.freeze({S:2,M:3,L:4});
-const LIMITS=Object.freeze({pushDelayMs:[0,500],idleTimeoutS:[0,120],maxPercent:[100,150],snapWindowPercent:[0,2],gain:[0,1]});
-const ENUMS=Object.freeze({corner:['top-left','top-right','bottom-left','bottom-right'],size:['S','M','L'],mode:['all','focused','named'],iconMode:['always','onApproach','never'],track:['solid','dashed','dotted','segmented'],knob:['round','bar','none'],thickness:['thin','normal','bold'],source:['bluetoothBattery','wifiSignal','laptopBattery','penBattery'],tabStyle:['rings2knob','rings3','rings3knob'],toggleScroll:['resetOnOpen']});
+const LIMITS=Object.freeze({pushDelayMs:[0,500],idleTimeoutS:[0,120],maxPercent:[100,150],snapWindowPercent:[0,2],gain:[0,1],speed:[0.5,2],bounce:[0,0.35]});
+const ENUMS=Object.freeze({corner:['top-left','top-right','bottom-left','bottom-right'],size:['S','M','L'],mode:['all','focused','named'],iconMode:['always','onApproach','never'],track:['solid','dashed','dotted','segmented'],knob:['round','bar','none'],thickness:['thin','normal','bold'],source:['bluetoothBattery','wifiSignal','laptopBattery','penBattery'],tabStyle:['rings2knob','rings3','rings3knob'],toggleScroll:['resetOnOpen'],style:['morph','hybrid','lens','cascade','minimal','fan']});
 const ERROR_CODES=Object.freeze(['parse_error','newer_version','wrong_type','out_of_range','unknown_value','unknown_control','duplicate_control','wrong_placement','over_capacity']);
 const ACTIONS=Object.freeze({wifi:['switchRadio','quickDetail','fullWindow'],bluetooth:['switchPower','quickDetail','fullWindow'],kbdlight:['nextStep','quickDetail'],theme:['togglePair','quickDetail'],media:['quickDetail']});
 const ORDER_LIMITS=Object.freeze([0,Number.MAX_SAFE_INTEGER]), WHEEL_MIN=0;

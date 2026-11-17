@@ -9,8 +9,19 @@ const LABELS = Object.freeze({
     solid: 'Solid', dashed: 'Dashed', dotted: 'Dotted', segmented: 'Segmented',
     round: 'Round', bar: 'Bar', none: 'None', thin: 'Thin', normal: 'Normal', bold: 'Bold',
     switchRadio: 'Switch radio', switchPower: 'Switch power', 'switch': 'Switch', quickDetail: 'Quick detail',
-    fullWindow: 'Full window', nextStep: 'Next level', 'default': 'Default', '': 'None'
+    fullWindow: 'Full window', nextStep: 'Next level', 'default': 'Default', '': 'None',
+    morph: 'Tab morph', hybrid: 'Hybrid', lens: 'Lens', cascade: 'Spring cascade', minimal: 'Minimal', fan: 'Fan'
 });
+// One line on what each animation style does, for the Animation setting.
+const DESCRIPTIONS = Object.freeze({
+    morph: 'The tab grows into the corner and its small rings fly out to become the full rings.',
+    hybrid: 'One spring grows the corner out of the tab and shows the rings as it passes them.',
+    lens: 'The corner is revealed from the tab on a fixed curve: quick start, soft landing, no bounce.',
+    cascade: 'The corner springs out of the tab, then the rings arrive one by one.',
+    minimal: 'A short grow and fade out of the tab. The least motion.',
+    fan: 'The rings unfold from the screen edge like a fan as the corner grows.'
+});
+function description(value) { return Object.prototype.hasOwnProperty.call(DESCRIPTIONS, String(value)) ? DESCRIPTIONS[String(value)] : ''; }
 function label(value) {
     const key = String(value);
     if (Object.prototype.hasOwnProperty.call(LABELS, key)) return LABELS[key];

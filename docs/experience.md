@@ -6,19 +6,77 @@ Design specification, 2026-11-17. Quickshell 0.3.2. All distances are logical px
 
 1. Grow from the corner. The origin never moves. Rings unfold from the side edge toward the other edge.
 2. Follow the finger exactly. Input has no easing, inertia or delayed knob. A tap only reveals a value.
-3. Settle without overshoot. Motion starts promptly, slows once and stops. No rotation, bounce or elastic stretch.
+3. Settle calmly. Motion starts promptly, slows once and stops. No rotation or elastic stretch. Only the open motion may bounce, and only by the configured amount or after a flick (see Open and close).
 4. Keep work available. Pending work belongs to one control. Other controls, Back and dismissal still work.
 5. Tell the truth. Preview, pending, confirmed, failed and unavailable have distinct words or outlines.
 
 ## Motion contract
 
-All eased rows below use **E** unless marked otherwise. E is Qt `Easing.Bezier`, `easing.bezierCurve: [0.23, 1, 0.32, 1, 1, 1]`. The browser equivalent is `cubic-bezier(0.23, 1, 0.32, 1)`. Linear means Qt `Easing.Linear`. No springs are used. Early drag-open release returns closed using E over 120 ms without overshoot.
+All eased rows below use **E** unless marked otherwise. E is Qt `Easing.Bezier`, `easing.bezierCurve: [0.23, 1, 0.32, 1, 1, 1]`. The browser equivalent is `cubic-bezier(0.23, 1, 0.32, 1)`. Linear means Qt `Easing.Linear`. The open and close motion is the one exception: it has its own styles, springs and curves, set in the next section.
 
 Every visual duration and stagger passes through `theme.duration(ms)`. Gesture thresholds and real command deadlines do not. View properties contain rendered progress only. `vm/FanModel.qml` owns session state, selected control, arc offset, detail id, displayed draft, confirmed value and status. Control backends own command state. Views receive these through the view model. A view must never infer success from the end of an animation.
 
 `logic/Geometry.js` supplies canonical points, radii, sweep mapping, bubble positions and corner transforms. `logic/Gesture.js` classifies taps, drags and long presses. Visual interpolation stays in `views/`. `theme/Theme.qml` alone reads stock style and colour roles. Views call named view model intents. They never run commands, read backend services or discover geometry independently.
 
 At M, R = 420, three 44 px ring bands, 4 px strokes, 240 px toggle radius, 40 px visible toggle circles and 48 px hit targets. Ring sweep = 3 to 87 degrees, toggle sweep = 6 to 84 degrees. Ring radii are Geometry output, not independent motion constants. The prototype uses band centres R-22, R-66 and R-110 as the decided Geometry implementation, checked at every size. No motion alters hit target dimensions. A valid corner tap still opens after movement under 10 px, even if a drag preview began at 6 px. Tap classification takes priority on release when its time and inside-zone checks pass.
+
+## Open and close
+
+One number, the open amount p, drives the whole open and close motion: 0 is the closed tab, 1 is the full corner.
+`logic/OpenStyles.js` maps p to everything that is drawn (disc radius, clip radius, each ring's radius, sweep, width,
+value factor, knob alpha and size, alpha, toggle alpha and scale, label and readout alpha, tab overlay alpha), and the
+timing of each style. It is a port of `docs/prototype/motion-lab.html` in real pixels for S, M and L. `views/Fan.qml`
+draws one frame from it; nothing else animates during an open or close.
+
+The style is `animation.style` (file-contract.md), default **Tab morph**. Speed (`animation.speed`, 0.5x to 2x)
+divides every duration. Bounce (`animation.bounce`, 0 to 0.35, default 0.06) is used by the spring styles when they
+open. Springs have mass 1, stiffness (2π / response)² and damping 4π(1 - bounce) / response (damping ratio 1 - bounce).
+
+| Style (key) | What moves | Open | Close |
+|---|---|---|---|
+| Tab morph (`morph`) | The disc grows from the tab (42 px) to R. Each mini ring flies out to its full ring (radius, stroke 2.5 px to the ring's width, knob 8 px to 14 px), outer first, 0.05 of p apart. Rings without a mini ring, and knobs the tab lacks, fade in as they travel. Toggles fade in from p = 0.6, labels from 0.72. | Spring 0.30 s, configured bounce | Spring 0.22 s, bounce 0 |
+| Hybrid (`hybrid`) | One radius grows the disc and opens the clip together; the full rings are revealed as the clip passes them. Toggles fade in from 0.5, labels from 0.6. | Spring 0.30 s | Spring 0.20 s, bounce 0 |
+| Lens (`lens`) | The full disc is in place; a circular clip opens from 42 px to R + 6. | 260 ms, (0.05, 0.7, 0.1, 1) | 170 ms, (0.3, 0, 0.8, 0.15) |
+| Spring cascade (`cascade`) | The disc springs out of the tab; rings fade in one by one from p = 0.25, 0.1 apart, and each fill and knob sweeps up to its value from 0.35. Toggles fade in and scale 0.7 to 1 from 0.55, 0.05 apart. | Spring 0.34 s | Spring 0.22 s, bounce 0 |
+| Minimal (`minimal`) | A short grow out of the tab with a fade (body alpha 2.2 p). | 160 ms, (0, 0, 0, 1) | 110 ms, (0.3, 0, 0.8, 0.15) |
+| Fan (`fan`) | The disc grows out of the tab by p = 0.71; each ring's sweep unfolds from the screen edge, outer first, 0.08 apart over 0.7 of p. Toggles pop in (scale 0.6 to 1) from 0.5, 0.05 apart. | 300 ms, (0.42, 1.67, 0.21, 0.9) | 170 ms, (0.3, 0, 0.8, 0.15) |
+
+Rules for every style:
+
+1. **First and last frames are the closed tab.** At p = 0 the tab overlay (`views/TabMark.qml`, the same drawing as
+   the closed tab) is fully on top and the rest is hidden; checked pixel by pixel for every tab style in a standalone
+   spike. The overlay fades out by p = 0.18 and back in on close. At p = 1 every part is at its final place.
+   `test/OpenStyles.test.mjs` checks both ends for every style, size, short screen and tab style, and that every value
+   stays finite for p from -0.2 to 1.2.
+2. **Geometry, never scale.** Radius, sweep, width and alpha are animated as geometry. Strokes and text are never
+   scaled. The clip is resolved in OpenStyles into geometry (disc radius = min(surface, clip), each part's alpha times
+   how much of its band the clip covers), so no layer or mask is created.
+3. **Staggers land by p = 1.** A stagger step shrinks when there are more rings or toggles than the lab drew (L has
+   four rings, seven toggle slots), so nothing is still fading at rest. This is the one deliberate change from the lab.
+4. **Labels and marks stay on the final radius** and fade; hit tests always use the final radii.
+5. **Interruptions keep motion.** A spring keeps its velocity when retargeted; a tween restarts from the shown value
+   over its time times the remaining distance (at least a quarter). Reopening during a close never jumps.
+6. **Drag to open.** Once the finger has moved 6 px from a closed corner, p = (distance - 42) / (R - 42) directly
+   from the finger, with a rubber band past R: 1 + (1 - 1 / ((q - 1) · 0.55 + 1)) · 0.3. On release the flick decides,
+   not the lift point: open when p + 0.12 · velocity > 0.4. The spring styles start from the finger's velocity; an
+   outward flick faster than 1.5 open amounts per second opens with bounce at least 0.15. Closing never bounces.
+7. **Exit is shorter than entry and never bounces.**
+8. **Clock only while moving.** The open amount is a spring stepped in a `FrameAnimation` with the real frame time
+   (1 ms substeps, frames over 50 ms clamped), or a bezier tween; the clock runs only while the value moves and stops
+   at rest (`views/MotionValue.qml`, math in `logic/Motion.js`). Closed and open at rest run no clock.
+9. **Colours from the theme roles only**, so the motion follows the active Omarchy theme live.
+10. **Reduced motion** (`theme.reduceMotion`) always uses Minimal without movement: the full disc in place, faded in
+    over 160 ms and out over 110 ms. No grow, no clip, no stagger, no bounce.
+
+**Seam rule.** The closed tab lives in its own window (TabWindow, above or behind windows) and the corner in
+another; the two commit separately. When the corner starts opening it draws the tab itself (the overlay above), and
+the TabWindow's tab hides only after the corner window has put that frame on screen. When it closes, the TabWindow's
+tab shows again at once, and the corner hides its copy only after the TabWindow has put its tab on screen. So there is
+never a frame without a tab, and the hand-off itself is instant in both directions (no 80 ms hint fade).
+
+Measured on the Z13 (180 Hz, standalone spike with the real views, opened and closed every 0.6 s for 8 s): every style
+averages 5.55 to 5.56 ms per frame while moving, worst 6.6 to 9.5 ms on a quiet machine. A released drag continues
+from the finger's value and velocity with no jump.
 
 ## Dial precision
 
@@ -51,7 +109,7 @@ The configured tab marks the closed corner. `cornerIcon.mode` (ux.md section 5) 
 | `onApproach` | Nothing | Tab fades 0 to 1 in 80 ms, E; fades out in 80 ms on leave. Replaces the hint arc. Push dwell is off | Tap, click, keybind, IPC |
 | `never` | Nothing | Hint arc and push dwell as before | Tap, click, push dwell, keybind, IPC |
 
-On open the icon fades out with the hint timing (80 ms) while the fan enters; on close it returns after the close completes. `aboveWindows: false` moves only the icon behind windows; the tap zone stays above them. Reduced motion shows and hides the icon instantly.
+On open and close the tab hands over to the corner window's copy of it instantly, by the seam rule in Open and close. The 80 ms fade is only for `onApproach`. `aboveWindows: false` moves only the icon behind windows; the tap zone stays above them. Reduced motion shows and hides the icon instantly.
 
 
 ## Storyboard
@@ -63,10 +121,10 @@ Times start at the trigger. Stagger is zero unless stated. Opacity values are 0 
 | Closed, no input | No visible surface, rings or perpetual hint. The static radius 32 trigger mask and the configured corner tab exist. No work loop. | 0, none |
 | Pointer enters the 2 px corner, no buttons held | Hint arc at radius 24 changes opacity 0 to 0.7. No fan preview or value change. Leave cancels dwell and fades hint 0.7 to 0. | 80 in, 80 out, E |
 | Pointer stays for 150 ms | Open. The hint fades to 0 with the entry. Ignore pushes while any button is down. After dismissal suppress another push until the pointer leaves the 2 px zone. | 150 dwell, real time; 80 hint fade, E |
-| Corner tap, valid release inside radius 32 | Surface scale 0.6 to 1 and opacity 0 to 1. No rotation. Readout and toggles opacity 0 to 1 with the surface. | 180, E |
-| Rings on open | Each ring's reveal q goes 0 to 1. Track and fill are clipped to angle `3 + 84*q`. Fill endpoint is `min(valueAngle, revealAngle)`. Knob opacity equals q and sits at its true value throughout. Labels opacity equals q. Values never animate from zero on open. | 180 each, E; outer starts 0, middle 20, inner 40. L adds 60. M finishes at 220, L at 240 |
-| Corner drag-open | Once movement exceeds 6 px, p = clamp(distance from corner / R, 0, 1). Opacity = p, scale = 0.6 + 0.4*p, ring reveal = p, no stagger. Finger owns p directly. It never edits a dial on this gesture. | 0, direct |
-| Release corner drag | Strictly past 0.4 commits open. At or below 0.4 returns closed. Continue from the displayed scale, opacity and reveal. | Remaining fraction of 180 for open; full 120 for early return closed, E, no stagger |
+| Corner tap, valid release inside radius 32 | Open amount 0 to 1 in the configured style (Open and close). | Style timing |
+| Rings on open | As the style sets them from the open amount. Fill endpoint is `min(valueAngle, sweepAngle)`. Only Spring cascade sweeps values up from zero. | Style timing |
+| Corner drag-open | Once movement exceeds 6 px, the finger owns the open amount directly, with the rubber band past R (Open and close, rule 6). It never edits a dial on this gesture. | 0, direct |
+| Release corner drag | The projected amount p + 0.12 · velocity strictly past 0.4 commits open, otherwise closed. Continue from the shown amount with the finger's velocity. | Style timing |
 | Press a ring | Lock band at down, show bubble opacity 0 to 1. No value update until movement reaches 6 px. A stationary release does not write. | Bubble 80, E |
 | Drag a dial | Disable value Behaviors before taking input. Angle maps 3 to 87 degrees to floor through max. Knob position, fill and integer label update on the same frame. Bubble is 56 px toward screen centre, clamped inside output with 8 px clearance. Brightness preview stops at 1%, other floors at 0. | 0, direct, no stagger |
 | Step or endpoint tick | At a discrete level change, knob outline width 2 to 3 then 3 to 2. Endpoint uses width 4 instead of 3. No knob translation or value overshoot. Tick once on entry to floor or max, rearm after leaving by at least one logical step. Coalesce multiple crossed steps into one tick per frame; do not buzz every percent on continuous dials. | Attack 40, recovery 80, E on each leg |
@@ -86,8 +144,8 @@ Times start at the trigger. Stagger is zero unless stated. Opacity values are 0 
 | External dial update while open | Numeric label takes the truthful value immediately. Fill angle and knob share one displayed-value interpolation from current value to new. Retarget every newer update from the displayed point. An over-cap value remains truthful in text, knob pins at max with an over-cap mark. | 120, E |
 | External update while dragging | Keep finger ownership of displayed draft. Store newest confirmed backend value in the model. After release, reconcile using the backend command result, not a stale queued animation. | Direct during drag; reconciliation 120, E |
 | Control becomes unavailable | During probing keep an empty outlined slot with input off. Available is normal. Error keeps the slot with warning and input off. Missing control is hidden per UX. Freeze positions during any active gesture. Disable its writes immediately and show reason. Remove it and recompute geometry after release; remaining positions snap. For temporary error keep its slot and a warning icon; never show false off. | No removal animation, 0 |
-| Close by outside tap, Escape, corner tap again, keybind, IPC, workspace switch, pointer leave or idle | Surface and all children fade from current opacity to 0, scale from current scale to 0.8 about corner. Cancel ring staggers. No reverse ring cascade. Detail closes in its current shape. Keep outside catcher through final frame, then restore only trigger mask. | 120, E, no stagger |
-| Reopen or reverse during close | Cancel completion callbacks and restart from each displayed property. Target scale 1, opacity 1 and ring reveal 1. Do not seed 0.6 again. Generation tokens discard stale completions. | 180 times largest remaining normalised distance, E, no stagger |
+| Close by outside tap, Escape, corner tap again, keybind, IPC, workspace switch, pointer leave or idle | Open amount from its shown value to 0 in the style, back into the tab. Detail closes in its current shape. Keep outside catcher through final frame, then restore only trigger mask. | Style close timing, no bounce |
+| Reopen or reverse during close | Retarget the open amount from its shown value; a spring keeps its velocity. Never seed 0 again. | Style timing; tweens scale by the remaining distance |
 
 Keyboard and IPC opens request OnDemand focus. Tap opens never request Exclusive focus. Outside dismissal consumes that one click. Pointer sessions close 600 ms after leaving the fan, cancelled on re-entry. Idle closes after 10000 ms without user activity. Pause both timers during any captured gesture or long press. Restart them on release. A pending command does not extend the session forever; it survives dismissal in the backend and is read again on open.
 
@@ -95,7 +153,7 @@ A timeout is an event, not a frame animation. No motion duration changes a comma
 
 ### Interruption rules
 
-Sample current presentation values before cancelling an animator. A new animation uses those values as its start. Retarget duration is the base duration multiplied by the largest remaining distance divided by that property's full travel, capped at the base duration. Zero distance finishes synchronously. Use separate opacity, scale, reveal and shape-radius channels. Do not compute scale from opacity during reversal: close ends at 0.8, first open starts at 0.6.
+Sample current presentation values before cancelling an animator. A new animation uses those values as its start. Retarget duration is the base duration multiplied by the largest remaining distance divided by that property's full travel, capped at the base duration. Zero distance finishes synchronously. The open and close motion is one channel, the open amount; detail shape and content keep their own channels.
 
 All callbacks carry a session or transition generation. Old callbacks cannot hide a newly opened fan. Input masks and accessibility visibility follow semantic state, not a rounded opacity comparison. Detail morph and close can overlap on independent channels. No view destruction until close completes. A forced close from output loss, lock or fullscreen suppresses the trigger and snaps hidden immediately.
 
@@ -107,7 +165,7 @@ All callbacks carry a session or transition generation. Old callbacks cannot hid
 | Values read by angle | Knobs travel on the same arc as input | 6 px threshold, tap never edits, band remains locked |
 | Big battery readout inside the fan | Light numerals and a compact profile chip | 48 px profile target and readable status instead of hover-only hints |
 | Filled round toggles | Filled on, outlined off, contrasting glyphs | Pending, rollback, long press and touch access |
-| Small entry from the origin | Scale plus fade | No rotating text, overshoot or colour-coded rings; stagger the ring sweep |
+| Small entry from the origin | Grows out of the tab | No rotating text, scaled strokes or colour-coded rings; six chosen styles, Tab morph by default |
 | Quiet idle | Nothing moves until asked | Fullscreen and lock suppression; zero closed polling |
 
 ## Match to stock Omarchy
@@ -137,11 +195,12 @@ Keep the window mapped with invisible contents if supported. On first mapping, c
 
 ## Reduced motion
 
-`theme.reduceMotion` is authoritative. Turning it on mid-transition immediately sets every channel to its current semantic target and cancels animation callbacks.
+`theme.reduceMotion` is authoritative. Turning it on mid-transition immediately sets every channel to its current semantic target and cancels animation callbacks. The open amount is the exception: it switches to Minimal without movement and fades from where it is.
 
 | Animation family | Reduced version |
 |---|---|
-| Hint, entry, close, reversal and ring stagger | Instant visibility and final geometry; no hint fade or stagger |
+| Hint, reversal and ring stagger | Instant; no hint fade or stagger |
+| Open and close | Minimal without movement: the full disc in place, a 160 ms fade in and 110 ms fade out |
 | Direct corner or dial drag | Still follows input 1:1, with no autonomous frames |
 | Bubble, labels and external values | Show, update and hide instantly; keep the 600 ms information hold |
 | Tick | Static endpoint mark or stepped value text. No outline pulse |

@@ -224,6 +224,11 @@ The following is the complete default file. Object keys are fixed except the cat
     ]
   },
   "toggleScroll": "resetOnOpen",
+  "animation": {
+    "style": "morph",
+    "speed": 1,
+    "bounce": 0.06
+  },
   "themePair": {
     "light": "",
     "dark": ""
@@ -257,6 +262,9 @@ The following is the complete default file. Object keys are fixed except the cat
 | ringStyle.thickness, ring style.thickness | thin, normal, bold |
 | tabStyle | rings2knob, rings3 |
 | toggleScroll | resetOnOpen |
+| animation.style | morph (Tab morph, default), hybrid, lens, cascade (Spring cascade), minimal, fan; see experience.md "Open and close" |
+| animation.speed | Number 0.5 to 2 (default 1); divides every open and close duration |
+| animation.bounce | Number 0 to 0.35 (default 0.06); used by the spring styles (morph, hybrid, cascade) when opening, ignored by the others |
 | dialInteraction.snapWindowPercent | Number 0 to 2 |
 | dialInteraction.fineDistancesPx | Exactly two finite nonnegative numbers in increasing order |
 | dialInteraction.fineGains | Exactly two finite numbers greater than 0 and at most 1 |

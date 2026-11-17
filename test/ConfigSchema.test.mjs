@@ -16,7 +16,7 @@ for(const name of ['valid','invalid','partial','unknown-keys'])test(`config fixt
     }
 });
 // A-TOGGLE-6, A-DIAL-9, A-ICON-4
-const enumPaths={corner:'corner',size:'size',mode:'outputs.mode',iconMode:'cornerIcon.mode',track:'ringStyle.track',knob:'ringStyle.knob',thickness:'ringStyle.thickness',tabStyle:'tabStyle',toggleScroll:'toggleScroll'};
+const enumPaths={corner:'corner',size:'size',mode:'outputs.mode',iconMode:'cornerIcon.mode',track:'ringStyle.track',knob:'ringStyle.knob',thickness:'ringStyle.thickness',tabStyle:'tabStyle',toggleScroll:'toggleScroll',style:'animation.style'};
 for(const [key,path] of Object.entries(enumPaths))test(`every ${key} enum accepts members and reports invalid values`,()=>{
     for(const value of C.ENUMS[key])assert.ok(!validate(at({version:1},path,value)).errors.some(e=>e.path===path));
     const r=validate(at({version:1},path,'invalid'));
@@ -104,4 +104,15 @@ test('default toggles start with Wi-Fi and keep hidden extras last (ux.md Defaul
 test('icons need no installed-icon list: plain names and local svg or png files pass, junk is reported', ()=>{
     for (const ok of ['default','audio-volume-high','wifi','/home/u/icons/x.svg']) assert.equal(C.validate({version:1,cornerIcon:{source:ok}},catalog).errors.length,0,ok);
     for (const bad of ['a b','../x.svg','$(rm)','x'.repeat(65)]) assert.ok(C.validate({version:1,cornerIcon:{source:bad}},catalog).errors.some(e=>e.path==='cornerIcon.source'),bad);
+});
+test('animation: defaults to Tab morph at 1x with bounce 0.06; bad values are reported and fall back',()=>{
+    assert.deepEqual(validate({version:1}).config.animation,{style:'morph',speed:1,bounce:0.06});
+    assert.equal(validate({version:1,animation:{style:'fan',speed:0.5,bounce:0}}).errors.length,0);
+    assert.equal(validate({version:1,animation:{speed:2,bounce:0.35}}).errors.length,0);
+    for(const [path,bad,code] of [['animation.speed',0.49,'out_of_range'],['animation.speed',2.01,'out_of_range'],['animation.bounce',-0.01,'out_of_range'],
+        ['animation.bounce',0.36,'out_of_range'],['animation.speed','fast','wrong_type'],['animation.style','bounce','unknown_value'],['animation.extra',1,'unknown_value'],['animation',7,'wrong_type']]){
+        const r=validate(at({version:1},path,bad));
+        assert.ok(r.errors.some(e=>e.path===path&&e.code===code),`${path}=${bad}`);
+        assert.deepEqual(r.config.animation,{style:'morph',speed:1,bounce:0.06});
+    }
 });

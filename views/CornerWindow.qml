@@ -19,7 +19,23 @@ PanelWindow {
   readonly property bool selected: !model.output || model.output === screen
   property bool suppressed: false
   property string iconMode: "always"
-  readonly property bool fanPresenting: selected && fan.presenting
+  property string tabStyle: "rings2knob"
+  property string tabSource: "default"
+  // Seam with TabWindow (two layer surfaces commit separately). Opening: this window draws the tab itself first, and
+  // `fanPresenting` turns true only once that frame is on screen, which hides the TabWindow's tab. Closing: the fan
+  // stays until `tabShown` (the TabWindow's tab is on screen again, or not wanted), so no frame is without a tab.
+  property bool tabShown: true
+  property bool fanDrawn: false
+  property bool handBack: false
+  readonly property bool fanPresenting: fanDrawn && fan.presenting
+  readonly property bool fanActive: selected && !suppressed && (fan.presenting || handBack)
+  onTabShownChanged: if (tabShown) handBack = false
+  Connections { target: fan; function onPresentingChanged() { win.handBack = !fan.presenting && !win.tabShown } }
+  Connections {
+    target: fan.Window.window
+    enabled: win.fanDrawn !== (fan.visible && fan.presenting)
+    function onFrameSwapped() { win.fanDrawn = fan.visible && fan.presenting }
+  }
   readonly property bool approaching: fan.approaching || trigger.approaching
 
   property bool ready: false
@@ -55,7 +71,7 @@ PanelWindow {
     id: fan
     anchors.fill: parent
     theme: win.theme; model: win.model; corner: win.corner
-    visible: win.selected && !win.suppressed && presenting
+    visible: win.fanActive; tabStyle: win.tabStyle; tabSource: win.tabSource
     forceHidden: win.suppressed || !win.selected; detailRadius: win.detailRadius; size: win.cap.size; toggleRadius: win.cap.toggleRadius; iconMode: win.iconMode
     fanRadius: win.fanRadius; radii: win.radii; origin: win.origin; screenWidth: win.outW; screenHeight: win.outH
   }

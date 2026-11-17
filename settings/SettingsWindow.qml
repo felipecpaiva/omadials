@@ -124,7 +124,7 @@ PanelWindow {
     Component { id: cornerComponent; CornerPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store } }
     Component { id: ringsComponent; ControlsPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry; host: panelWindow.panelHost } }
     Component { id: togglesComponent; ControlsPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry; host: panelWindow.panelHost; togglesOnly: true } }
-    Component { id: behaviorComponent; BehaviorPage { registry: panelWindow.panelHost.registry; theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store } }
+    Component { id: behaviorComponent; BehaviorPage { active: panelWindow.panelHost.opened; registry: panelWindow.panelHost.registry; theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store } }
     Component { id: aboutComponent; AboutPage { theme: panelWindow.panelHost.theme; store: panelWindow.panelHost.store; registry: panelWindow.panelHost.registry } }
     Component {
         id: editSheetComponent

@@ -15,7 +15,8 @@ QtObject {
     property var rings: registry ? (captured ? frozenRings : registry.rings) : []
     readonly property var toggles: registry ? (captured ? frozenToggles : registry.toggles) : []
     property bool open: false
-    property real preview: -1
+    property real preview: -1       // the open amount while a finger drags the corner open, -1 otherwise
+    property real flick: 0          // that finger's speed (open amounts per second) at release; the open motion starts from it
     property bool pointerSession: false
     property int tickSerial: 0
     property var tickControl: null
@@ -72,6 +73,7 @@ QtObject {
         bubbleVisible = false; idle.stop()
     }
     function toggle() { if (open) close(); else show(false) }
+    function release(opening, velocity) { flick = velocity; if (opening) show(false); else close(); flick = 0 }
     function say(text, error, user) { status = text; statusError = !!error; statusAt = Date.now(); if (user !== false) activity() }
     function report(control) {
         say(control.label + ": " + (control.writeState === "failed" ? control.lastError : control.writeState === "pending" ? "changing…" : control.valueText), control.writeState === "failed", false)

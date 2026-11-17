@@ -20,6 +20,8 @@ Item {
     property real startAngle: 0
     property real startOffset: 0
     property real offset: model.arcOffset
+    property var reveal: []          // per visible slot {alpha, scale} from OpenStyles.frame while opening and closing
+    function slotLook(i) { return reveal.length ? reveal[Math.max(0, Math.min(reveal.length - 1, Math.round(i)))] : ({ alpha: 1, scale: 1 }) }
     Connections { target: arc.model; function onOpenChanged() { if (arc.model.open) { snapAnimation.stop(); arc.dragging = true; arc.offset = 0; arc.dragging = false } } }
     onOffsetChanged: model.arcOffset = offset
     Behavior on offset { enabled: !arc.dragging; NumberAnimation { id: snapAnimation; duration: arc.theme.duration(Motion.TIMES.snap); easing.type: Easing.BezierSpline; easing.bezierCurve: arc.theme.easeOut } }
@@ -35,13 +37,16 @@ Item {
         id: buttons
         model: arc.model.toggles
         ToggleButton {
+            id: toggle
             required property var modelData
             required property int index
             readonly property real angle: Geometry.ARC_START + arc.slots.step * (index-arc.offset+0.5)
             readonly property var pos: Geometry.fromCanonical(Geometry.knobPos(arc.radius,angle,arc.screenHeight),arc.screenWidth,arc.screenHeight,arc.corner)
             x: pos.x-width/2; y: pos.y-height/2
             visible: Gesture.arcHit(angle,arc.radius)
-            opacity: modelData.availability === "available" ? 1 : 0.5
+            readonly property var look: arc.slotLook(index - arc.offset)
+            opacity: (modelData.availability === "available" ? 1 : 0.5) * look.alpha
+            transform: Scale { origin.x: Gesture.TARGET / 2; origin.y: Gesture.TARGET / 2; xScale: toggle.look.scale; yScale: toggle.look.scale }
             theme: arc.theme; control: modelData; model: arc.model
             down: arc.pressedIndex === index && !arc.dragging
             holdProgress: down ? holdFill.progress : 0
@@ -105,6 +110,7 @@ Item {
             readonly property var pos: Geometry.fromCanonical(Geometry.knobPos(arc.radius,index ? Geometry.ARC_END : Geometry.ARC_START,arc.screenHeight),arc.screenWidth,arc.screenHeight,arc.corner)
             x: pos.x-8; y: pos.y-8; width: 16; height: 16; radius: 8
             visible: index ? arc.offset < arc.maxOffset : arc.offset > 0
+            opacity: arc.slotLook(index ? arc.reveal.length - 1 : 0).alpha
             gradient: Gradient { GradientStop { position: 0; color: arc.theme.surface } GradientStop { position: 1; color: Qt.alpha(arc.theme.surface,0) } }
         }
     }

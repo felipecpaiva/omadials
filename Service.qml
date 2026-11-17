@@ -70,8 +70,12 @@ Item {
         size: root.config.size
         iconMode: root.config.cornerIcon ? root.config.cornerIcon.mode : "always"
         suppressed: perOutput.fullscreen
+        tabStyle: root.config.tabStyle || "rings2knob"
+        tabSource: root.config.cornerIcon ? root.config.cornerIcon.source : "default"
+        tabShown: !tabWindow.wanted || tabWindow.shown
       }
       TabWindow {
+        id: tabWindow
         screen: perOutput.modelData
         theme: omadialsTheme
         model: fanModel

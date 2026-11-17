@@ -6,12 +6,15 @@ ColumnLayout {
     required property var store
     required property var theme
     required property var registry
+    // False while the panel is closed, so no preview animation runs.
+    property bool active: true
     spacing: 16
     SettingsCard {
         theme: behaviorPage.theme; title: "Closing"
         SettingField { theme: behaviorPage.theme; store: behaviorPage.store; path: "behavior.idleTimeoutS"; label: "Close after"; hint: "Seconds without activity."; choices: [0,5,10,20,30]; choiceLabels: ["Never","5 s","10 s","20 s","30 s"] }
         SettingField { theme: behaviorPage.theme; store: behaviorPage.store; path: "behavior.closeOnPointerLeave"; label: "Close when the pointer leaves"; hint: "Dismiss the corner when you move away."; kind: "bool" }
     }
+    AnimationCard { theme: behaviorPage.theme; store: behaviorPage.store; active: behaviorPage.active }
     SettingsCard {
         theme: behaviorPage.theme; title: "Dials"
         SettingField { theme: behaviorPage.theme; store: behaviorPage.store; path: "dialInteraction.fineEnabled"; label: "Fine control when you drag away from the ring"; hint: "Move outward for smaller adjustments."; kind: "bool" }

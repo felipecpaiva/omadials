@@ -11,6 +11,7 @@ ColumnLayout {
         SettingField { store: page.store; theme: page.theme; path: "behavior.idleTimeoutS"; label: qsTr("Close after"); help: qsTr("Seconds without activity before the corner closes."); kind: "choice"; choices: [0,5,10,20,30]; words: [qsTr("Never"),qsTr("5 s"),qsTr("10 s"),qsTr("20 s"),qsTr("30 s")] }
         SettingField { store: page.store; theme: page.theme; path: "behavior.closeOnPointerLeave"; label: qsTr("Close when the pointer leaves"); help: qsTr("Close the corner when you move back to your work."); kind: "bool" }
     }
+    AnimationCard { store: page.store; theme: page.theme }
     SettingsCard {
         theme: page.theme; title: qsTr("Dials")
         SettingField { store: page.store; theme: page.theme; path: "dialInteraction.fineEnabled"; label: qsTr("Fine control when you drag away from the ring"); help: qsTr("Move outward to make smaller changes."); kind: "bool" }

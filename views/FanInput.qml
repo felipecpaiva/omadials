@@ -3,6 +3,7 @@ import QtQuick
 import "../logic/Geometry.js" as Geometry
 import "../logic/Gesture.js" as Gesture
 import "../logic/ValueMap.js" as ValueMap
+import "../logic/OpenStyles.js" as OpenStyles
 
 MouseArea {
     id: input
@@ -24,6 +25,9 @@ MouseArea {
     property bool startedClosed: false
     property double pressedAt: 0
     property real remainder: 0
+    property real flick: 0           // drag-open speed, open amounts per second
+    property real lastDistance: 0
+    property double lastAt: 0
     hoverEnabled: true
     function polarOf(px, py) {
         const c = Geometry.toCanonical({x:px,y:py}, screenWidth, screenHeight, corner)
@@ -36,6 +40,7 @@ MouseArea {
         start = Qt.point(m.x,m.y); pressedAt = Date.now(); dragging = false; consumed = false
         startedClosed = !model.open; if (startedClosed && targetScreen) model.output = targetScreen; dwell.stop(); model.activity()
         const p = polarOf(m.x,m.y)
+        flick = 0; lastDistance = p.d; lastAt = pressedAt
         ring = model.open && !model.detail ? Geometry.hitRing(p.d,radii) : -1
         labelHit = false
         const boxes = model.open && !model.detail ? Geometry.labelBoxes(radii,screenWidth,screenHeight,corner) : []
@@ -62,7 +67,11 @@ MouseArea {
             return
         }
         const distance = Math.hypot(m.x-start.x,m.y-start.y)
-        if (startedClosed && model.captured && distance >= Gesture.DRAG) { model.preview = Math.min(1,p.d/fanRadius); return }
+        if (startedClosed && model.captured && distance >= Gesture.DRAG) {   // the finger owns the open amount
+            const now = Date.now()
+            flick = OpenStyles.flickVelocity(flick, p.d - lastDistance, now - lastAt, fanRadius); lastDistance = p.d; lastAt = now
+            model.preview = OpenStyles.dragAmount(p.d, fanRadius); return
+        }
         if (distance >= (labelHit ? Gesture.LABEL_CANCEL : Gesture.DRAG)) hold.stop()
         if (ring < 0 || consumed || labelHit || model.rings[ring].kind === "readout") return
         if (distance < Gesture.DRAG && !dragging) return
@@ -78,7 +87,7 @@ MouseArea {
                 if (c.kind === "readout") model.openDetail(c)
                 else if (labelHit) model.action(c,false)
             } else if (!c && p.d <= Gesture.TRIGGER && Date.now()-pressedAt <= Gesture.TAP && Math.hypot(m.x-start.x,m.y-start.y) < Gesture.TAP_MOVE) { model.pointerSession = false; model.toggle() }
-            else if (!c && startedClosed) { if (p.d/fanRadius > Gesture.OPEN_THRESHOLD) model.show(false); else model.close() }
+            else if (!c && startedClosed) model.release(model.preview >= 0 && OpenStyles.opensOnRelease(model.preview, flick, Gesture.OPEN_THRESHOLD), model.preview >= 0 ? flick : 0)
             else if (!c && model.open && p.d > fanRadius) model.close()
         }
         ring = -1; dragging = false
