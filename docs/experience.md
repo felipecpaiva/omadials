@@ -1,6 +1,6 @@
 # omadials experience and motion
 
-Design specification, 2026-11-17. Quickshell 0.3.2. All distances are logical px. This extends `ux.md`, it does not replace its sizes, gestures or acceptance criteria. `architecture.md` resolves backend and password handling. Items needing a product decision are listed at the end.
+Design specification, 2026-11-17. Quickshell 0.3.2. All distances are logical px. This extends `ux.md`, it does not replace its sizes, gestures or acceptance criteria. `architecture.md` resolves backend and password handling. The shared checks are in [acceptance.md](acceptance.md).
 
 ## Feel
 
@@ -12,13 +12,47 @@ Design specification, 2026-11-17. Quickshell 0.3.2. All distances are logical px
 
 ## Motion contract
 
-All eased rows below use **E** unless marked otherwise. E is Qt `Easing.Bezier`, `easing.bezierCurve: [0.23, 1, 0.32, 1, 1, 1]`. The browser equivalent is `cubic-bezier(0.23, 1, 0.32, 1)`. Linear means Qt `Easing.Linear`. No springs are used. The phrase "springs closed" in UX acceptance 1 means return to closed, using E over 120 ms. It does not mean overshoot.
+All eased rows below use **E** unless marked otherwise. E is Qt `Easing.Bezier`, `easing.bezierCurve: [0.23, 1, 0.32, 1, 1, 1]`. The browser equivalent is `cubic-bezier(0.23, 1, 0.32, 1)`. Linear means Qt `Easing.Linear`. No springs are used. Early drag-open release returns closed using E over 120 ms without overshoot.
 
 Every visual duration and stagger passes through `theme.duration(ms)`. Gesture thresholds and real command deadlines do not. View properties contain rendered progress only. `vm/FanModel.qml` owns session state, selected control, arc offset, detail id, displayed draft, confirmed value and status. Control backends own command state. Views receive these through the view model. A view must never infer success from the end of an animation.
 
 `logic/Geometry.js` supplies canonical points, radii, sweep mapping, bubble positions and corner transforms. `logic/Gesture.js` classifies taps, drags and long presses. Visual interpolation stays in `views/`. `theme/Theme.qml` alone reads stock style and colour roles. Views call named view model intents. They never run commands, read backend services or discover geometry independently.
 
-At M, R = 420, three 44 px ring bands, 4 px strokes, 240 px toggle radius, 40 px visible toggle circles and 48 px hit targets. Ring sweep = 3 to 87 degrees, toggle sweep = 6 to 84 degrees. Ring radii are Geometry output, not independent motion constants. The prototype uses band centres R-22, R-66 and R-110 as an illustrative Geometry implementation. This placement needs the geometry review noted below. No motion alters hit target dimensions. A valid corner tap still opens after movement under 10 px, even if a drag preview began at 6 px. Tap classification takes priority on release when its time and inside-zone checks pass.
+At M, R = 420, three 44 px ring bands, 4 px strokes, 240 px toggle radius, 40 px visible toggle circles and 48 px hit targets. Ring sweep = 3 to 87 degrees, toggle sweep = 6 to 84 degrees. Ring radii are Geometry output, not independent motion constants. The prototype uses band centres R-22, R-66 and R-110 as the decided Geometry implementation, checked at every size. No motion alters hit target dimensions. A valid corner tap still opens after movement under 10 px, even if a drag preview began at 6 px. Tap classification takes priority on release when its time and inside-zone checks pass.
+
+## Dial precision
+
+Normal drag follows the finger without easing. Outward distance is measured from the locked ring centre, so the rule works for every ring and corner. Beyond the 22 px half band, gain is 0.25. Beyond 66 px, gain is 0.1. Fine mode integrates angle deltas into an unsnapped draft. The knob leaves the finger and the bubble says "Fine". Every gain transition rebases the last angle. Returning to normal keeps the draft and uses gain 1 from that angle, without a jump. A fresh normal drag maps the finger angle directly. This deliberate clutch is the exception to "knob under the finger".
+
+Marks stay visible at 0, 25, 50, 75 and 100. Snap attracts the displayed value within 2 percentage points. The unsnapped draft keeps moving so it can escape. Settings can disable attraction, not marks. Each detent entry gives one existing 40/80 ms visual tick. No Z13 haptics.
+
+## Order and text layout
+
+Order changes only in settings, never from usage. Toggle scrolling resets to the first slot on each open.
+
+Labels follow each ring curve, 14 px inside the track and starting 10 px from the side edge, always left to right. Normal battery text is 40 px, Compact 28 px and Large 48 px. The profile and gear each keep a 48 px target. Compact omits ring names and the battery line.
+
+At M and L, status uses a 120 px box with up to two 18 px lines. Longer status hides the battery number and line and uses a 144 px box with up to four lines above the profile chip. If it still does not fit, show the whole text in a 260 px notice beside the fan. Compact always uses the notice for 2.5 s after an action; errors remain until the next action. Short status restores battery copy. No clipping, ellipsis, overlap or font below 12 px.
+
+## Media detail
+
+At M the three 44 px bands use 132 px. A progress readout would replace brightness, volume or mic under the three-ring cap. It also cannot fit track title and three 48 px transport targets. The R by R detail can fit a 48 px header, two title lines, a 48 px progress row and three 48 px transport controls with room to scroll. Choose a media detail, reached by holding the volume label or tapping Media. Volume detail includes the Media button. No progress ring.
+
+Storyboard: open, normal drag, outward fine clutch, detent escape, toggle scroll, app sliders and output picker, media transport, theme picker, return and close. Prototype data and commands are fake.
+
+
+## Corner icon
+
+The configured tab marks the closed corner. `cornerIcon.mode` (ux.md section 5) decides:
+
+| Mode | Closed look | Pointer enters the 32 px zone | Opens by |
+|---|---|---|---|
+| `always` | Corner tab visible | No change; push dwell and hint arc as before | Tap, click, push dwell, keybind, IPC |
+| `onApproach` | Nothing | Tab fades 0 to 1 in 80 ms, E; fades out in 80 ms on leave. Replaces the hint arc. Push dwell is off | Tap, click, keybind, IPC |
+| `never` | Nothing | Hint arc and push dwell as before | Tap, click, push dwell, keybind, IPC |
+
+On open the icon fades out with the hint timing (80 ms) while the fan enters; on close it returns after the close completes. `aboveWindows: false` moves only the icon behind windows; the tap zone stays above them. Reduced motion shows and hides the icon instantly.
+
 
 ## Storyboard
 
@@ -26,13 +60,13 @@ Times start at the trigger. Stagger is zero unless stated. Opacity values are 0 
 
 | Moment and trigger | What moves, from and to | Duration, curve, stagger |
 |---|---|---|
-| Closed, no input | No visible surface, rings or perpetual hint. Only the static radius 32 trigger mask exists. No work loop. | 0, none |
+| Closed, no input | No visible surface, rings or perpetual hint. The static radius 32 trigger mask and the configured corner tab exist. No work loop. | 0, none |
 | Pointer enters the 2 px corner, no buttons held | Hint arc at radius 24 changes opacity 0 to 0.7. No fan preview or value change. Leave cancels dwell and fades hint 0.7 to 0. | 80 in, 80 out, E |
 | Pointer stays for 150 ms | Open. The hint fades to 0 with the entry. Ignore pushes while any button is down. After dismissal suppress another push until the pointer leaves the 2 px zone. | 150 dwell, real time; 80 hint fade, E |
 | Corner tap, valid release inside radius 32 | Surface scale 0.6 to 1 and opacity 0 to 1. No rotation. Readout and toggles opacity 0 to 1 with the surface. | 180, E |
-| Rings on open | Each ring's reveal q goes 0 to 1. Track and fill are clipped to angle `6 + 78*q`. Fill endpoint is `min(valueAngle, revealAngle)`. Knob opacity equals q and sits at its true value throughout. Labels opacity equals q. Values never animate from zero on open. | 180 each, E; outer starts 0, middle 20, inner 40. L adds 60. M finishes at 220, L at 240 |
+| Rings on open | Each ring's reveal q goes 0 to 1. Track and fill are clipped to angle `3 + 84*q`. Fill endpoint is `min(valueAngle, revealAngle)`. Knob opacity equals q and sits at its true value throughout. Labels opacity equals q. Values never animate from zero on open. | 180 each, E; outer starts 0, middle 20, inner 40. L adds 60. M finishes at 220, L at 240 |
 | Corner drag-open | Once movement exceeds 6 px, p = clamp(distance from corner / R, 0, 1). Opacity = p, scale = 0.6 + 0.4*p, ring reveal = p, no stagger. Finger owns p directly. It never edits a dial on this gesture. | 0, direct |
-| Release corner drag | Strictly past 0.4 commits open. At or below 0.4 returns closed. Continue from the displayed scale, opacity and reveal. | Remaining fraction of 180 open or 120 close, E, no stagger |
+| Release corner drag | Strictly past 0.4 commits open. At or below 0.4 returns closed. Continue from the displayed scale, opacity and reveal. | Remaining fraction of 180 for open; full 120 for early return closed, E, no stagger |
 | Press a ring | Lock band at down, show bubble opacity 0 to 1. No value update until movement reaches 6 px. A stationary release does not write. | Bubble 80, E |
 | Drag a dial | Disable value Behaviors before taking input. Angle maps 3 to 87 degrees to floor through max. Knob position, fill and integer label update on the same frame. Bubble is 56 px toward screen centre, clamped inside output with 8 px clearance. Brightness preview stops at 1%, other floors at 0. | 0, direct, no stagger |
 | Step or endpoint tick | At a discrete level change, knob outline width 2 to 3 then 3 to 2. Endpoint uses width 4 instead of 3. No knob translation or value overshoot. Tick once on entry to floor or max, rearm after leaving by at least one logical step. Coalesce multiple crossed steps into one tick per frame; do not buzz every percent on continuous dials. | Attack 40, recovery 80, E on each leg |
@@ -45,7 +79,7 @@ Times start at the trigger. Stagger is zero unless stated. Opacity values are 0 
 | Command fails or times out | Cross-fade proposed fill back to last confirmed fill. Replace pending outline with warning icon and "Could not change Bluetooth: reason". Keep error until the next user action or successful refresh. No shake. Never retry from the view. | Rollback 120, E; warning appears immediately |
 | Long press on toggle or dial label | At 150 ms start an outline fill at 0 degrees. It reaches 360 at 450 ms. Movement of 6 px cancels toggle hold; dial label hold cancels at 10 px. A completed hold consumes release so no toggle follows. | 300, Linear; real hold deadline 450 |
 | Arc scroll | After 6 px cancel hold; tangential travel updates arc offset 1:1. No easing during capture. Theme-only end fades show hidden items. | 0, direct |
-| Arc release or wheel | Snap to nearest slot; wheel advances one slot. Retarget from current offset. Capture interrupts snap; close cancels it and remembers nearest slot. | 160, E, no overshoot |
+| Arc release or wheel | Snap to nearest slot; wheel advances one slot. Retarget from current offset. Capture interrupts snap; close cancels it; the next open resets to the first slot. | 160, E, no overshoot |
 | Enter detail | R x R bounds and corner anchor stay fixed. Far-corner surface radius R to theme.radius. Straight edges stay on the two screen edges. Fan content opacity 1 to 0 in first 80 ms. Detail content opacity 0 to 1 from 80 ms onward. No text scaling or rotation. | Radius 200, E; outgoing 80, E; incoming 120, E, delay 80 |
 | Wi-Fi, outputs or displays detail loads | Asynchronous Loader. Header and Back exist immediately. Reserve rows at least 48 px tall, growing for wrapped text; show static "Loading" until rows arrive. Replace text in place, no growing card or row cascade. New secured Wi-Fi uses inline password entry, gated by S7; no keyboard offers the full window. Never put credentials in argv. | Data replacement 0, no stagger |
 | Back or Escape in detail | Reverse radius to R over 200. Detail fades out in first 80, fan fades in over following 120. Restore prior arc offset and focused control. Escape again closes even during this transition. | 200, E; 80 out, 120 in, delay 80 |
@@ -78,7 +112,7 @@ All callbacks carry a session or transition generation. Old callbacks cannot hid
 
 ## Match to stock Omarchy
 
-Read from installed sources on 2026-11-17. These are observations, not measured frame times.
+Installed source values recorded on 2026-11-17. These are observations, not measured frame times.
 
 | Installed source, file:line | Actual value | Use here |
 |---|---|---|
@@ -127,7 +161,7 @@ Resolve contrast fallback at the new endpoint. Intermediate interpolation can re
 
 ## Four corners
 
-Canonical origin is bottom-left. Map points through Geometry, then apply a positive uniform scale around the chosen screen corner. Right corners mirror x positions. Top corners mirror y positions. Both mirror both positions. Never negative-scale a parent containing glyphs or text. Reveal always runs from the vertical edge to the horizontal edge. Text remains upright and row order remains top to bottom in detail views. Detail header and rows are laid out normally inside the anchored square. The far-corner surface radius moves between R and theme.radius in every corner.
+Canonical origin is bottom-left. Map points through Geometry, then apply a positive uniform scale around the chosen screen corner. Right corners mirror x positions. Top corners mirror y positions. Top-right mirrors both positions. Never negative-scale a parent containing glyphs or text. Reveal always runs from the vertical edge to the horizontal edge. Text remains upright and row order remains top to bottom in detail views. Detail header and rows are laid out normally inside the anchored square. The far-corner surface radius moves between R and theme.radius in every corner.
 
 An output rotation or scale change cancels captured gestures without writing a brightness draft. Recompute R and capacity, then snap to the new geometry. Unplug closes immediately. Do not animate a fan across outputs.
 
@@ -158,7 +192,7 @@ The event set is exactly `PUSH_ENTER`, `PUSH_LEAVE`, `DWELL`, `OPEN`, `CORNER_TA
 | opening, open | RING_DOWN | dragging | Capture owner=ring; value bubble, no write |
 | dragging | MOVE | dragging | Threshold then direct corner progress or dial angle |
 | dragging | RELEASE, owner=corner and p>0.4 | opening | Complete remaining entry |
-| dragging | RELEASE, owner=corner and p<=0.4 | closing | Remaining close |
+| dragging | RELEASE, owner=corner and p<=0.4 | closing | 120 ms return on E |
 | dragging | RELEASE, owner=ring | open | Commit only if drag threshold passed; reconcile |
 | dragging | CANCEL | open if ring, closing if corner | Discard brightness draft; release capture |
 | opening, open | DETAIL, supported and no capture | detail | Morph in, load asynchronously |
@@ -182,77 +216,22 @@ The event set is exactly `PUSH_ENTER`, `PUSH_LEAVE`, `DWELL`, `OPEN`, `CORNER_TA
 
 Deferred deliberate dismissal is delivered as DISMISS immediately after RELEASE or CANCEL. A cancelled long press is not a dial drag. Pointer leave and idle use the existing UX deadlines. Command machines continue independently when the view is closed.
 
-## Motion acceptance checklist
+## Acceptance
 
-Continue `ux.md` acceptance numbering.
+Use the shared [acceptance checklist](acceptance.md).
 
-24. At normal speed, new entry surface reaches scale 1 and opacity 1 at 180 ms within one 60 Hz frame. Ring starts are 0, 20, 40 ms at M, and all finish by 220 ms within one frame.
-25. Close completes in 120 ms within one frame from rest. No frame shows scale below 0.8 on ordinary close. No text rotates.
-26. Reverse entry at 60 ms and reverse exit at 60 ms. Compare the frame before and after retarget: scale, opacity, reveal and radius start at the same presentation values. No stale completion hides the reopened fan.
-27. Press and release at five positions on each ring with movement below 6 px. No backend write occurs. After crossing 6 px, knob and fill match the clamped pointer angle in the next rendered frame.
-28. Cross ring bands while captured. Only the original dial changes. Brightness writes exactly once on completed release and never on cancellation.
-29. A stepped-level crossing produces one 40 ms attack and 80 ms recovery. Holding an endpoint for 1 s causes no repeated tick. Re-entering after one step produces one new tick.
-30. Toggle press reaches 0.92 in 80 ms; fill reaches proposed state in 120 ms. A pending command leaves other controls and dismissal usable. A failed command restores last confirmed fill in 120 ms and shows a reason.
-31. Hold at 449 ms does not open detail. At 450 ms it does. A 6 px toggle move cancels. Release after a completed hold never toggles.
-32. Arc release snaps in 160 ms with E and no overshoot. Capture interrupts snap from its current offset. Wheel advances one slot. Off-arc targets cannot receive input.
-33. Detail keeps the same anchor and R x R bounds. Radius reaches theme.radius in 200 ms. Fan content is gone by 80 ms; detail is fully visible by 200 ms. Back restores arc offset and focus.
-34. External updates glide for 120 ms, with text truthful immediately. An update during a drag cannot pull the knob away from the pointer. Over-cap readings are not falsified.
-35. Reduced motion switches every active animation to its semantic endpoint in one frame. Pending remains dashed and static. Gesture deadlines stay unchanged.
-36. Switch themes twice during a drag. Geometry and capture stay unchanged. Colour targets retarget within one frame and settle in 160 ms. Check text and control contrast at intermediate colours.
-37. Repeat entry, drag, arc scrolling and detail in four corners. Text stays upright, minimum stays at the side edge, and order remains unchanged.
-38. In the stated 30 s Z13 performance run, capture frame intervals and UI/render work. Meet the budgets above with both normal and reduced motion. Record shader and Shape fallback results separately.
-39. Closed and resting open views have no visual frame callbacks. Pending-only motion is confined to pending controls. Dismissal never waits for a command.
-40. All dismissal paths retain the outside catcher through close and release it on completion. Forced hide is immediate. Verify layer focus and first-map compositor timing by hand.
+## Geometry and device checks
 
-## Decisions on earlier open questions
+The closed geometry decisions are in `architecture.md` section 14.
 
-Closed 2026-11-17 (plan P0.1); the full list is in `architecture.md` section 14.
-
-- Early drag-open release: 120 ms return on E, no overshoot. "Springs closed" in older text means this.
+- Early drag-open release: 120 ms return on E, no overshoot.
 - Ring radii: R - 22 - 44 x i, checked per size in the Geometry tests.
 - Small outputs: fall back to Compact, then fewer rings; targets never shrink.
 - Compositor fade stacking and theme contrast during a cross-fade stay open as Z13 checks (plan P1.3 and P2.6).
 
-## Prototype scope and verification
+## Prototype scope
 
-Open `docs/prototype/motion.html` locally. It has no dependencies or network requests. Play storyboard drives entry, values, tick, slow confirmation, failure, arc scrolling, detail, external update and close. Manual controls cover corner choice, detail kind, unavailable hardware, light/dark, reduced motion and quarter speed. Pointer and touch use the same capture path. A browser cannot emulate Hyprland focus, layer input masks, real backends or physical haptics. It demonstrates a visual tick only.
-
-The round 2 extracted script passed `node --check`. A Node DOM stub exercised four-corner rendering, arc bounds, disconnected readouts, styles, quick Wi-Fi detail, reduced motion and close. This checks logic, not browser rendering. Since round 3, `docs/prototype/shoot.sh` takes headless Chromium screenshots of all 4 corners with a long status, and each round is checked from those images. Headless Chromium does not run animation frames reliably, so motion checks replace the frame clock with a 16 ms timer; they prove the animation logic, not real frame pacing. Touch, Qt shaders, first-map behaviour and Z13 frame pacing still need the device.
-
-Round 2 text, styles and readout acceptance is in ux.md 41 to 45. Track thickness is configurable 2, 4 or 6 px. Dash patterns are shader uniforms, never per-frame path rebuilds. Readouts have no knob and flat caps.
-
-Round 3 replaces the outside text rail with inside-fan boxes and readout priority.
+Open [the motion prototype](prototype/motion.html) locally. It simulates controls and commands. It does not verify Hyprland focus, layer input masks, real backends, touch hardware, Qt shaders or frame pacing. Those need the plan P1 device checks.
 
 
-## Round 3 contract
-
-Normal drag follows the finger without easing. Outward distance is measured from the locked ring centre, so the rule works for every ring and corner. Beyond the 22 px half band, gain is 0.25. Beyond 66 px, gain is 0.1. Fine mode integrates angle deltas into an unsnapped draft. The knob leaves the finger and the bubble says "Fine". Every gain transition rebases the last angle. Returning to normal keeps the draft and uses gain 1 from that angle, without a jump. A fresh normal drag maps the finger angle directly. This deliberate clutch is the exception to "knob under the finger".
-
-Marks stay visible at 0, 25, 50, 75 and 100. Snap attracts the displayed value within 2 percentage points. The unsnapped draft keeps moving so it can escape. Settings can disable attraction, not marks. Each detent entry gives one existing 40/80 ms visual tick. No Z13 haptics.
-
-Order changes only in settings, never from usage. Toggle scrolling resets to the first slot on each open so the same initial controls are easy to find.
-
-All fan text stays inside the quarter circle. Labels occupy the side-edge start of each band. The corner readout has a 40 px battery number and a 48 px profile chip. The status box is 100 px wide for one line above the battery number. A longer status hides the battery number and battery line and takes their room above the profile chip: 124 px wide, up to 4 lines of 12 px text on 18 px lines, inside the toggle arc. Longer still, it shows whole as a notice beside the fan along the same screen edge (260 px wide, theme surface and border). Text is never cut and never overlaps.
-
-### Media fit study
-
-At M the three 44 px bands use 132 px. A progress readout would replace brightness, volume or mic under the three-ring cap. It also cannot fit track title and three 48 px transport targets. The R by R detail can fit a 48 px header, two title lines, a 48 px progress row and three 48 px transport controls with room to scroll. Choose a media detail, reached by holding the volume label or tapping Media. Volume detail includes the Media button. No progress ring.
-
-Storyboard: open, normal drag, outward fine clutch, detent escape, toggle scroll, app sliders and output picker, media transport, theme picker, return and close. Prototype data and commands are fake.
-
-## Corner icon
-
-Closed is no longer an empty corner when the icon is on. `cornerIcon.mode` (ux.md section 5) decides:
-
-| Mode | Closed look | Pointer enters the 32 px zone | Opens by |
-|---|---|---|---|
-| `always` | Corner tab visible | No change; push dwell and hint arc as before | Tap, click, push dwell, keybind, IPC |
-| `onApproach` | Nothing | Tab fades 0 to 1 in 80 ms, E; fades out in 80 ms on leave. Replaces the hint arc. Push dwell is off | Tap, click, keybind, IPC |
-| `never` | Nothing | Hint arc and push dwell as before | Tap, click, push dwell, keybind, IPC |
-
-On open the icon fades out with the hint timing (80 ms) while the fan enters; on close it returns after the close completes. `aboveWindows: false` moves only the icon behind windows; the tap zone stays above them. Reduced motion shows and hides the icon instantly.
-
-53. In each icon mode a tap in the 32 px zone opens, also with a window covering the corner and the icon behind it.
-54. In `onApproach`, a pointer that rests in the zone for 2 s shows the icon and never opens the fan by itself.
-55. The icon never appears over a fullscreen window or on the lock screen.
-56. An invalid custom icon falls back to the default icon and is reported in settings, never silently.
+**Ring cap at Large:** the cap is four rings (decision 6). The three dials fill three; the fourth slot holds a readout ring when one is added. The prototype has only three ring slots.

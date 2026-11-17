@@ -4,14 +4,15 @@ A control corner for [Omarchy](https://omarchy.org). Quick settings as you drag 
 with your hardware quick settings: brightness, volume and mic as arcs you drag, plus toggles for Wi-Fi,
 Bluetooth, night light, do not disturb, keep awake and power profile. Touch first, mouse fine.
 
-**Status:** design rounds 1 to 3 done. Next: phase P0, design close-out ([plan](docs/plan.md)). No plugin code yet.
+**Status:** design close-out in progress. Next: design freeze ([plan](docs/plan.md)). No plugin code yet.
 
 | Doc | What it holds |
 |---|---|
 | [docs/plan.md](docs/plan.md) | The plan: phases P0 to P10, day goals, what done means |
 | [docs/architecture.md](docs/architecture.md) | Start here: layers, control contract, config, milestones |
 | [docs/experience.md](docs/experience.md) | Motion and interaction spec: timings, curves, state machine. Prototype: [docs/prototype/motion.html](docs/prototype/motion.html) |
-| [docs/ux.md](docs/ux.md) | Experience, touch, theming, settings window, acceptance checklist |
+| [docs/ux.md](docs/ux.md) | Experience, touch, theming, settings window |
+| [docs/acceptance.md](docs/acceptance.md) | Shared acceptance checklist with stable IDs |
 | [docs/controls.md](docs/controls.md) | Every hardware control: read, write, events, availability |
 | [docs/platform.md](docs/platform.md) | Omarchy shell plugin contract |
 | [docs/references.md](docs/references.md) | What we learned from other control corners |

@@ -54,7 +54,7 @@ Tags: [verified Z13] = a read command was run here. [from source] = read in `/us
 
 ### Output volume and mute
 - Read: `Quickshell.Services.Pipewire` `Pipewire.defaultAudioSink.audio.volume` and `.muted`; wrap in `PwObjectTracker` or the audio property stays null [from source, standard Quickshell usage; untested here].
-- CLI check [verified Z13]: `wpctl status` shows sink 60 "Ryzen HD Audio Controller Analog Stereo [vol: 1.10]". The volume is above 1.0, so the dial must allow 0 to 150% and show an overdrive zone, or cap at 100%.
+- CLI check [verified Z13]: `wpctl status` shows sink 60 "Ryzen HD Audio Controller Analog Stereo [vol: 1.10]". The volume is above 1.0, so show the real 110% reading. Input caps at 100% by default; a setting permits up to 150%. Pin the knob at the cap with an over-cap mark when needed.
 - Write: set `audio.volume` through Pipewire. Alternative stock helper: `omarchy-audio-output-volume raise|lower|mute-toggle|+N|-N` (shows the OSD; resolves through DSP sinks via `omarchy-audio-output-sink`) [from source].
 
 ### Mic volume and mute
@@ -88,13 +88,13 @@ Tags: [verified Z13] = a read command was run here. [from source] = read in `/us
 ### Keep awake
 - Read [verified Z13]: `omarchy toggle idle status` gives `{"enabled":false,...}`. The state is just a file: `~/.local/state/omarchy/indicators/stay-awake` [from source; absent now, matches false].
 - Write [from source]: `omarchy toggle idle stay-awake` or `allow-idle` (explicit, safer than `toggle`).
-- Event: inotify on the file's directory (the file does not exist when off).
+- Event, UNVERIFIED S2: inotify on the file's directory (the file does not exist when off).
 
 ### Power profile
 - Read [verified Z13]: `powerprofilesctl get` gives `balanced`; `list` shows performance, balanced, power-saver.
 - Write [from source]: `omarchy-powerprofiles-set autodetect <profile>`. It saves the choice per AC or battery and refreshes the shell. Use it rather than `powerprofilesctl set` so Omarchy's restore logic stays consistent.
 - Available profiles: `omarchy-powerprofiles-list` (so power-saver may be missing on some machines) [from source].
-- Event: D-Bus `net.hadess.PowerProfiles` `ActiveProfile` changes (or `org.freedesktop.UPower.PowerProfiles`) [untested]. Otherwise poll on open.
+- Event, UNVERIFIED S6: D-Bus `net.hadess.PowerProfiles` `ActiveProfile` changes (or `org.freedesktop.UPower.PowerProfiles`) [untested]. Otherwise poll on open.
 
 ### Battery, time left, charge limit
 - Read [verified Z13]: UPower BAT0 shows `state: charging`, `percentage: 31%`, `time to full: 43.2 minutes`. `omarchy-battery-status` prints `Battery 31%  ·  34m to full  ·  67.5W / 70Wh`; `omarchy-battery-present` exits 0 when there is a battery. Use `Quickshell.Services.UPower` (`UPower.displayDevice`, `UPower.onBattery`) for live values.
@@ -114,7 +114,7 @@ Tags: [verified Z13] = a read command was run here. [from source] = read in `/us
 ### Displays
 - Read [verified Z13]: `hyprctl -j monitors all` gives eDP-1 at 2560x1600, 180 Hz, scale 1.6, `transform 0`, `vrr false`, `mirrorOf none`, with `availableModes` (13 here). `omarchy-monitor-state` wraps the common fields [from source].
 - Scale write [from source]: `omarchy-hyprland-monitor-scaling up|down|SCALE` on the focused monitor; allowed steps 1, 1.25, 1.6, 2, 3, 4, rounded to a clean value. Picker with those steps. It logs each change.
-- Refresh rate, per-monitor on/off, mirror: Hyprland monitor rules via `hyprctl` (`hyprctl keyword monitor` is the older route; on this Omarchy rules are Lua, so check `hl.monitor` and `hyprctl eval` before writing) [untested, do not guess]. Stock helpers exist: `omarchy-hyprland-monitor-internal`, `-internal-mirror`, `-clamshell`, `-external-active`, `-laptop` [from source names; args not read].
+- Refresh rate, per-monitor on/off, mirror: Hyprland monitor rules via `hyprctl` (`hyprctl keyword monitor` is the older route; on this Omarchy rules are Lua, so verify `hl.monitor` and `hyprctl eval` before writing, UNVERIFIED S5) [untested, do not guess]. Stock helpers exist: `omarchy-hyprland-monitor-internal`, `-internal-mirror`, `-clamshell`, `-external-active`, `-laptop` [from source names; args not read].
 - Event: Hyprland IPC `monitoradded`, `monitorremoved`, `configreloaded` via `Quickshell.Hyprland`; re-read on each.
 
 ### Rotation
@@ -134,53 +134,3 @@ Tags: [verified Z13] = a read command was run here. [from source] = read in `/us
 
 ### Camera and mic privacy
 - No Omarchy privacy switch exists. Webcam is `ASUS 5M webcam` (v4l2) in `wpctl status` [verified Z13]. Readout only: a dot when a Pipewire stream captures from camera or mic [untested]. No toggle.
-
-## Proposed common backend interface
-
-Every control is one QML object with the same properties, so the dial UI has no control-specific code.
-
-| Property | Meaning |
-|---|---|
-| `id` | Stable string used in the user's config (`brightness`) |
-| `kind` | `dial`, `toggle`, `picker`, or `readout` |
-| `available` | False hides the control; must settle without blocking the UI thread |
-| `value` | 0 to 1 for a dial, boolean for a toggle, key for a picker, text for a readout |
-| `min`, `max`, `step` | Dial range, or discrete levels (keyboard light, power profile) |
-| `options` | Picker only: list of `{key, label, icon}` |
-| `set(v)` | Non-blocking write; the shown value comes back through the read path |
-| `label`, `icon` | Short name, icon, and a unit string such as `65%` |
-| `busy`, `error` | Pending state and last failure text |
-| `detailsTarget` | What long press opens: a stock panel or command, or empty |
-| `refresh()` | Re-read now; called on open |
-
-Rules:
-1. Prefer a Quickshell service; else one `Process` read plus a file or D-Bus trigger. Poll only while the corner is open, every 2 to 4 s.
-2. Writes go through stock `omarchy-*` helpers where they exist (they keep persistence and LED effects). Pass `--no-osd` where offered. Debounce drags and send the final value on release.
-3. A failed read makes `available` false, never a plausible default. Show "unknown", not 0.
-4. Dangerous writes (touchscreen off, display off, charge limit, GPU mode) need a confirm and a lockout guard.
-5. A group with no hardware (battery on a desktop) disappears whole.
-
-
-## Round 2 readout ring sources
-
-All use existing kind `readout`, ring placement, null for unknown/disconnected, no writes or knob, flat caps and read-only labels. Tap opens related detail. Selected device identity is configurable and preserved when disconnected.
-
-| Readout | Value source | Parameter and events | Verification |
-|---|---|---|---|
-| Bluetooth headset battery | UPower device percentage, matched to chosen Bluetooth device | deviceAddress; Bluetooth connection events and UPower device changes | UNVERIFIED: device-address mapping and headset battery support on this machine |
-| Wi-Fi signal | `nmcli -t -f SSID,SIGNAL,IN-USE dev wifi list` or Quickshell.Networking signal | selected interface (auto default); Networking updates, bounded open-only fallback refresh | CLI list previously verified; Quickshell signal property and mapping UNVERIFIED |
-| Laptop battery | Quickshell UPower displayDevice percentage | display device; UPower events | Earlier UPower CLI read verified; live QML binding UNVERIFIED |
-| Pen battery | UPower devices percentage for selected stylus | devicePath; UPower events | Device enumeration previously verified; unknown-state mapping UNVERIFIED |
-
-A disconnected device says "not connected", never 0%. An attached device without battery telemetry says "unknown". Do not interpret the earlier pen 0% sample as a reliable empty battery without a known state. No new machine commands were run for this design round.
-
-
-## Round 3 service contracts
-
-Per-app volume: use `Quickshell.Services.Pipewire` nodes for playing output streams, track each with PwObjectTracker, read and write its audio.volume. Keep node identity rather than app name as the row key; several streams from one app get distinct rows. Filter out devices and capture streams. Keep the output picker using the stock device helper described above. API filtering and stream lifetime handling remain UNVERIFIED on the Z13.
-
-Media: `Quickshell.Services.Mpris` supplies players, title, artist, playback state, position, length and supported actions. Detail exposes previous, play/pause and next only when supported. Seek only when supported. Unknown length is explicit, never a fake zero. Prefer the playing player; keep an explicit selection until it disappears. Live Mpris binding is UNVERIFIED.
-
-Game mode: read exact typed runtime option values, journal before writes, apply only selected allowlisted options, restore on off/logout/shell death. See architecture S8, UNVERIFIED. Never change config files.
-
-Theme: use Omarchy's own `omarchy-theme-set` with one validated installed theme argument, then read back the active theme. See S9, UNVERIFIED. Prototype names and actions are fake.

@@ -3,7 +3,7 @@
 Status: design only, no plugin code yet (2026-11-17). Inputs: [research.md](research.md), [references.md](references.md),
 [platform.md](platform.md), [controls.md](controls.md), [ux.md](ux.md), [engineering-standards.md](engineering-standards.md),
 plus the house patterns in `omahop/docs/architecture.md`, `omahop/docs/file-contract.md` and `OmaBarConfigurator/docs/architecture.md`.
-Claims nobody has checked on the machine are marked UNVERIFIED and point at a spike (S1 to S7, section 13).
+Platform gates are marked UNVERIFIED and point at a spike (S1 to S9, Verification spikes).
 
 ## 1. Goals and non-goals
 
@@ -15,24 +15,21 @@ Claims nobody has checked on the machine are marked UNVERIFIED and point at a sp
 - Follows the Omarchy theme live, and costs nothing while closed.
 
 **Non-goals**
-- No launcher, media player, notifications or weather. Hardware settings only.
+- No launcher, notifications or weather. Media controls are an optional detail, not a player in the fan.
 - No new gestures. 3 and 4 finger swipes stay as they are (ux.md section 2).
-- No commands read from config, no network, no root, no writes to `shell.json`.
+- No commands read from config, no direct network requests, no root, no writes to `shell.json`.
 - No rotation control until `omarchy-z13/docs/plan.md` Step 3 is decided (controls.md, Rotation).
 - No code copied from denon.corner, aryal or GPL shells (research.md, Code origin).
 
-## 2. Conflicts between inputs, resolved
+## 2. Shared policies
 
-| Topic | Inputs say | Decision |
-|---|---|---|
-| Volume above 100% | controls.md: Z13 reads 110%, allow 150% or cap. ux.md section 4: cap at 100 | Setting `volume.maxPercent`, default 100 (ux.md wins). A value above the cap shows truthfully ("110%", knob pinned, over-cap tick); input never writes above the cap. |
-| Invalid config | platform.md section 5, standards: "fall back, log once" | Report, skip, show (this brief): default at runtime, listed in the settings banner, warning dot on the gear, one journal line. The file is untouched until the user edits that field. |
-| Control interface | controls.md: boolean `available`, 4 kinds | Superseded by section 4: closed `availability` set and a fifth kind, `stepped`. |
-| Keyboard light | research.md step 1: a toggle. controls.md: a stepped dial | Kind `stepped`, placeable on a ring (snaps) or on the toggle arc (tap goes to the next level). |
-| Wi-Fi password | ux.md section 3: inline. controls.md: stock panel | Quick detail includes inline password entry. UNVERIFIED S7: use `nmcli --ask` with credentials fed through process stdin, never argv, shell interpolation, journal, config or diagnostics. Without a physical keyboard show a reason and offer the stock network window. |
-| Ring tolerance, trigger | references.md: 28 px, 12 px zone, 120 ms | ux.md wins: 44 px band, 32 px tap zone, 2 px pointer corner, 150 ms push. |
-| Off state colour | references.md table: "muted" alpha | ux.md section 6 wins: never `muted` for text or off states. |
-| Idle cost | standards: zero idle cost | The trigger zone is a static mask, no timer. Polls, processes, file watches and streams run only while open. Quickshell services are already live in the shell. |
+- Volume input respects `options.volume.maxPercent`, default 100, with a setting up to 150. Existing readings above the cap stay truthful; the knob pins at the cap with an over-cap tick.
+- Invalid config uses runtime defaults, a settings banner, a warning dot on the gear and one journal line. Preserve the file until the user edits the field.
+- Keyboard light is `stepped`, on a ring or the toggle arc.
+- Wi-Fi passwords stay inline, gated by UNVERIFIED S7. No physical keyboard: explain why and offer the stock network window.
+- Ring bands are 44 px. The tap zone is 32 px, pointer corner 2 px and push dwell 150 ms.
+- Never use `muted` for text or off states.
+- Closed views have no polling, processes, file watches or streams. The trigger is a static mask. Shell services are already live. Game recovery is the narrow exception while a restore journal exists.
 
 ## 3. Layers
 
@@ -46,7 +43,7 @@ Claims nobody has checked on the machine are marked UNVERIFIED and point at a sp
                       |                           |  ConfigSchema     |
   +-------------------v--------------------+      |  ConfigMigrate    |
   | Registry.qml + controls/catalog.json   |      |  Layout           |
-  |  makes one backend per enabled id      |      |  Gesture          |
+  |  makes one backend per shown id      |      |  Gesture          |
   +-------------------+--------------------+      |  CommandMachine   |
                       |                           |  Contrast         |
   +-------------------v--------------------+      +---------^---------+
@@ -86,7 +83,7 @@ Import rules. Each one is a grep gate in `test/isolation.sh`, in the style of Om
 
 ## 4. Control contract
 
-Every control inherits `core/ControlBase.qml`; views see only this interface (extends controls.md, Proposed common backend interface).
+Every control inherits `core/ControlBase.qml`; views see only this interface (the shared interface for controls.md).
 
 | Member | Type | Meaning |
 |---|---|---|
@@ -106,6 +103,8 @@ Every control inherits `core/ControlBase.qml`; views see only this interface (ex
 | `set(v)` | method | Non-blocking. The value shown comes back through the read path. |
 | `refresh()` | method | Re-read now. Called on open. |
 | `activate(rowKey)` | method | Picks a detail row. |
+| `connected` | bool | Selected readout connection state. |
+| `parameter` | catalog data | Validated source identity. |
 | `active` | bool, input | True while the fan is open. Gates every poll and watch. |
 | `changed(reason)` | signal | For the status line. |
 
@@ -127,14 +126,24 @@ Exhaustive mapping without a compiler: each closed set is a frozen array in the 
 
 ### Event source or poll
 
-`watch` is a closed set: `service` (binding), `file` (FileView `watchChanges`), `stream` (such as `rfkill event`), or `poll` (2 s brightness, 4 s otherwise; controls.md rule 1). All start when `active` turns true, stop when it turns false, and each open calls `refresh()` once. UNVERIFIED: FileView firing for a file created after load (keep awake's state file is absent when off). Spike S2; if not, that control polls.
+`watch` is a closed set: `service` (binding), `file` (FileView `watchChanges`), `stream` (such as `rfkill event`), or `poll` (2 s brightness, 4 s otherwise; controls.md rule 1). All start when `active` turns true, stop when it turns false, and each open calls `refresh()` once. UNVERIFIED S2: FileView firing for a file created after load (keep awake's state file is absent when off). If not, that control polls.
+
+### Catalog actions
+
+The catalog exposes closed `tapActions` and `holdActions` per control. Wi-Fi: `switchRadio | quickDetail | fullWindow`; Bluetooth: `switchPower | quickDetail | fullWindow`; stepped keyboard light: `nextStep | quickDetail`; other boolean toggles: `switch | quickDetail`. Both action fields use the respective control set. Defaults for these controls are the first action for tap and quickDetail for hold. Theme tap alternates the pair, theme hold opens the picker, and Media opens its detail. These are identifiers resolved in backend code, never commands in config.
+
+### Readout sources
+
+The two readout examples in section 6 are hidden. Replace the device placeholder with a selected device before showing that ring. Hidden entries do not consume capacity. To add one, set a stable id, source, `order`, `controls.<id>.shown` and optional style. `readoutRings` source is `bluetoothBattery | wifiSignal | laptopBattery | penBattery`. Bluetooth requires deviceAddress; pen requires devicePath from UPower; Wi-Fi interface is auto or a detected interface; laptop uses UPower display device. Selected source identity persists across disconnects. ControlBase exposes `connected` and validated `parameter` data. Disconnected selected readout remains visible, dimmed with value null and valueText "not connected"; unknown value stays null with "unknown". This is a specific exception to missing-hardware slot removal. Tap opens related detail; set/drag/wheel are unsupported. Geometry reserves label rectangles and wrapping row heights per ux.md. Combined dial/readout cap is S 2, M 3, L 4.
 
 ### Adding a control (the scalability story)
 
 1. Make `controls/<id>/` with `Backend.qml` and either `spec.js` or `map.js`, a test `<id>.test.mjs`, and optionally `Detail.qml`.
 2. Add one entry to `controls/catalog.json`: id, kind, placements, label, icon, default placement, and an `options` schema (types, limits, defaults).
 
-QML cannot list a folder, so the catalog is the one audited index (references.md: fixed list, no commands from files); `test/catalog-check.mjs` fails on an entry without a folder or a folder without an entry. Options sit under `options.<id>` and are validated against the catalog schema, so adding a control never bumps the config version. The registry creates `controls/<id>/Backend.qml` only for enabled ids, or all while settings is open.
+QML cannot list a folder, so the catalog is the one audited index (references.md: fixed list, no commands from files); `test/catalog-check.mjs` fails on an entry without a folder or a folder without an entry. Options sit under `options.<id>` and are validated against the catalog schema, so adding a control never bumps the config version. The registry creates `controls/<id>/Backend.qml` only for shown ids, or all while settings is open.
+
+Only settings changes order. Reset scroll on open. FanModel owns the continuous unsnapped draft, last angle and fine gain. Geometry supplies the inside-fan reserved boxes. Gain changes rebase before integrating. Snap is presentation plus the submitted value, not a mutation of the continuous draft.
 
 ## 5. Pure logic modules
 
@@ -142,7 +151,7 @@ All files are `.pragma library`, have no Qt calls, have no cross-imports, and st
 
 | File | Holds |
 |---|---|
-| `Geometry.js` | `toCanonical` and `fromCanonical` (4-corner mirroring, positions only, never a negative scale; references.md, Mirroring), `polar(x, y, H)`, `angleToFraction` over the 6 to 84 degree sweep, `fractionToAngle`, `ringRadii(R, n)`, `hitRing(d, radii, band)`, `knobPos`, `arcSlots(r, pitch)`, `capacity(size, shortSide)` (R = S 330, M 420, L 500, clamped to 45% of the short side; toggles = floor(r x 1.36 / 48); ux.md section 3), `bubblePos` (56 px toward the screen centre). |
+| `Geometry.js` | `toCanonical` and `fromCanonical` (4-corner mirroring, positions only, never a negative scale; references.md, Mirroring), `polar(x, y, H)`, `angleToFraction` over the ring sweep 3 to 87 degrees or toggle sweep 6 to 84 degrees, `fractionToAngle`, `ringRadii(R, n)`, `hitRing(d, radii, band)`, `knobPos`, `arcSlots(r, pitch)`, `capacity(size, shortSide)` (R = S 330, M 420, L 500, clamped to 45% of the short side; toggles = floor(r x 1.36 / 48); ux.md section 3), `bubblePos` (56 px toward the screen centre). |
 | `ValueMap.js` | Native value, fraction and angle conversions. Stepped snapping. `floor`. The over-cap case. Wheel steps (5%, 1% with Shift, pixel deltas into whole steps). Keyboard steps (5, 1, 25, Home, End). |
 | `Gesture.js` | Reducer for tap, drag-open (past 40%), 6 px drag start, ring lock, long press (450 ms, fill from 150 ms, 6 px cancels toggle hold, 10 px dial label hold), push dwell. Every threshold is a named constant from ux.md sections 2 and 4. |
 | `Layout.js` | Config, catalog, availability and capacity in; rings outer to inner, toggle strip offset and scroll bounds, readout, over-capacity errors out. |
@@ -155,56 +164,133 @@ Test runner: house style, `node` with no npm packages. `test/load.mjs` strips `.
 
 ## 6. Config contract
 
-Path `~/.config/omadials/config.json` (platform.md section 5, option B). Draft v1 with defaults (not frozen until v0.5):
+Path `~/.config/omadials/config.json` (platform.md section 5, option B). Draft v1 (not frozen until v0.5). Visibility and layout match the decided defaults. Theme placeholders must be replaced with installed names. Game values illustrate selected runtime overrides, not a newly decided default selection:
 
 ```json
 {
   "version": 1,
   "corner": "bottom-left",
   "size": "M",
-  "outputs": { "mode": "all", "names": [] },
-  "trigger": { "tapZone": true, "pushDelayMs": 150 },
-  "cornerIcon": { "mode": "always", "aboveWindows": true, "source": "default" },
-  "controls": { "brightness": { "shown": true, "icon": "default" }, "wifi": { "shown": true, "icon": "default" } },
-  "behavior": { "idleTimeoutS": 10, "closeOnPointerLeave": true },
-  "ringStyle": { "track": "solid", "knob": "round", "thickness": "normal" },
+  "outputs": {
+    "mode": "all",
+    "names": []
+  },
+  "trigger": {
+    "tapZone": true,
+    "pushDelayMs": 150
+  },
+  "cornerIcon": {
+    "mode": "always",
+    "aboveWindows": true,
+    "source": "default"
+  },
+  "controls": {
+    "brightness": {"shown": true, "icon": "default"},
+    "volume": {"shown": true, "icon": "default"},
+    "mic": {"shown": true, "icon": "default"},
+    "wifi": {"shown": true, "icon": "default"},
+    "bluetooth": {"shown": true, "icon": "default"},
+    "nightlight": {"shown": true, "icon": "default"},
+    "dnd": {"shown": true, "icon": "default"},
+    "keepawake": {"shown": true, "icon": "default"},
+    "kbdlight": {"shown": true, "icon": "default"},
+    "airplane": {"shown": true, "icon": "default"},
+    "gameMode": {"shown": true, "icon": "default"},
+    "theme": {"shown": true, "icon": "default"},
+    "media": {"shown": true, "icon": "default"},
+    "touchpad": {"shown": false, "icon": "default"},
+    "touchscreen": {"shown": false, "icon": "default"},
+    "recording": {"shown": false, "icon": "default"},
+    "headphones": {"shown": false, "icon": "default"},
+    "signal": {"shown": false, "icon": "default"}
+  },
+  "behavior": {
+    "idleTimeoutS": 10,
+    "closeOnPointerLeave": true
+  },
+  "ringStyle": {
+    "track": "solid",
+    "knob": "round",
+    "thickness": "normal"
+  },
   "readoutRings": [
-    { "id": "headphones", "kind": "readout", "source": "bluetoothBattery", "deviceAddress": "AA:BB:CC:DD:EE:FF", "enabled": false, "order": 2 },
-    { "id": "signal", "kind": "readout", "source": "wifiSignal", "interface": "auto", "enabled": false, "order": 3 }
+    {"id": "headphones", "source": "bluetoothBattery", "deviceAddress": "<selected-device-address>", "order": 3, "style": {"knob": "none"}},
+    {"id": "signal", "source": "wifiSignal", "interface": "auto", "order": 4, "style": {"knob": "none"}}
   ],
   "dials": [
-    { "id": "brightness", "enabled": true },
-    { "id": "volume", "enabled": true },
-    { "id": "mic", "enabled": true }
+    {"id": "brightness", "order": 0, "style": {"track": "solid", "knob": "round", "thickness": "normal"}},
+    {"id": "volume", "order": 1, "style": {"track": "solid", "knob": "round", "thickness": "normal"}},
+    {"id": "mic", "order": 2, "style": {"track": "solid", "knob": "round", "thickness": "normal"}}
   ],
   "toggles": [
-    { "id": "wifi", "enabled": true, "tapAction": "switchRadio", "holdAction": "quickDetail" },
-    { "id": "bluetooth", "enabled": true },
-    { "id": "nightlight", "enabled": true },
-    { "id": "dnd", "enabled": true },
-    { "id": "keepawake", "enabled": true },
-    { "id": "kbdlight", "enabled": true },
-    { "id": "airplane", "enabled": false },
-    { "id": "touchpad", "enabled": false },
-    { "id": "touchscreen", "enabled": false },
-    { "id": "recording", "enabled": false }
+    {"id": "wifi", "tapAction": "switchRadio", "holdAction": "quickDetail"},
+    {"id": "bluetooth", "tapAction": "switchPower", "holdAction": "quickDetail"},
+    {"id": "nightlight", "tapAction": "switch", "holdAction": "quickDetail"},
+    {"id": "dnd", "tapAction": "switch", "holdAction": "quickDetail"},
+    {"id": "keepawake", "tapAction": "switch", "holdAction": "quickDetail"},
+    {"id": "kbdlight", "tapAction": "nextStep", "holdAction": "quickDetail"},
+    {"id": "airplane", "tapAction": "switch", "holdAction": "quickDetail"},
+    {"id": "gameMode", "tapAction": "switch", "holdAction": "quickDetail"},
+    {"id": "theme", "tapAction": "togglePair", "holdAction": "quickDetail"},
+    {"id": "media", "tapAction": "quickDetail", "holdAction": "quickDetail"},
+    {"id": "touchpad", "tapAction": "switch", "holdAction": "quickDetail"},
+    {"id": "touchscreen", "tapAction": "switch", "holdAction": "quickDetail"},
+    {"id": "recording", "tapAction": "switch", "holdAction": "quickDetail"}
   ],
-  "readout": { "battery": true, "powerProfile": true, "penBattery": true },
+  "readout": {
+    "battery": true,
+    "powerProfile": true,
+    "penBattery": true
+  },
   "options": {
-    "brightness": { "wheelStep": 5, "monitor": "auto" },
-    "volume": { "wheelStep": 5, "maxPercent": 100 },
-    "mic": { "wheelStep": 5 }
+    "brightness": {"wheelStep": 5, "monitor": "auto"},
+    "volume": {"wheelStep": 5, "maxPercent": 100},
+    "mic": {"wheelStep": 5}
+  },
+  "tabStyle": "rings2knob",
+  "dialInteraction": {
+    "snap": true,
+    "snapWindowPercent": 2,
+    "fineEnabled": true,
+    "fineDistancesPx": [
+      22,
+      66
+    ],
+    "fineGains": [
+      0.25,
+      0.1
+    ]
+  },
+  "toggleScroll": "resetOnOpen",
+  "themePair": {
+    "light": "<installed-light-theme>",
+    "dark": "<installed-dark-theme>"
+  },
+  "gameMode": {
+    "animations": false,
+    "blur": false,
+    "shadows": false,
+    "gapsIn": 0,
+    "gapsOut": 0
   }
 }
 ```
 
 Enums: `corner` is `top-left | top-right | bottom-left | bottom-right`. `size` is `S | M | L`. `outputs.mode` is `all | focused | named`. Limits: `pushDelayMs` 0 to 500, `idleTimeoutS` 0 (off) to 120, `maxPercent` 100 or 150. List order is display order: the first dial is the outermost ring (ux.md section 3).
 
+Toggle array order is display order; controls with `shown: true` alone form the scrollable strip. Every toggle stores tapAction and holdAction. Ring array order is outer to inner. During the draft period, dials and readoutRings merge by explicit `order` (add order to each dial when mixing); duplicate positions report duplicate_control, never reorder silently. A ring may override `style: {track, knob, thickness}`; omitted fields inherit ringStyle. Track is `solid | dashed | dotted | segmented`, knob `round | bar | none`, thickness `thin | normal | bold` mapping to 2/4/6 px. Readouts force no knob by contract: a non-none explicit override is a reported wrong_placement error. Render dash patterns as shader uniforms.
+
+Validation reports unknown values and incompatible fields in the problems banner, keeps the original file and never silently fixes it. Settings expose all fields above. Schema remains draft until v0.5.
+
+The draft supports `dialInteraction: {snap: true, snapWindowPercent: 2, fineEnabled: true, fineDistancesPx: [22,66], fineGains: [0.25,0.1]}`, `toggleScroll: "resetOnOpen"`, `themePair: {light, dark}` using installed theme ids, and `gameMode: {animations: false, blur: false, shadows: false, gapsIn: 0, gapsOut: 0}`. Theme names come from installed themes; prototype names are examples. `togglePair` is a draft catalog identifier for the decided theme tap behavior. Distances are increasing nonnegative numbers, gains are greater than zero and at most one, snap window is 0 to 2. Game fields are optional typed allowlisted options, never commands. Theme ids must match installed entries. Settings expose snap, fine enable, the theme pair, game option selection and values. Media is a shown toggle by default and a volume detail action. Per-app sliders are transient Pipewire node state, never persisted.
+
+`controls.<id>.shown` is the visibility field for dials, toggles and readouts; list membership sets placement and order. There is no separate enabled flag. `tabStyle` is `rings2knob | rings3`. In `onApproach`, pointer push is disabled regardless of the stored delay.
+
 **Validation.** Each error is `{path, code, message}` with `code` from a closed set: `parse_error`, `newer_version`, `wrong_type`, `out_of_range`, `unknown_value`, `unknown_control`, `duplicate_control`, `wrong_placement`, `over_capacity`. The bad entry is skipped, or for a scalar its default is used, and it is shown (section 2). Unknown top-level keys and unknown control ids are kept on disk (a newer version may know them) and reported once. A file that does not parse keeps the last good config, or the defaults, and puts settings into read-only mode with "Fix the file or Reset". A broken file is never overwritten silently.
 
 **Writes.** Only the settings writer writes. It re-reads the text, patches the one changed path, and writes with FileView `atomicWrites: true` (the app uses `QSaveFile`), after a fixed-argv `mkdir -p` (omahop `SettingsStore.qml`). Debounced 300 ms, serialised, newest wins.
 
-**Live reload.** `watchChanges: true`; a reload re-validates and the registry diffs enabled ids, within 1 s (ux.md acceptance 22). Our own write echoes are harmless.
+**Live reload.** `watchChanges: true`; a reload re-validates and the registry diffs shown ids, within 1 s ([acceptance.md](acceptance.md) A-SET-1). Our own write echoes are harmless.
 
 **Migration.** `version` is required. Older files are migrated in memory and written back only on the next user change, after a one-time copy to `config.v<N>.bak`. A `version` newer than ours opens read-only with a warning, never downgraded. Each migration step ships with a fixture pair in `test/fixtures/config/`.
 
@@ -287,7 +373,7 @@ IPC target `omadials` (platform.md section 2; typed args, string or void returns
 | `radius`, `font`, `duration(ms)`, `ease`, `reduceMotion` | `Style.*` |
 | `isLight` | `Contrast.isLight(background)` |
 
-`muted` is never mapped. A grep gate rejects `Commons.` outside `theme/` and colour literals in QML (ux.md acceptance 18). Plugin-local `pragma Singleton` is unproven (no house plugin uses one), so v0.1 builds one Theme in `Service.qml` and passes it as a `required property Theme theme`. If spike S1 proves a plugin-local singleton, only the wiring changes.
+`muted` is never mapped. A grep gate rejects `Commons.` outside `theme/` and colour literals in QML ([acceptance.md](acceptance.md) A-THEME-2). UNVERIFIED S1: plugin-local `pragma Singleton` is unproven (no house plugin uses one), so v0.1 builds one Theme in `Service.qml` and passes it as a `required property Theme theme`. If spike S1 proves a plugin-local singleton, only the wiring changes.
 
 ## 9. Settings app decision
 
@@ -301,7 +387,7 @@ The maintainer asked for "an isolated App to configure and adjust all the detail
 | Install | `omarchy plugin add`, marketplace ready | PKGBUILD, AUR or `omarchy-pkgs` PR | Two releases |
 | Effort | Low, omahop pattern | High | Highest, but staged |
 
-**Recommendation: (c), with the app as a named milestone (v0.7), not "someday".** The panel ships first: cheap, exact theme, proven on the marketplace by omahop and OmaBar. The app follows the schema freeze, so it never chases a moving contract. Until then the panel loads only on demand and never touches the corner service.
+**Decision: (c), panel at v0.3 and app at v0.7.** The panel ships first: cheap, exact theme, proven on the marketplace by omahop and OmaBar. The app follows the schema freeze, so it never chases a moving contract. Until then the panel loads only on demand and never touches the corner service.
 
 How (b) is added with no plugin change:
 - Its contract exists now: `config.json` v1, `controls/catalog.json` (names, kinds, placements, option schemas), IPC `status()` for availability, IPC `open`.
@@ -326,12 +412,22 @@ How (b) is added with no plugin change:
 | Risk | Guard |
 |---|---|
 | Touchscreen off on a tablet | Refused when no keyboard or pointer is attached (checked live on each attempt). Otherwise a confirm, then a 15 s revert countdown that only a non-touch input can keep (controls.md, Touchpad and touchscreen). |
-| Display changes (refresh, scale) | Same confirm and revert countdown. Writes UNVERIFIED (controls.md, Displays): spike S5 before v0.5. |
+| Display changes (refresh, scale) | Same confirm and revert countdown. Writes UNVERIFIED S5 (controls.md, Displays) before v0.5. |
 | Airplane mode | On: save the soft-block state of each radio to `~/.local/state/omadials/airplane-restore.json`, then `rfkill block all`. Off: unblock only what was on (controls.md, Airplane mode). Bluetooth restore goes through `omarchy-bluetooth-power`. |
 | Root controls | GPU mode is a read-only chip; its detail explains the stock command and never runs it. Charge limit writes only through `asusctl`; without it, read-only. |
 | Black screen | Brightness floor 1%. |
-| Hidden writes | Every written file is listed in the README and the marketplace notes: `~/.config/omadials/config.json`, `config.v<N>.bak` (migration only), `~/.local/state/omadials/airplane-restore.json`. Nothing else. Never `shell.json`. No network (platform.md section 8). |
+| Hidden writes | Every written file is listed in the README and the marketplace notes: `~/.config/omadials/config.json`, `config.v<N>.bak` (migration only), `~/.local/state/omadials/airplane-restore.json`, `~/.local/state/omadials/game-restore.json`. Never `shell.json`. No network (platform.md section 8). |
 | Clicks taken | No trigger zone on fullscreen outputs or the lock screen; settings warn when the bar or dock shares the corner (ux.md section 2). |
+
+### Game mode recovery
+
+UNVERIFIED S8 game runtime writes: confirm the installed Hyprland runtime read/write API and exact typed read-back for animations, blur, shadows and both gap values. Do not assume keyword syntax on a Lua-config build. Before any write, atomically persist a versioned restore journal under `~/.local/state/omadials/game-restore.json`, with compositor instance id, baseline and intended values. Apply serially and read back. On partial failure restore all changed values. Off restores the baseline exactly, verifies, then deletes the journal. A shell-independent user-session recovery helper watches shell exit and logout, restores before compositor exit when possible, and shares a lock with the writer. On restart, recover the journal before allowing new writes. Same compositor: restore before accepting input; new compositor: discard old runtime journal because runtime overrides died with it. Unknown instance or failed restore leaves a visible recovery error, journal intact and game mode disabled. Never edit Hyprland config. Spike must test forced shell death, logout, partial writes and concurrent external option changes. Baseline restoration intentionally replaces external changes to options owned during game mode.
+
+### Theme selection
+
+UNVERIFIED S9 theme command: verify installed `omarchy-theme-set <installed-name>` via fixed argv, read-back, errors and event propagation. Tap selects the opposite configured theme (if neither is active, choose dark); hold lists installed themes. Never write theme files directly.
+
+Written-files inventory additionally includes the game restore journal. Recovery is the narrow exception to closed-state inactivity: it runs only while a restore journal exists.
 
 ## 12. Testing
 
@@ -342,9 +438,23 @@ How (b) is added with no plugin change:
 | Shared contract | Catalog matches folders; every catalog option schema validates; config fixtures give the expected errors | `test/catalog-check.mjs`, fixtures |
 | Static gates | Isolation greps (section 3), no colour literals, no `execDetached` or `sh -c`, line budgets, scrub (no dashes, no private data) | `test/isolation.sh`, `test/scrub.sh` |
 | Plugin | `omarchy plugin validate .` | in `run-all.sh` when `omarchy` exists |
-| Hand, on the Z13 | ux.md section 10 items, per milestone below | Checklist in `docs/batch-log.md`, with screenshots |
+| Hand, on the Z13 | [acceptance.md](acceptance.md) items, per milestone below | Checklist in `docs/batch-log.md`, with screenshots |
 
 No live input automation by default. A live test runs only after asking whether the machine is in use, and restarting the shell is announced first (it can change the theme, OmaBar section 9).
+
+## Verification spikes
+
+Each UNVERIFIED claim names one of these gates. Plan P1 also has separate integration and rendering checks.
+
+1. **S1 Singleton.** Verify plugin-local `pragma Singleton`; otherwise pass the Theme instance explicitly.
+2. **S2 FileView created file.** Verify a watch sees a file created after load; otherwise poll while open.
+3. **S3 Input mask.** Verify closed and open masks, outside click capture, icon layering, reveal, focus and compositor fade.
+4. **S4 Screen reader.** Verify accessible names and values on a layer surface; document a fallback if it fails.
+5. **S5 Display writes.** Verify refresh and scale writes on the Lua configuration, confirmation and exact revert.
+6. **S6 Power profile D-Bus.** Verify profile change events; otherwise refresh while open.
+7. **S7 Wi-Fi password via stdin.** Verify Quickshell Process stdin lifecycle with `nmcli --ask` for a new secured network, successful connect, wrong password, cancellation, timeout and device removal. Password must never enter argv, environment, config, logs or error text. Use fixed argv with network identity as a separate argument, feed only the credential to stdin after the expected prompt, close stdin and clear the input on completion/cancel. Audit process argv and diagnostic paths without recording the secret. If stdin prompting cannot be made reliable, spike a NetworkManager secret-agent API instead. Do not ship real inline credentials until verified. No physical keyboard: explain that the Z13 has no on-screen keyboard and offer the full stock network window.
+8. **S8 Game mode runtime writes.** Verify the runtime API and every recovery path in section 11.
+9. **S9 Theme command.** Verify fixed-argv stock command, read-back, errors and event propagation in section 11.
 
 ## 13. Milestones
 
@@ -357,7 +467,7 @@ Moved to [plan.md](plan.md) on 2026-11-17: phases P0 to P10 with day goals and e
 | 1 | Settings app timing | Panel at v0.3, standalone app at v0.7 after the schema freeze (section 9). |
 | 2 | Bar widgets: replace or sit beside | Sit beside; omadials never edits the bar. Later (plan, Later): when both omadials and OmaBar are installed, offer to hide a control in one app when it is enabled in the other. Always ask, never change the other app silently. Needs a small shared contract between the two. |
 | 3 | Volume above 100% | Default cap 100, a setting allows up to 150, the number always shows the real value (section 2). |
-| 4 | `bar-widget` kind | Left out. Tap, mouse push, keybind and IPC cover opening. Installing changes nothing you can see. |
+| 4 | `bar-widget` kind | Left out. Tap, mouse push, keybind and IPC cover opening. Installing changes nothing you can see; enabling shows only the corner tab (see Activation). |
 | 5 | Default toggle set at M | Wi-Fi, Bluetooth, night light, DND, keep awake, keyboard light. Others available but off by default. |
 | 6 | Thinner readout bands for more rings | No. Keep 44 px bands, 48 px targets and the per-size ring cap. |
 | 7 | Custom corner icons | A local SVG or PNG file, or an icon theme name. Read only, size limited, validated; a bad icon falls back to the default tab and is reported (ux.md section 5). |
@@ -366,31 +476,8 @@ Moved to [plan.md](plan.md) on 2026-11-17: phases P0 to P10 with day goals and e
 | 10 | Size L on a screen below its radius | Shrinks to the 45% cap; Settings shows "capped at N px". |
 | 11 | Very small screens | Below the minimum for the chosen size, fall back to Compact and say why. Below Compact's minimum, show fewer rings; never shrink touch targets below 48 px or bands below 44 px. |
 
-### Round 2 contract additions (sections 4 and 6)
 
-Catalog exposes closed `tapActions` and `holdActions` per control. Wi-Fi: `switchRadio | quickDetail | fullWindow`; Bluetooth: `switchPower | quickDetail | fullWindow`; stepped keyboard light: `nextStep | quickDetail`; other boolean toggles: `switch | quickDetail`. Both action fields use the respective control set. Defaults are the first action for tap and quickDetail for hold. These are identifiers resolved in backend code, never commands in config.
+The six controls in decision 5 are the first six visible slots at M. The newer UX Defaults section sets the full shown strip: those six, followed by airplane, game mode, theme and media.
 
-Toggle array order is display order; enabled controls alone form the scrollable strip. Every toggle stores tapAction and holdAction. Ring array order is outer to inner. During the draft period, dials and readoutRings merge by explicit `order` (add order to each dial when mixing); duplicate positions report duplicate_control, never reorder silently. A ring may override `style: {track, knob, thickness}`; omitted fields inherit ringStyle. Track is `solid | dashed | dotted | segmented`, knob `round | bar | none`, thickness `thin | normal | bold` mapping to 2/4/6 px. Readouts force no knob by contract: a non-none explicit override is a reported wrong_placement error. Render dash patterns as shader uniforms.
+**Activation:** installing (`omarchy plugin add`) changes nothing you can see. Enabling the plugin is the user's choice to use it, and only then does the corner tab appear. omadials never changes the bar, the Hyprland config or other apps.
 
-readoutRings source is `bluetoothBattery | wifiSignal | laptopBattery | penBattery`. Bluetooth requires deviceAddress; pen requires devicePath from UPower; Wi-Fi interface is auto or a detected interface; laptop uses UPower display device. Selected source identity persists across disconnects. Extend ControlBase with `connected` bool and `parameter` validated catalog data. Disconnected selected readout remains visible, dimmed with value null and valueText "not connected"; unknown value stays null with "unknown". This is a specific exception to missing-hardware slot removal. Tap opens related detail; set/drag/wheel are unsupported. Geometry reserves label rectangles and wrapping row heights per ux.md. Combined dial/readout cap is S 2, M 3, L 4.
-
-Validation reports unknown values and incompatible fields in the problems banner, keeps the original file and never silently fixes it. Settings expose all fields above. Schema remains draft until v0.5.
-
-### S7, secured Wi-Fi stdin spike (v0.4 exit gate)
-
-UNVERIFIED. Prototype is simulation only. Verify Quickshell Process stdin lifecycle with `nmcli --ask` for a new secured network, successful connect, wrong password, cancellation, timeout and device removal. Password must never enter argv, environment, config, logs or error text. Use fixed argv with network identity as a separate argument, feed only the credential to stdin after the expected prompt, close stdin and clear the input on completion/cancel. Audit process argv and diagnostic paths without recording the secret. If stdin prompting cannot be made reliable, spike a NetworkManager secret-agent API instead. Do not ship real inline credentials until verified. No physical keyboard: explain that the Z13 has no on-screen keyboard and offer the full stock network window.
-
-Section 14 open question: should readouts use thinner bands to fit more? Recommendation: keep the same 44 px band, 48 px target and ring cap for now. A thinner stroke is already supported; it does not create more safe touch capacity.
-
-
-## Round 3 config and recovery
-
-Draft config adds `dialInteraction: {snap: true, snapWindowPercent: 2, fineEnabled: true, fineDistancesPx: [22,66], fineGains: [0.25,0.1]}`, `toggleScroll: "resetOnOpen"`, `themePair: {light: "Paper Light", dark: "Midnight"}`, and `gameMode: {animations: false, blur: false, shadows: false, gapsIn: 0, gapsOut: 0}`. Theme names in the prototype are fake; real choices come from installed themes. Distances are increasing nonnegative numbers, gains are greater than zero and at most one, snap window is 0 to 2. Game fields are optional typed allowlisted options, never commands. Theme ids must match installed entries. Settings expose snap, fine enable, the theme pair, game option selection and values. Media is an optional toggle and a volume detail action. Per-app sliders are transient Pipewire node state, never persisted.
-
-Only settings changes order. Reset scroll on open. FanModel owns the continuous unsnapped draft, last angle and fine gain. Geometry supplies the inside-fan reserved boxes. Gain changes rebase before integrating. Snap is presentation plus the submitted value, not a mutation of the continuous draft.
-
-S8 game runtime writes, UNVERIFIED: confirm the installed Hyprland runtime read/write API and exact typed read-back for animations, blur, shadows and both gap values. Do not assume keyword syntax on a Lua-config build. Before any write, atomically persist a versioned restore journal under `~/.local/state/omadials/game-restore.json`, with compositor instance id, baseline and intended values. Apply serially and read back. On partial failure restore all changed values. Off restores the baseline exactly, verifies, then deletes the journal. A shell-independent user-session recovery helper watches shell exit and logout, restores before compositor exit when possible, and shares a lock with the writer. On restart, recover the journal before allowing new writes. Same compositor: restore before accepting input; new compositor: discard old runtime journal because runtime overrides died with it. Unknown instance or failed restore leaves a visible recovery error, journal intact and game mode disabled. Never edit Hyprland config. Spike must test forced shell death, logout, partial writes and concurrent external option changes. Baseline restoration intentionally replaces external changes to options owned during game mode.
-
-S9 theme command, UNVERIFIED: verify installed `omarchy-theme-set <installed-name>` via fixed argv, read-back, errors and event propagation. No source or machine checks were run. Tap selects the opposite configured theme (if neither is active, choose dark); hold lists installed themes. Never write theme files directly.
-
-Written-files inventory additionally includes the game restore journal. Recovery is the narrow exception to closed-state inactivity: it runs only while a restore journal exists.
