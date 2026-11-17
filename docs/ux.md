@@ -39,7 +39,7 @@ From the outside in, around the corner origin:
 - **Toggle arc.** Round toggles, 40 px drawn, 48 px hit area, pitch 48 px along the arc.
 - **Corner readout.** Large battery %, "On battery, 2 h 50 m", and a 48 px power profile chip.
 - **Status line.** Above the readout, names the last touched control ("Wi-Fi: on, HomeNet"). Replaces hover tips.
-- **Settings gear.** Separate 48 px target in the readout; never consumes an arc slot.
+- **Settings gear.** 48 px, beside the power profile chip in the corner readout; never consumes an arc slot (P0.2).
 
 Dial rings sweep 3 to 87 degrees, so they run close to both screen edges (about 19 px at M); the knob still clears the bezel. The toggle arc keeps 6 to 84 degrees so its 48 px targets never touch an edge.
 
