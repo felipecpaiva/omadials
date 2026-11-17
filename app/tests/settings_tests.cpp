@@ -50,6 +50,91 @@ private slots:
                 if (w == 1200) walk(window->contentItem(),i);
             }
         }
+        // Writes: drive each control the way a click does, then read the saved value back.
+        auto *store = root->findChild<QObject*>("configStore"); QVERIFY(store);
+        auto value = [&](const QString &path) {
+            QQmlExpression e(engine.rootContext(),store,QString("JSON.stringify(value('%1'))").arg(path));
+            return e.evaluate().toString();
+        };
+        auto named = [&](const QString &name) -> QQuickItem* {
+            std::function<QQuickItem*(QQuickItem*)> find = [&](QQuickItem *item) -> QQuickItem* {
+                if (!item->isVisible()) return nullptr;
+                auto *a = QAccessible::queryAccessibleInterface(item);
+                if (a && a->text(QAccessible::Name) == name && (item->inherits("QQuickAbstractButton") || item->inherits("QQuickComboBox") || item->inherits("QQuickSlider"))) return item;
+                for (auto *child : item->childItems()) if (auto *found = find(child)) return found;
+                return nullptr;
+            };
+            return find(window->contentItem());
+        };
+        QFile log(QString("sweep-%1-writes.txt").arg(themeName)); QVERIFY(log.open(QIODevice::WriteOnly));
+        struct Step { int page; QString name; QString op; QVariant arg; QString path; QString expect; };
+        const QList<Step> steps = {
+            {0,"Top left","click",{},"corner","\"top-left\""}, {0,"Bottom left","click",{},"corner","\"bottom-left\""},
+            {0,"Large","click",{},"size","\"L\""}, {0,"Normal","click",{},"size","\"M\""},
+            {0,"3 rings","click",{},"tabStyle","\"rings3\""}, {0,"2 rings and a knob","click",{},"tabStyle","\"rings2knob\""},
+            {0,"Screens","combo",1,"outputs.mode","\"focused\""}, {0,"Screens","combo",2,"outputs.mode","\"named\""},
+            {0,"shot:screens","",{},"",""}, {0,"Screens","combo",0,"outputs.mode","\"all\""},
+            {0,"Show the tab","combo",2,"cornerIcon.mode","\"never\""}, {0,"Show the tab","combo",1,"cornerIcon.mode","\"onApproach\""},
+            {0,"Show the tab","combo",0,"cornerIcon.mode","\"always\""},
+            {0,"Above windows","click",{},"cornerIcon.aboveWindows","false"}, {0,"Above windows","click",{},"cornerIcon.aboveWindows","true"},
+            {0,"Open when the pointer rests in the corner","click",{},"trigger.push","false"},
+            {0,"","",{},"cornerIcon.mode","\"always\""},
+            {0,"Open when the pointer rests in the corner","click",{},"trigger.push","true"},
+            {0,"Opening delay","slider",300,"trigger.pushDelayMs","300"}, {0,"Opening delay","slider",150,"trigger.pushDelayMs","150"},
+            {1,"Track","combo",1,"ringStyle.track","!\"solid\""}, {1,"Track","combo",0,"ringStyle.track","\"solid\""},
+            {1,"Knob","combo",1,"ringStyle.knob","!\"round\""}, {1,"Knob","combo",0,"ringStyle.knob","\"round\""},
+            {1,"Thickness","combo",0,"ringStyle.thickness","!\"normal\""}, {1,"Thickness","combo",1,"ringStyle.thickness","\"normal\""},
+            {1,"Edit Brightness","click",{},"",""}, {1,"shot:edit","",{},"",""},
+            {3,"Close after","combo",0,"behavior.idleTimeoutS","0"}, {3,"Close after","combo",2,"behavior.idleTimeoutS","10"},
+            {3,"Close when the pointer leaves","click",{},"behavior.closeOnPointerLeave","false"},
+            {3,"Close when the pointer leaves","click",{},"behavior.closeOnPointerLeave","true"},
+            {3,"Fan","click",{},"animation.style","\"fan\""}, {3,"Tab morph","click",{},"animation.style","\"morph\""},
+            {3,"Speed","slider",1.5,"animation.speed","1.5"}, {3,"Speed","slider",1,"animation.speed","1"},
+            {3,"Bounce","slider",0.2,"animation.bounce","0.2"}, {3,"Bounce","slider",0.06,"animation.bounce","0.06"},
+            {3,"Fine control when you drag away from the ring","click",{},"dialInteraction.fineEnabled","false"},
+            {3,"Fine control when you drag away from the ring","click",{},"dialInteraction.fineEnabled","true"},
+            {3,"Snap to 0, 25, 50, 75 and 100 %","click",{},"dialInteraction.snap","false"},
+            {3,"Snap to 0, 25, 50, 75 and 100 %","click",{},"dialInteraction.snap","true"},
+            {3,"Volume can go above 100 %","click",{},"options.volume.maxPercent","150"},
+            {3,"Volume can go above 100 %","click",{},"options.volume.maxPercent","100"},
+            {3,"Animations","click",{},"gameMode.animations","true"}, {3,"Animations","click",{},"gameMode.animations","false"},
+            {3,"Blur","click",{},"gameMode.blur","true"}, {3,"Blur","click",{},"gameMode.blur","false"},
+            {3,"Shadows","click",{},"gameMode.shadows","true"}, {3,"Shadows","click",{},"gameMode.shadows","false"},
+            {3,"Window gaps become 0","click",{},"gameMode.gapsIn","null"}, {3,"","",{},"gameMode.gapsOut","null"},
+            {3,"Window gaps become 0","click",{},"gameMode.gapsIn","0"},
+            {4,"Corner works when the tab is hidden","click",{},"trigger.tapZone","false"},
+            {4,"Corner works when the tab is hidden","click",{},"trigger.tapZone","true"},
+        };
+        window->resize(1200,3200);
+        int failures = 0;
+        for (const Step &step : steps) {
+            if (pages->property("currentIndex").toInt() != step.page) { pages->setProperty("currentIndex",step.page); QTest::qWait(150); }
+            if (step.name.startsWith("shot:")) { QTest::qWait(150); window->grabWindow().save(QString("sweep-%1-%2.png").arg(themeName,step.name.mid(5))); continue; }
+            if (!step.op.isEmpty()) {
+                QQuickItem *item = named(step.name);
+                if (!item) { log.write(QString("MISSING\t%1\n").arg(step.name).toUtf8()); ++failures; continue; }
+                if (step.op == "click") { if (item->property("checkable").toBool()) QMetaObject::invokeMethod(item,"toggle"); QMetaObject::invokeMethod(item,"clicked"); }
+                else if (step.op == "combo") { item->setProperty("currentIndex",step.arg); QMetaObject::invokeMethod(item,"activated",Q_ARG(int,step.arg.toInt())); }
+                else if (step.op == "slider") { item->setProperty("value",step.arg); QMetaObject::invokeMethod(item,"moved"); }
+                QTest::qWait(60);
+            }
+            if (step.path.isEmpty()) continue;
+            const QString got = value(step.path);
+            const bool ok = step.expect.startsWith("!") ? got != step.expect.mid(1) : got == step.expect;
+            if (!ok) ++failures;
+            log.write(QString("%1\t%2\t%3\t%4\n").arg(ok ? "OK" : "FAIL",step.name,step.path,got).toUtf8());
+        }
+        log.close();
+        QCOMPARE(failures,0);
+        // The app follows a theme switch: Omarchy replaces the theme folder, it does not edit the file.
+        if (themeName != "white") {
+            QDir(state.filePath("theme")).removeRecursively(); QDir().mkpath(state.filePath("theme"));
+            QVERIFY(QFile::copy("/usr/share/omarchy/themes/white/colors.toml",state.filePath("theme/colors.toml")));
+            QTRY_COMPARE(theme.colors().value("background").toString(),QString("#ffffff"));
+            pages->setProperty("currentIndex",0); QTest::qWait(400);
+            window->resize(1200,1100); QTest::qWait(150);
+            QVERIFY(window->grabWindow().save(QString("sweep-%1-switched-to-white.png").arg(themeName)));
+        }
     }
     void ipcUsesFixedArguments() {
         QTemporaryDir tools;

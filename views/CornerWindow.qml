@@ -20,8 +20,8 @@ PanelWindow {
   property bool suppressed: false
   property string iconMode: "always"
   property bool allowed: true
-  // trigger.tapZone off: the corner catches the pointer only while the tab is always drawn (2026-11-17).
-  readonly property bool zoneActive: allowed && (iconMode === "always" || !model.config.trigger || model.config.trigger.tapZone !== false)
+  // trigger.tapZone off: no zone when the tab is never drawn. "When the pointer is near" keeps it: it must see the pointer arrive.
+  readonly property bool zoneActive: allowed && (iconMode !== "never" || !model.config.trigger || model.config.trigger.tapZone !== false)
   property string tabStyle: "rings2knob"
   property string tabSource: "default"
   // Seam with TabWindow (two layer surfaces commit separately). Opening: this window draws the tab itself first, and

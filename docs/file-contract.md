@@ -254,7 +254,7 @@ The following is the complete default file. Object keys are fixed except the cat
 | outputs.mode | all, focused, named |
 | outputs.names | Array of nonempty strings; named requires at least one |
 | trigger.push | Boolean: open when the pointer rests in the corner (independent of cornerIcon.mode since 2026-11-17) |
-| trigger.tapZone | Boolean: false means the corner catches the pointer only while cornerIcon.mode is always |
+| trigger.tapZone | Boolean: false means no corner zone while cornerIcon.mode is never (the corner then opens only by IPC or a shortcut) |
 | trigger.pushDelayMs | Number 0 to 500 |
 | behavior.idleTimeoutS | Number 0 to 120; 0 disables timeout |
 | cornerIcon.mode | always, onApproach, never |

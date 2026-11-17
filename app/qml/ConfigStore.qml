@@ -42,6 +42,10 @@ Item {
         if (!reload() || readOnly) { problem("Config is read only. Fix the file or Reset all."); return false }
         try {
             changes = changes.slice();
+            // "Choose screens" with none picked is invalid, so start with every screen picked; the person then unticks.
+            if (changes.some(function(c) { return c.path === "outputs.mode" && c.value === "named" }) && !config.outputs.names.length
+                && !changes.some(function(c) { return c.path === "outputs.names" }))
+                changes.push({path: "outputs.names", value: (validationResources.screens || []).slice()});
             let next = rawText;
             changes.forEach(function(c) { next = Schema.patch(next,c.path,c.value) });
             validationResources = io.resources(next);
