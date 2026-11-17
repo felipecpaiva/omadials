@@ -42,7 +42,7 @@ For the Effect check, we searched the plugin (`Service.qml core controls views v
 | Corner | Tab style, own icon | `tabStyle`, `cornerIcon.source` | run | code read | run |
 | Corner | Show the tab | `cornerIcon.mode` | run | code read | run |
 | Corner | Above windows | `cornerIcon.aboveWindows` | run | code read | run |
-| Corner | Open when the pointer rests | `trigger.push` (new) | run, and `cornerIcon.mode` stays unchanged | code (was tied to "Show the tab") | run |
+| Corner | Open when the pointer rests | `trigger.push` (new) | run, and `cornerIcon.mode` stays unchanged | run (live, run-p5) | run |
 | Corner | Opening delay | `trigger.pushDelayMs` | run | code read; hand | run |
 | Rings | All rings style | `ringStyle.*` | run | run (was hidden by the built-in ring styles; IPC open shot) | run |
 | Rings | Edit sheet | `controls.<id>.icon`, `dials[].style` | existing test | code read | run |
@@ -51,12 +51,12 @@ For the Effect check, we searched the plugin (`Service.qml core controls views v
 | Toggles | Add, Remove, When tapped, When held | `toggles`, `controls.<id>.shown` | existing test | code read | run |
 | Toggles | Theme toggle tap | `toggles[theme].tapAction` | run (schema test) | run (IPC `detail theme` shows the installed theme list) | run |
 | Behavior | Close after | `behavior.idleTimeoutS` | run | code read | run |
-| Behavior | Close when the pointer leaves | `behavior.closeOnPointerLeave` | run | code (was dead) | run |
+| Behavior | Close when the pointer leaves | `behavior.closeOnPointerLeave` | run | run (live, run-p5) | run |
 | Behavior | Animation style, speed, bounce | `animation.*` | run | code read; feel is hand | run |
 | Behavior | Fine control, Snap | `dialInteraction.*` | run | code read; feel is hand | run |
 | Behavior | Volume above 100 % | `options.volume.maxPercent` | run | code read | run |
 | Behavior | Game mode switches | `gameMode.*` | run, gaps off writes `null` | run (unit test); code (an off switch used to force a value) | run |
-| About | Corner works when the tab is hidden | `trigger.tapZone` | run | code (was dead) | run |
+| About | Corner works when the tab is hidden | `trigger.tapZone` | run | run (live hover, run-p5) | run |
 | About | Reset, Undo, Copy details, Open folder | | existing test | | run |
 
 ## What was wrong, and the fix
@@ -67,6 +67,7 @@ For the Effect check, we searched the plugin (`Service.qml core controls views v
   - Wheel step: `ValueMap.wheel` now takes the ring's step.
   - Tap zone: the window mask ignored it. Fix: `CornerWindow.zoneActive`. With the option off, a tab set to "Never" has no zone. "When the pointer is near" keeps its zone, because it needs the zone to see the pointer arrive.
   - Rest to open: it shared `cornerIcon.mode` with "Show the tab", so switching it changed the tab. Fix: it has its own key, `trigger.push`.
+- **Resting opened the corner, then it closed 0.6 s later** when "Close when the pointer leaves" was on (the default). The closed-corner input turns off as the fan opens, and that counted as the pointer leaving. Fix: only a real exit starts the leave timer. Found and proved by the live check `test/live/run-p5.sh`.
 - **All rings style did nothing (found by the maintainer).** The built-in ring list gave each ring its own solid, round, normal style, and that hid the All rings choice. The write test passed because the file was right; only the corner was wrong. Fix: the built-in rings have no own style. Proved live with a shot after the fix.
 - **"Choose screens" could not be picked.** The choice was rejected when no screen was selected yet. Fix: picking it now selects every screen first.
 - **Game mode switches left off forced a value** (gaps 5 and 10, animations on). Fix: an off switch now keeps the value from before game mode.

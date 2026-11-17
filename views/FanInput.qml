@@ -93,7 +93,8 @@ MouseArea {
     }
     readonly property bool pushEnabled: !model.config.trigger || model.config.trigger.push !== false
     readonly property bool leaveCloses: !model.config.behavior || model.config.behavior.closeOnPointerLeave !== false
-    onExited: { approaching = false; dwell.stop(); if (leaveCloses && model.pointerSession && model.open && !model.captured) leave.restart() }
+    // Only a real exit: the closed-corner input also "exits" when the fan opens and turns it off, with the pointer still in place.
+    onExited: { approaching = false; dwell.stop(); if (enabled && leaveCloses && model.pointerSession && model.open && !model.captured) leave.restart() }
     onCanceled: { hold.stop(); if (model.draftControl) model.commitDial(false,true); else model.releaseCapture(); ring = -1; if (startedClosed) model.close() }
     onWheel: w => {
         const p = polarOf(w.x,w.y), i = Geometry.hitRing(p.d,radii)
