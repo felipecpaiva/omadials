@@ -15,3 +15,7 @@ function parse(text, code) {
 function write(value, options) { if (!Number.isFinite(value)) return null; return ['brightnessctl', '-d', options.device || 'asus::kbd_backlight', 'set', String(normalize(value, options))]; }
 
 function probe(options) { return read(options); }
+
+function detect(text, code) {
+    return code ? '' : text.trim().split(/\s+/).filter(n => /^[^/]*kbd_backlight[^/]*$/.test(n)).sort()[0] || '';
+}

@@ -7,6 +7,7 @@ const GLYPHS = Object.freeze({
     powerprofile: "\u{F04C5}", gameMode: "\u{F0297}", theme: "\u{F03D8}", media: "\u{F075A}",
     bluetoothBattery: "\u{F02CB}", wifiSignal: "\u{F0928}", laptopBattery: "\u{F0079}", penBattery: "\u{F03EA}",
     touchpad: "\u{F0322}", touchscreen: "\u{F04F6}", chargeLimit: "\u{F008A}",
+    touchpad: "\u{F07F8}", touchscreen: "\u{F096D}", chargeLimit: "\u{F0079}",
     settings: "\u{F0493}"
 });
 function glyph(name) { return Object.prototype.hasOwnProperty.call(GLYPHS, name) ? GLYPHS[name] : ""; }

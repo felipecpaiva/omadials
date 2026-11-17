@@ -29,3 +29,7 @@ result = M.reduce(result.state,{type:'WRITTEN',code:1,reason:'failed',generation
 assert.equal(result.state.value,requested);
 assert.equal(result.state.writeState,'failed');
 console.log('PASS command backend');
+
+assert.equal(S.detect('other\nfoo::kbd_backlight\n',0),'foo::kbd_backlight');
+assert.equal(S.detect('other',0),'');
+assert.equal(S.detect('foo::kbd_backlight',1),'');

@@ -358,5 +358,55 @@
     "icon": "penBattery",
     "defaultPlacement": "ring",
     "options": {}
+  },
+  {
+    "id": "touchpad",
+    "folder": "touchpad",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Touchpad",
+    "icon": "touchpad",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "switch",
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ]
+  },
+  {
+    "id": "touchscreen",
+    "folder": "touchscreen",
+    "kind": "toggle",
+    "placements": [
+      "arc"
+    ],
+    "label": "Touchscreen",
+    "icon": "touchscreen",
+    "defaultPlacement": "arc",
+    "options": {},
+    "tapActions": [
+      "switch",
+      "quickDetail"
+    ],
+    "holdActions": [
+      "quickDetail"
+    ]
+  },
+  {
+    "id": "chargeLimit",
+    "folder": "chargeLimit",
+    "kind": "stepped",
+    "placements": [
+      "ring"
+    ],
+    "label": "Charge limit",
+    "icon": "chargeLimit",
+    "defaultPlacement": "ring",
+    "options": {}
   }
 ]

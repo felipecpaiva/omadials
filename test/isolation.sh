@@ -4,7 +4,7 @@
 # QML at most 150 lines, JS at most 250, no `sh -c`.
 cd "$(dirname "$0")/.." || exit 1
 fail=0
-qml=$(find . -name '*.qml' -not -path './spikes/*' -not -path './docs/*')
+qml=$(find . -name '*.qml' -not -path './spikes/*' -not -path './docs/*' -not -path './app/*')  # app/ is a separate program with its own rules
 bad=$(grep -ln 'Process {' $qml | grep -v '^./core/CommandRunner.qml$'); [ -n "$bad" ] && { echo "Process outside CommandRunner: $bad"; fail=1; }
 bad=$(grep -ln 'import qs.Commons' $qml | grep -vE '^./(theme/Theme|Service)\.qml$'); [ -n "$bad" ] && { echo "qs.Commons outside Theme: $bad"; fail=1; }
 bad=$(grep -nE '"#[0-9a-fA-F]{3,8}"' $qml | grep -v '^./spikes'); [ -n "$bad" ] && { echo "colour literal: $bad"; fail=1; }

@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const source=readFileSync(new URL('./spec.js',import.meta.url),'utf8').replace(/^\.pragma library\n/,'');
+const S=new Function(source+';return {read,parse,write,usableInput}')();
+assert.equal(S.parse('',1).availability,'unavailable');
+assert.equal(S.parse('device\n',0).availability,'available');
+assert.deepEqual(S.write(false),['omarchy','toggle','touchpad','off']);
+assert.equal(S.write('off'),null);
+for(const input of ['{}','{','{"keyboards":[{"name":"keyboard"}]}','{"mice":[{"name":"mouse","enabled":false}]}','{"keyboards":[{"name":"virtual keyboard","enabled":true}]}']) assert.equal(S.usableInput(input,0),false);
+for(const group of ['keyboards','mice']) assert.equal(S.usableInput(JSON.stringify({[group]:[{name:'physical',enabled:true}]}),0),true);
+assert.equal(S.usableInput('{"keyboards":[{"name":"physical","enabled":true}]}',1),false);

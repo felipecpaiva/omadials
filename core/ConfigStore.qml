@@ -4,7 +4,6 @@ import Quickshell
 import Quickshell.Io
 import "../logic/ConfigSchema.js" as Schema
 import "../logic/ConfigMigrate.js" as Migrate
-
 Item {
     id: configStore
     readonly property string path: Quickshell.env("HOME") + "/.config/omadials/config.json"
@@ -23,7 +22,6 @@ Item {
     property string pendingPrevious: ""
     property bool undoing: false
     property string lastProblem: ""
-
     function problem(message) {
         errors = errors.concat([{ path: path, code: "io_error", message: message }]);
         if (lastProblem !== message) console.warn("omadials: " + message);
@@ -35,6 +33,7 @@ Item {
         let result = Schema.validate(text, catalog, validationResources);
         try {
             let migration = Migrate.migrate(JSON.parse(text));
+            if (migration.changed) result = Schema.validate(migration.config, catalog, validationResources);
             readOnly = result.readOnly || migration.readOnly;
             result.errors = result.errors.concat(migration.errors.filter(function(e) {
                 return !result.errors.some(function(r) { return r.path === e.path && r.code === e.code; });
@@ -58,7 +57,8 @@ Item {
         file.text();
         if (!loaded || readOnly) { problem("Config is read only; repair its JSON or version first."); return false; }
         try {
-            let next = rawText;
+            const migration = Migrate.migrate(JSON.parse(rawText));
+            let next = migration.changed ? JSON.stringify(migration.config) : rawText;
             changes.forEach(function(change) { next = Schema.patch(next, change.path, change.value); });
             let checked = Schema.validate(next, catalog, validationResources);
             let baseline = Schema.validate(rawText, catalog, validationResources).errors;
@@ -83,13 +83,34 @@ Item {
         pendingText = text;
         undoing = isUndo;
         saving = true;
-        file.setText(text); // atomicWrites uses a sibling temporary file and rename.
+        let migration = {changed:false};
+        try { migration = Migrate.migrate(JSON.parse(rawText)); } catch (e) { /* Explicit reset can replace broken JSON. */ }
+        if (migration.changed) {
+            backup.path = path.slice(0, path.lastIndexOf("/") + 1) + migration.backup;
+            backup.reload(); backup.text();
+            if (backupExists) file.setText(text);
+            else if (backupMissing) backup.setText(rawText);
+            else { saving = false; problem("Cannot inspect migration backup"); return false; }
+        } else file.setText(text); // Atomic sibling temporary file and rename.
         return true;
     }
     function undo() {
         if (!canUndo) return;
         file.reload(); file.text();
         if (canUndo) write(previousText, true);
+    }
+    property bool backupExists: false
+    property bool backupMissing: false
+    FileView {
+        id: backup
+        atomicWrites: true
+        blockLoading: true
+        blockWrites: true
+        printErrors: false
+        onLoaded: { configStore.backupExists = true; configStore.backupMissing = false }
+        onLoadFailed: error => { configStore.backupExists = false; configStore.backupMissing = error === FileViewError.FileNotFound }
+        onSaved: file.setText(configStore.pendingText)
+        onSaveFailed: error => { configStore.saving = false; configStore.problem("Cannot save migration backup: " + error) }
     }
     onCatalogChanged: if (loaded) accept(rawText)
     onValidationResourcesChanged: if (loaded) accept(rawText)

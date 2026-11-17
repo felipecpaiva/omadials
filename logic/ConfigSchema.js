@@ -7,6 +7,9 @@ const DEFAULTS = {
     "trigger": {"tapZone":true,"pushDelayMs":150},
     "cornerIcon": {"mode":"always","aboveWindows":true,"source":"default"},
     "controls": {
+        "touchpad": {"shown":false,"icon":"default"},
+        "touchscreen": {"shown":false,"icon":"default"},
+        "chargeLimit": {"shown":false,"icon":"default"},
         "brightness": {"shown":true,"icon":"default"},
         "volume": {"shown":true,"icon":"default"},
         "mic": {"shown":true,"icon":"default"},
@@ -25,7 +28,7 @@ const DEFAULTS = {
     "ringStyle": {"track":"solid","knob":"round","thickness":"normal"},
     "readoutRings": [],
     "dials": [{"id":"brightness","order":0,"style":{"track":"solid","knob":"round","thickness":"normal"}},{"id":"volume","order":1,"style":{"track":"solid","knob":"round","thickness":"normal"}},{"id":"mic","order":2,"style":{"track":"solid","knob":"round","thickness":"normal"}}],
-    "toggles": [{"id":"wifi","tapAction":"switchRadio","holdAction":"quickDetail"},{"id":"bluetooth","tapAction":"switchPower","holdAction":"quickDetail"},{"id":"nightlight","tapAction":"switch","holdAction":"quickDetail"},{"id":"dnd","tapAction":"switch","holdAction":"quickDetail"},{"id":"keepawake","tapAction":"switch","holdAction":"quickDetail"},{"id":"kbdlight","tapAction":"nextStep","holdAction":"quickDetail"},{"id":"airplane","tapAction":"switch","holdAction":"quickDetail"},{"id":"gameMode","tapAction":"switch","holdAction":"quickDetail"},{"id":"theme","tapAction":"togglePair","holdAction":"quickDetail"},{"id":"media","tapAction":"quickDetail","holdAction":"quickDetail"}],
+    "toggles": [{"id":"touchpad","tapAction":"switch","holdAction":"quickDetail"},{"id":"touchscreen","tapAction":"switch","holdAction":"quickDetail"},{"id":"wifi","tapAction":"switchRadio","holdAction":"quickDetail"},{"id":"bluetooth","tapAction":"switchPower","holdAction":"quickDetail"},{"id":"nightlight","tapAction":"switch","holdAction":"quickDetail"},{"id":"dnd","tapAction":"switch","holdAction":"quickDetail"},{"id":"keepawake","tapAction":"switch","holdAction":"quickDetail"},{"id":"kbdlight","tapAction":"nextStep","holdAction":"quickDetail"},{"id":"airplane","tapAction":"switch","holdAction":"quickDetail"},{"id":"gameMode","tapAction":"switch","holdAction":"quickDetail"},{"id":"theme","tapAction":"togglePair","holdAction":"quickDetail"},{"id":"media","tapAction":"quickDetail","holdAction":"quickDetail"}],
     "readout": {"battery":true,"powerProfile":true,"penBattery":true},
     "options": {"brightness":{"wheelStep":5,"monitor":"auto"},"volume":{"wheelStep":5,"maxPercent":100},"mic":{"wheelStep":5}},
     "tabStyle": "rings2knob",
