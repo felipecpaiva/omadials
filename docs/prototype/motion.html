@@ -58,7 +58,7 @@ const C = Object.freeze({
   fakeSlow:1500, fakeFailure:900, fakeFast:450, step:5, fineStep:1,
   ease:[.23,1,.32,1], circleK:.55228475,
   demoApps:[65,40,80], demoProgress:40, fineNear:22, fineFar:66, fineGain:.25, finerGain:.1, detentStep:25, snapWindow:2, batteryFont:40, statusWidth:176, statusDepth:124, statusShortWidth:100, readoutWidth:136, readoutDepth:112, labelInset:4, markSize:4, percent:100,
-  textWidth:220, textInset:12,labelOffset:14,labelPad:10,tabRadius:42,tabArcs:[16,24,32],tabFill:[.3,.55,.8],iconSize:28,iconInset:4,iconRest:.7,iconReveal:80,windowW:300,windowH:220,textGap:8,statusLongWidth:124,statusLongLines:4,noticeWidth:260, statusHeight:54, textLine:18, labelWidth:96, labelHeight:40, thin:2, normal:4, bold:6, dash:10, gap:6, dot:1, segment:18, bar:12, maxRings:3, fadeSlots:.6,
+  textWidth:220, textInset:12,labelOffset:14,labelPad:10,ringStart:3,ringEnd:87,tabRadius:42,tabArcs:[16,24,32],tabFill:[.3,.55,.8],tab2Arcs:[19,31],tab2Fill:[.4,.65],tabKnob:4,iconSize:28,iconInset:4,iconRest:.7,iconReveal:80,windowW:300,windowH:220,textGap:8,statusLongWidth:124,statusLongLines:4,noticeWidth:260, statusHeight:54, textLine:18, labelWidth:96, labelHeight:40, thin:2, normal:4, bold:6, dash:10, gap:6, dot:1, segment:18, bar:12, maxRings:3, fadeSlots:.6,
   storyboardPause:650, storyboardDrag:850, storyboardHold:1100
 });
 const PALETTES = {
@@ -78,7 +78,7 @@ const S={iconReveal:0,state:'closed',corner:'bl',opacity:0,scale:C.scaleStart,hi
 let width=0,height=0,R=C.radius,ratio=1,frame=0,drag=null,holdTimer=0,holdStartTimer=0,
  bubbleTimer=0,idleTimer=0,leaveTimer=0,dwellTimer=0,playToken=0,lastPending=0;
 const tracks=new Map();
-const config={iconMode:'always',iconAbove:true,demoWindow:false,toggles:[0,1,2,3,4,5,6,7,8,9,10],enabled:new Set([0,1,2,3,4,5,6,7,8,9,10]),wifiTap:'switchRadio',styles:Array.from({length:C.maxRings},()=>({track:'solid',knob:'round',thickness:'normal'})),readouts:[null,null,null],snap:true,fine:true,lightTheme:"Paper Light",darkTheme:"Midnight",game:{animations:true,blur:true,shadows:true,gaps:true},apps:[...C.demoApps],keyboard:true};
+const config={tabStyle:'rings2knob',iconMode:'always',iconAbove:true,demoWindow:false,toggles:[0,1,2,3,4,5,6,7,8,9,10],enabled:new Set([0,1,2,3,4,5,6,7,8,9,10]),wifiTap:'switchRadio',styles:Array.from({length:C.maxRings},()=>({track:'solid',knob:'round',thickness:'normal'})),readouts:[null,null,null],snap:true,fine:true,lightTheme:"Paper Light",darkTheme:"Midnight",game:{animations:true,blur:true,shadows:true,gaps:true},apps:[...C.demoApps],keyboard:true};
 S.arcOffset=0;
 const copy=document.createElement('div');copy.className='fan-copy';stage.append(copy);
 const statusBox=document.createElement('div');statusBox.className='status-box';stage.append(statusBox);
@@ -185,9 +185,9 @@ function render(){
     for(let i=0;i<3;i++){
       if(i===2&&S.missing)continue;
       const rd=devices[config.readouts[i]],style=config.styles[i],stroke=C[style.thickness],dash=style.track==='solid'?'':style.track==='dotted'?`${C.dot} ${C.gap}`:style.track==='segmented'?`${C.segment} ${C.gap}`:`${C.dash} ${C.gap}`;
-      const r=ringRadius(i),q=S.rings[i]*(rd&&!rd.connected?.4:1),end=C.start+(C.end-C.start)*q,v=clamp((rd?(rd.value??0):S.shown[i])/100),a=C.start+(C.end-C.start)*v,p=point(r,a);
-      if(q>0)out+=`<path d="${arcPath(r,C.start,Math.max(C.start+.001,end))}" fill="none" stroke="var(--track)" stroke-width="${stroke}" stroke-dasharray="${dash}" stroke-linecap="${rd?'butt':style.track==='dotted'?'round':'butt'}"/><path d="${arcPath(r,C.start,Math.max(C.start+.001,Math.min(end,a)))}" fill="none" stroke="var(--accent)" stroke-width="${stroke}" stroke-dasharray="${dash}" stroke-linecap="${rd?'butt':style.track==='dotted'?'round':'butt'}"/>`;
-      if(!rd)for(let detent=0;detent<=C.percent;detent+=C.detentStep){const a=C.start+(C.end-C.start)*detent/C.percent,u=point(r-C.markSize,a),v=point(r+C.markSize,a);out+=`<path d="M${u.x},${u.y} L${v.x},${v.y}" stroke="var(--text)" opacity="${q}"/>`;}
+      const r=ringRadius(i),q=S.rings[i]*(rd&&!rd.connected?.4:1),end=C.ringStart+(C.ringEnd-C.ringStart)*q,v=clamp((rd?(rd.value??0):S.shown[i])/100),a=C.ringStart+(C.ringEnd-C.ringStart)*v,p=point(r,a);
+      if(q>0)out+=`<path d="${arcPath(r,C.ringStart,Math.max(C.ringStart+.001,end))}" fill="none" stroke="var(--track)" stroke-width="${stroke}" stroke-dasharray="${dash}" stroke-linecap="${rd?'butt':style.track==='dotted'?'round':'butt'}"/><path d="${arcPath(r,C.ringStart,Math.max(C.ringStart+.001,Math.min(end,a)))}" fill="none" stroke="var(--accent)" stroke-width="${stroke}" stroke-dasharray="${dash}" stroke-linecap="${rd?'butt':style.track==='dotted'?'round':'butt'}"/>`;
+      if(!rd)for(let detent=0;detent<=C.percent;detent+=C.detentStep){const a=C.ringStart+(C.ringEnd-C.ringStart)*detent/C.percent,u=point(r-C.markSize,a),v=point(r+C.markSize,a);out+=`<path d="M${u.x},${u.y} L${v.x},${v.y}" stroke="var(--text)" opacity="${q}"/>`;}
       if(!rd&&style.knob!=='none')out+=style.knob==='bar'?`<rect x="${p.x-C.bar/2}" y="${p.y-stroke/2}" width="${C.bar}" height="${stroke}" fill="var(--accent)" opacity="${q}"/>`:`<circle cx="${p.x}" cy="${p.y}" r="${C.knob}" fill="var(--accent)" stroke="var(--ink)" stroke-width="${C.knobOutline+S.ticks[i]}" opacity="${q}"/>`;
 
     }
@@ -195,7 +195,7 @@ function render(){
       if(i===2&&S.missing)continue;
       const d=devices[config.readouts[i]],caption=d?('Read only '+(d.connected?d.value+'%':'not connected')):['☀','♪','●'][i]+' '+names[i]+' '+S.values[i]+'%';
       // Label follows the ring, on its corner side. The path always runs left to right so glyphs stay upright.
-      const rl=ringRadius(i)-C.labelOffset,a1=point(rl,C.start),a2=point(rl,C.end),m=point(rl,(C.start+C.end)/2);
+      const rl=ringRadius(i)-C.labelOffset,a1=point(rl,C.ringStart),a2=point(rl,C.ringEnd),m=point(rl,(C.ringStart+C.ringEnd)/2);
       const [p1,p2]=a1.x<a2.x?[a1,a2]:[a2,a1],sw=((m.x-p1.x)*(p2.y-m.y)-(m.y-p1.y)*(p2.x-m.x))>0?1:0,left=!S.corner.includes('r');
       out+=`<path id="lbl${i}" d="M${p1.x},${p1.y} A${rl},${rl} 0 0 ${sw} ${p2.x},${p2.y}" fill="none"/><text font-size="${C.textInset}" fill="var(--text)" opacity="${S.rings[i]}" dominant-baseline="middle"><textPath href="#lbl${i}" startOffset="${left?C.labelPad:'calc(100% - '+C.labelPad+'px)'}" text-anchor="${left?'start':'end'}">${escapeText(caption)}</textPath></text>`;
     }
@@ -210,8 +210,9 @@ function render(){
     const alpha=config.iconMode==='never'?0:config.iconMode==='always'?1:S.iconReveal;
     // Default corner mark: a small quarter tab with a mini dial, the closed shape of the fan itself.
     const tab=C.tabRadius,t0=point(0,0),tA=point(tab,0),tB=point(tab,90),sweepTab=(S.corner.includes('r')!==S.corner.includes('t'))?0:1;
-    const mini=C.tabArcs.map((r,k)=>{const a0=C.start+6,a1=C.end-6,f=a0+(a1-a0)*C.tabFill[k];
-      return `<path d="${arcPath(r,a0,a1)}" stroke="var(--track)" stroke-width="2.5" stroke-linecap="round"/><path d="${arcPath(r,a0,f)}" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>`}).join('');
+    const two=config.tabStyle==='rings2knob',radii=two?C.tab2Arcs:C.tabArcs,fills=two?C.tab2Fill:C.tabFill;
+    const mini=radii.map((r,k)=>{const a0=C.start+6,a1=C.end-6,f=a0+(a1-a0)*fills[k],kp=point(r,f);
+      return `<path d="${arcPath(r,a0,a1)}" stroke="var(--track)" stroke-width="2.5" stroke-linecap="round"/><path d="${arcPath(r,a0,f)}" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>`+(two&&k===radii.length-1?`<circle cx="${kp.x}" cy="${kp.y}" r="${C.tabKnob}" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5"/>`:'')}).join('');
     const icon=alpha>0?`<g opacity="${alpha}" fill="none"><path d="M${t0.x},${t0.y} L${tA.x},${tA.y} A${tab},${tab} 0 0 ${sweepTab} ${tB.x},${tB.y} Z" fill="var(--surface)" stroke="var(--edge)"/>${mini}</g>`:'';
     out+=config.iconAbove?win+icon:icon+win;
   }
@@ -350,7 +351,7 @@ function hit(p){
   }
   const profile=loc(72,R-24);
   if(Math.abs(p.x-profile.x)<52&&Math.abs(p.y-profile.y)<C.target/2)return{type:'profile'};
-  if(z.a>=C.start-4&&z.a<=C.end+4){
+  if(z.a>=C.ringStart-4&&z.a<=C.ringEnd+4){
     const i=[0,1,2].find(i=>!(i===2&&S.missing)&&Math.abs(z.d-ringRadius(i))<=C.band/2);
     if(i!==undefined)return{type:config.readouts[i]?'readout':'ring',i};
   }
@@ -412,8 +413,8 @@ svg.addEventListener('pointermove',e=>{
     const progress=clamp(polar(p).d/R);drag.progress=progress;S.opacity=progress;S.scale=C.scaleStart+(1-C.scaleStart)*progress;S.rings.fill(progress);render();
   }else if(drag.type==='ring'&&drag.moved){
     const z=polar(p),distance=z.d-ringRadius(drag.i),gain=config.fine?(distance>C.fineFar?C.finerGain:distance>C.fineNear?C.fineGain:1):1;
-    if(!drag.started){drag.raw=(z.a-C.start)/(C.end-C.start)*C.percent;drag.started=true;drag.lastAngle=z.a;}
-    if(gain===drag.gain)drag.raw=clamp(drag.raw+(z.a-drag.lastAngle)/(C.end-C.start)*C.percent*gain);
+    if(!drag.started){drag.raw=(z.a-C.ringStart)/(C.ringEnd-C.ringStart)*C.percent;drag.started=true;drag.lastAngle=z.a;}
+    if(gain===drag.gain)drag.raw=clamp(drag.raw+(z.a-drag.lastAngle)/(C.ringEnd-C.ringStart)*C.percent*gain);
     drag.lastAngle=z.a;drag.gain=gain;drag.fine=gain<1;
     const detent=Math.round(drag.raw/C.detentStep)*C.detentStep,snapped=config.snap&&Math.abs(drag.raw-detent)<=C.snapWindow;
     if(snapped&&drag.detent!==detent)tickMark(drag.i);drag.detent=snapped?detent:null;
@@ -469,7 +470,7 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='PageUp')v+=25;else if(e.key==='PageDown')v-=25;
     else if(e.key==='Home')v=i===0?1:0;else if(e.key==='End')v=100;
     else if(e.key==='Enter'&&e.shiftKey){enterDetail(i===0?'Displays':i===1?'Media':'Outputs');e.preventDefault();return}else return;
-    e.preventDefault();value(i,v);bubble(i,point(ringRadius(i),C.start+(C.end-C.start)*S.values[i]/100));hideBubble();activity();
+    e.preventDefault();value(i,v);bubble(i,point(ringRadius(i),C.ringStart+(C.ringEnd-C.ringStart)*S.values[i]/100));hideBubble();activity();
   }else if(e.key==='Enter'||e.key===' '){
     e.preventDefault();const id=items()[S.focus-3];if(e.shiftKey)enterDetail();else if(typeof id==='number')tapToggle(id);
   }
@@ -523,7 +524,7 @@ async function storyboard(){
     say('Dragging: pointer owns the knob, no easing.');
     const start=performance.now(),from=S.values[1];
     while(performance.now()-start<C.storyboardDrag){
-      const p=clamp((performance.now()-start)/C.storyboardDrag);value(1,from+(100-from)*p,true);bubble(1,point(ringRadius(1),C.start+(C.end-C.start)*S.values[1]/100));await pause(C.frame);
+      const p=clamp((performance.now()-start)/C.storyboardDrag);value(1,from+(100-from)*p,true);bubble(1,point(ringRadius(1),C.ringStart+(C.ringEnd-C.ringStart)*S.values[1]/100));await pause(C.frame);
     }
     value(1,100,true);tickMark(1,true);hideBubble();await pause(C.storyboardPause);
     say('A stepped value: one local tick.');tickMark(2);await pause(C.storyboardPause);
@@ -532,7 +533,7 @@ async function storyboard(){
     scrollArc(1);say('Arc scroll: direct capture, then nearest slot snap.');await pause(C.snap+C.storyboardPause,true);
     drag={type:'ring',i:1,fine:true};
     const fineFrom=S.values[1];
-    value(1,fineFrom-C.detentStep*C.fineGain,true);bubble(1,point(ringRadius(1)+C.fineFar,C.end));
+    value(1,fineFrom-C.detentStep*C.fineGain,true);bubble(1,point(ringRadius(1)+C.fineFar,C.ringEnd));
     say('Fine: outward clutch, reduced angle gain.');await pause(C.storyboardPause);
     drag=null;value(1,C.detentStep*2,true);tickMark(1);hideBubble();await pause(C.storyboardPause);
     enterDetail('Outputs');await pause(C.detail+C.storyboardHold);
@@ -549,7 +550,8 @@ $('play').onclick=()=>{if($('play').textContent.startsWith('Playing')){playToken
 new ResizeObserver(resize).observe(stage);
 function settingsPanel(){
   const panel=$('settings-panel');panel.innerHTML='<h2>Settings (live demo)</h2><fieldset id="toggle-config"><legend>Toggle order and visibility</legend></fieldset><label>Wi-Fi tap <select id="wifi-action"><option value="switchRadio">Switch radio</option><option value="quickDetail">Quick Wi-Fi detail</option><option value="fullWindow">Full Omarchy Wi-Fi window</option></select></label><fieldset id="ring-config"><legend>Ring styles and readouts (M: three total, choose a readout to replace a slider)</legend></fieldset><button id="stress">Long text stress</button>';
-  panel.insertAdjacentHTML('beforeend','<fieldset id="round3-settings"><legend>Corner and extras</legend><label>Corner icon <select id="icon-mode"><option value="always">Always</option><option value="onApproach">On approach</option><option value="never">Never</option></select></label><label><input id="icon-above" type="checkbox">Icon above windows</label><label><input id="demo-window" type="checkbox">Demo: a window covers the corner</label><p>The tap zone always works, in every mode.</p><label><input id="snap-on" type="checkbox">Magnetic snap</label><label><input id="fine-on" type="checkbox">Outward fine control</label><label>Light theme<input id="light-name"></label><label>Dark theme<input id="dark-name"></label><p>Order changes only here. Scroll resets on open.</p></fieldset>');
+  panel.insertAdjacentHTML('beforeend','<fieldset id="round3-settings"><legend>Corner and extras</legend><label>Corner tab <select id="tab-style"><option value="rings2knob">2 rings and a knob</option><option value="rings3">3 rings</option></select></label><label>Corner icon <select id="icon-mode"><option value="always">Always</option><option value="onApproach">On approach</option><option value="never">Never</option></select></label><label><input id="icon-above" type="checkbox">Icon above windows</label><label><input id="demo-window" type="checkbox">Demo: a window covers the corner</label><p>The tap zone always works, in every mode.</p><label><input id="snap-on" type="checkbox">Magnetic snap</label><label><input id="fine-on" type="checkbox">Outward fine control</label><label>Light theme<input id="light-name"></label><label>Dark theme<input id="dark-name"></label><p>Order changes only here. Scroll resets on open.</p></fieldset>');
+  $('tab-style').value=config.tabStyle;$('tab-style').onchange=()=>{config.tabStyle=$('tab-style').value;render()};
   $('icon-mode').value=config.iconMode;$('icon-mode').onchange=()=>{config.iconMode=$('icon-mode').value;render()};
   for(const [id,key] of [['icon-above','iconAbove'],['demo-window','demoWindow']]){$(id).checked=config[key];$(id).onchange=()=>{config[key]=$(id).checked;render()}}
   for(const [id,key] of [['snap-on','snap'],['fine-on','fine']]){$(id).checked=config[key];$(id).onchange=()=>config[key]=$(id).checked;}

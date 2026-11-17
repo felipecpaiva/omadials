@@ -41,7 +41,7 @@ From the outside in, around the corner origin:
 - **Status line.** Above the readout, names the last touched control ("Wi-Fi: on, HomeNet"). Replaces hover tips.
 - **Settings gear.** Separate 48 px target in the readout; never consumes an arc slot.
 
-Every arc sweeps 6 to 84 degrees, inset so no target touches a bezel.
+Dial rings sweep 3 to 87 degrees, so they run close to both screen edges (about 19 px at M); the knob still clears the bezel. The toggle arc keeps 6 to 84 degrees so its 48 px targets never touch an edge.
 
 **Capacity.** Radius R is S 300, M 380 (default), L 460, capped at 45% of the output's shorter side so portrait works. Toggles that fit = floor(r_toggle x 1.36 rad / 48).
 
@@ -102,7 +102,7 @@ Still open: replace the bar's audio, network and power widgets, or sit beside th
 
 - **Corner choice.** Settings pick the corner (bottom-left default) with a live preview.
 - **Ring labels.** Each dial label (icon, name, value) follows its ring's curve on the corner side of the track, 14 px inside it, starting 10 px from the side edge. The text path always runs left to right, so glyphs stay upright in all 4 corners.
-- **Corner icon.** A small mark shows where omadials lives. Default: a 42 px quarter tab in the theme surface colour with a 1 px edge, holding three mini rings (track colour, partly filled with the accent). It is the closed shape of the fan itself, so opening reads as the tab growing. It mirrors toward its corner (it has no text). A custom icon sits inside the same tab. `cornerIcon.mode` is a closed set: `always`, `onApproach` (hidden until the pointer enters the 32 px tap zone, fades in over 80 ms, a click opens; push-to-open is off in this mode), `never`. `cornerIcon.aboveWindows`: on, the icon floats over windows; off, it sits behind windows and shows only on an empty desktop. `cornerIcon.source`: `default`, an icon theme name, or a local SVG or PNG file (read only, size limited, validated; invalid falls back to default and is reported).
+- **Corner icon.** A small mark shows where omadials lives. Default: a 42 px quarter tab in the theme surface colour with a 1 px edge, holding a mini dial. Two variants under review: two rings with a knob (prototype default) and three rings. It is the closed shape of the fan itself, so opening reads as the tab growing. It mirrors toward its corner (it has no text). A custom icon sits inside the same tab. `cornerIcon.mode` is a closed set: `always`, `onApproach` (hidden until the pointer enters the 32 px tap zone, fades in over 80 ms, a click opens; push-to-open is off in this mode), `never`. `cornerIcon.aboveWindows`: on, the icon floats over windows; off, it sits behind windows and shows only on an empty desktop. `cornerIcon.source`: `default`, an icon theme name, or a local SVG or PNG file (read only, size limited, validated; invalid falls back to default and is reported).
 - **The tap zone always works.** In every icon mode, and with the icon behind a window, the 32 px zone stays above windows and a tap opens. Only the icon moves. The reveal area is the tap zone itself, never larger, because a layer mask that sees the pointer also catches clicks (spike S3). The icon hides over fullscreen windows and on the lock screen, like the zone.
 
 - All 4 corners mirror the geometry (`x -> width - x`, `y -> height - y`). List order runs from the side edge toward the top or bottom edge.
