@@ -2,6 +2,8 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import qs.Ui
+import "../logic/Labels.js" as Labels
 
 RowLayout {
     id: field
@@ -35,9 +37,19 @@ RowLayout {
         palette.base: field.theme.surface
         palette.button: field.theme.off
     }
+    // Fixed choices use the stock themed dropdown and show words, not config keys.
+    Dropdown {
+        visible: field.kind === "choice"
+        Layout.preferredWidth: 175
+        showLabel: false
+        options: Labels.options(field.choices)
+        value: String(field.current ?? "")
+        foreground: field.theme.text; background: field.theme.surface; accent: field.theme.accent; fontFamily: field.theme.font
+        onChanged: (v) => { const i = field.choices.map(String).indexOf(v); if (i >= 0) field.store.set(field.path, field.choices[i]) }
+    }
     ComboBox {
-        visible: field.kind === "choice" || field.kind === "editableChoice"
-        editable: field.kind === "editableChoice"
+        visible: field.kind === "editableChoice"
+        editable: true
         Layout.preferredWidth: 175
         model: field.choices
         currentIndex: field.choices.indexOf(field.current)
