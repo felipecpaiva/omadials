@@ -20,7 +20,9 @@ Item {
     // What the open styles start from: the mini ring radii ([] for a custom icon) and whether a knob rides the first.
     // cornerIcon.scale (0.5 to 1): the whole tab shrinks around the corner, and the open styles start from it.
     readonly property real tabScale: model.config.cornerIcon && model.config.cornerIcon.scale > 0 ? model.config.cornerIcon.scale : 1
-    readonly property var mini: custom ? [] : (OpenStyles.TAB.mini[tabStyle] || OpenStyles.TAB.mini.rings2knob).map(r => r * tabScale)
+    readonly property bool battery: !custom && model.batteryRing   // the battery is rings[0], drawn as the outer mini ring
+    readonly property var mini: custom ? [] : (battery ? [OpenStyles.TAB.battery] : []).concat(OpenStyles.TAB.mini[tabStyle] || OpenStyles.TAB.mini.rings2knob).map(r => r * tabScale)
+    readonly property int knobRing: battery ? 1 : 0
     readonly property bool knob: !custom && OpenStyles.TAB.knob0[tabStyle] === true
     readonly property real tabRadius: OpenStyles.TAB.radius * tabScale
     readonly property var origin: Geometry.fromCanonical({ x: 0, y: height }, width, height, corner)
@@ -36,7 +38,8 @@ Item {
             required property real modelData
             required property int index
             readonly property var control: mark.model.rings.length > index ? mark.model.rings[index] : null
-            readonly property real level: control && control.kind !== "readout" ? (ValueMap.fraction(control.value, control.range) || 0) : 0
+            readonly property bool isBattery: !!control && control === mark.model.battery
+            readonly property real level: control && (control.kind !== "readout" || isBattery) ? (ValueMap.fraction(control.value, control.range) || 0) : 0
             readonly property real endAngle: Geometry.RING_START + (Geometry.RING_END - Geometry.RING_START) * level
             readonly property var trackArc: Geometry.qtArc(Geometry.RING_START, Geometry.RING_END, mark.corner)
             readonly property var fillArc: Geometry.qtArc(Geometry.RING_START, Math.max(Geometry.RING_START + 0.01, endAngle), mark.corner)
@@ -46,18 +49,14 @@ Item {
                 PathAngleArc { centerX: mark.origin.x; centerY: mark.origin.y; radiusX: miniRing.modelData; radiusY: miniRing.modelData; startAngle: miniRing.trackArc.start; sweepAngle: miniRing.trackArc.sweep }
             }
             ShapePath {
-                strokeColor: mark.theme.accent; strokeWidth: OpenStyles.TAB.stroke * mark.tabScale; fillColor: "transparent"; capStyle: ShapePath.RoundCap
+                strokeColor: miniRing.isBattery && mark.model.batteryLow ? mark.theme.warn : mark.theme.accent; strokeWidth: OpenStyles.TAB.stroke * mark.tabScale; fillColor: "transparent"; capStyle: ShapePath.RoundCap
                 PathAngleArc { centerX: mark.origin.x; centerY: mark.origin.y; radiusX: miniRing.modelData; radiusY: miniRing.modelData; startAngle: miniRing.fillArc.start; sweepAngle: miniRing.fillArc.sweep }
             }
         }
     }
-    BatteryRing {
-        anchors.fill: parent; theme: mark.theme; model: mark.model; corner: mark.corner; origin: Qt.point(mark.origin.x, mark.origin.y)
-        radius: OpenStyles.TAB.battery * mark.tabScale; stroke: OpenStyles.TAB.stroke * mark.tabScale
-    }
     Rectangle {   // the knob rides the outer ring's value
-        readonly property var outer: miniRings.count > 0 ? miniRings.itemAt(0) : null
-        readonly property real ringRadius: mark.mini.length ? mark.mini[0] : 0
+        readonly property var outer: miniRings.count > mark.knobRing ? miniRings.itemAt(mark.knobRing) : null
+        readonly property real ringRadius: mark.mini.length > mark.knobRing ? mark.mini[mark.knobRing] : 0
         readonly property var pos: Geometry.fromCanonical(Geometry.knobPos(ringRadius, outer ? outer.endAngle : Geometry.RING_START, mark.height), mark.width, mark.height, mark.corner)
         visible: mark.knob
         x: pos.x - width / 2; y: pos.y - height / 2; width: OpenStyles.TAB.knob * mark.tabScale; height: width; radius: width / 2; color: mark.theme.accent

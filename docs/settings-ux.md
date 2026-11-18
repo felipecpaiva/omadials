@@ -26,7 +26,7 @@ the preview on one page only.
 - Card "Size": Compact / Normal / Large as three cards with a one-line description each and the cap note when the
   screen limits it ("Large is limited to 450 px on this screen").
 - Card "Corner tab": style as picture buttons (2 rings and a knob, 3 rings, 3 rings and a knob, your own icon),
-  "Tab size" (a 50 to 100 % slider, added 2026-11-18 for people who find the tab too big), "Show battery ring" (on by default; closed tab and open corner) and "Battery turns red at" (5 to 50 %, default 20 %, added 2026-11-18), "Show the tab" (Always / When the pointer is near / Never), "Above windows" switch with help
+  "Tab size" (a 50 to 100 % slider, added 2026-11-18 for people who find the tab too big), "Show battery ring" (on by default; the outermost ring closed and open, the corner grows by one band) and "Battery turns red at" (5 to 50 %, default 20 %, added 2026-11-18), "Show the tab" (Always / When the pointer is near / Never), "Above windows" switch with help
   ("Off: the tab hides behind windows; the corner still opens").
 - Card "Opening": "Open when the pointer rests in the corner" switch with the delay as a small slider (0 to 500 ms),
   shown only when on. The tap zone switch moves to Advanced (About page) with a warning.

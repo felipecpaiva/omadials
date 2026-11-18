@@ -5,7 +5,7 @@ const GLYPHS = Object.freeze({
     brightness: "\u{F00E0}", volume: "\u{F057E}", mic: "\u{F036C}", wifi: "\u{F05A9}", bluetooth: "\u{F00AF}",
     nightlight: "\u{F0594}", dnd: "\u{F009B}", keepawake: "\u{F0176}", kbdlight: "\u{F030C}", airplane: "\u{F001D}",
     powerprofile: "\u{F04C5}", gameMode: "\u{F0297}", theme: "\u{F03D8}", media: "\u{F075A}",
-    bluetoothBattery: "\u{F02CB}", wifiSignal: "\u{F0928}", laptopBattery: "\u{F0079}", penBattery: "\u{F03EA}",
+    bluetoothBattery: "\u{F02CB}", wifiSignal: "\u{F0928}", laptopBattery: "\u{F0322}", penBattery: "\u{F03EA}",
     touchpad: "\u{F07F8}", touchscreen: "\u{F0741}", chargeLimit: "\u{F0079}",
     settings: "\u{F0493}"
 });

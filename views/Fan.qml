@@ -34,7 +34,7 @@ Item {
     readonly property string style: fanPalette.reduceMotion ? "still" : animation.style || "morph"
     readonly property var shownRings: model.rings.slice(0, radii.length)
     readonly property var sizes: ({ R: fanRadius, radii: radii, toggleRadius: toggleRadius, toggles: Geometry.arcSlots(toggleRadius).count,
-        strokes: shownRings.map(c => OpenStyles.strokeFor(model.ringStyle(c).thickness)), mini: tabMark.mini, knob: tabMark.knob, tab: tabMark.tabScale })
+        strokes: shownRings.map(c => OpenStyles.strokeFor(model.ringStyle(c).thickness)), mini: tabMark.mini, knob: tabMark.knob, knobRing: tabMark.knobRing, tab: tabMark.tabScale })
     readonly property var frame: OpenStyles.frame(style, amount, sizes)
     function plan(from, to) { return OpenStyles.timing(style, from, to, model.flick, animation) }
     MotionValue {
@@ -55,11 +55,6 @@ Item {
         }
         Item {
             anchors.fill: parent; opacity: contentMotion.value; visible: opacity > 0
-            BatteryRing {   // the tab's battery ring, kept the same gap inside the disc edge as it grows
-                anchors.fill: parent; theme: fanPalette; model: fan.model; corner: fan.corner
-                origin: Qt.point(fan.origin.x, fan.origin.y); stroke: OpenStyles.TAB.stroke * tabMark.tabScale
-                radius: Math.max(OpenStyles.TAB.battery * tabMark.tabScale, fan.frame.disc - (OpenStyles.TAB.radius - OpenStyles.TAB.battery) * tabMark.tabScale - 6 * Math.min(1, Math.max(0, fan.amount)))   // 6 px more inside when open: off the edge line
-            }
             Repeater {
                 model: fan.shownRings
                 Ring {

@@ -9,9 +9,12 @@ ColumnLayout {
     required property var theme
     required property var registry
     readonly property var controls: registry.controls
-    implicitWidth: capacity.R*0.6
+    implicitWidth: extent*0.6
     readonly property var config: store.config
     readonly property var capacity: Geometry.capacity(config.size, Math.min(Screen.width,Screen.height))
+    // The battery ring adds one band outside the others, as in the corner (views/CornerWindow.qml).
+    readonly property bool batteryRing: config.cornerIcon.battery !== false
+    readonly property real extent: capacity.R + (batteryRing ? Geometry.BAND : 0)
     property string editingId: ""
     property bool compact: false
     signal editRequested(string id, bool toggle)
@@ -24,7 +27,7 @@ ColumnLayout {
             toggles:toggles.slice(0,Geometry.arcSlots(capacity.toggleRadius).count), angles:Geometry.arcSlots(capacity.toggleRadius).angles};
     }
     function hit(x, y) {
-        let R = capacity.R, p = Geometry.toCanonical({x:x/0.6,y:y/0.6},R,R,config.corner), polar = Geometry.polar(p.x,p.y,R);
+        let R = preview.extent, p = Geometry.toCanonical({x:x/0.6,y:y/0.6},R,R,config.corner), polar = Geometry.polar(p.x,p.y,R);
         let toggle = shapes.toggles.findIndex(function(e,i) {
             let t = Geometry.knobPos(preview.capacity.toggleRadius,shapes.angles[i],R);
             return Math.hypot(t.x - p.x, t.y - p.y) <= 30;
@@ -41,11 +44,11 @@ ColumnLayout {
     Canvas {
         id: canvas
         Layout.alignment: Qt.AlignHCenter
-        Layout.preferredWidth: preview.capacity.R * 0.6
-        Layout.preferredHeight: preview.capacity.R * 0.6
+        Layout.preferredWidth: preview.extent * 0.6
+        Layout.preferredHeight: preview.extent * 0.6
         onPaint: {
             let ctx = getContext("2d"); ctx.reset();
-            let cfg = preview.config, R = preview.capacity.R, scale = 0.6;
+            let cfg = preview.config, R = preview.extent, scale = 0.6;
             function point(radius,angle) {
                 return Geometry.fromCanonical(Geometry.knobPos(radius,angle,R),R,R,cfg.corner);
             }
@@ -58,9 +61,10 @@ ColumnLayout {
                 ctx.strokeStyle=color;ctx.lineWidth=width*scale;ctx.stroke();
             }
             let rings=preview.shapes.rings, radii=preview.shapes.radii;
-            if (cfg.cornerIcon.battery !== false) {   // battery ring just inside the edge, as in the corner (example level)
-                let k=cfg.cornerIcon.scale || 1, r=R-4*k-6;
-                arc(r,3,87,preview.theme.track,2.5*k); arc(r,3,3+.85*84,preview.theme.accent,2.5*k);
+            if (preview.batteryRing) {   // the outer battery ring in the common style, read only (example level)
+                let r=preview.capacity.R+Geometry.BAND/2, width=({thin:2,normal:4,bold:6})[cfg.ringStyle.thickness];
+                ctx.setLineDash(cfg.ringStyle.track === "solid" ? [] : cfg.ringStyle.track === "dotted" ? [2,4] : [8,4]);
+                arc(r,3,87,preview.theme.track,width); ctx.setLineDash([]); arc(r,3,3+.85*84,preview.theme.accent,width);
             }
             rings.forEach(function(entry,i) {
                 let style=Object.assign({},cfg.ringStyle,entry.style || {});

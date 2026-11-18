@@ -51,9 +51,10 @@ PanelWindow {
   readonly property real outW: width
   readonly property real outH: height
   readonly property var cap: Geometry.capacity(size, Math.min(outW, outH))
-  readonly property real fanRadius: cap.R
+  readonly property int batteryBand: model.batteryRing ? 1 : 0   // the battery ring adds one band outside, the others keep their place
+  readonly property real fanRadius: cap.R + batteryBand * Geometry.BAND
   readonly property var origin: Geometry.fromCanonical({ x: 0, y: outH }, outW, outH, corner)
-  readonly property var radii: Geometry.ringRadii(fanRadius, Math.min(cap.rings, model.rings.length))
+  readonly property var radii: Geometry.ringRadii(fanRadius, Math.min(cap.rings + batteryBand, model.rings.length))
 
   WlrLayershell.namespace: "omadials"
   WlrLayershell.layer: WlrLayer.Top

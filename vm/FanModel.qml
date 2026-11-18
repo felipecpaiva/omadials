@@ -13,7 +13,12 @@ QtObject {
     property var config: ({})
     property var frozenRings: []
     property var frozenToggles: []
-    property var rings: registry ? (captured ? frozenRings : registry.rings) : []
+    // cornerIcon.battery: the laptop battery is the outermost ring, closed (tab mini ring) and open (one band more).
+    readonly property bool batteryRing: !!battery && battery.value !== null && !(config.cornerIcon && config.cornerIcon.battery === false)
+    property var rings: {
+        const r = registry ? (captured ? frozenRings : registry.rings) : []
+        return batteryRing && r.indexOf(battery) < 0 ? [battery].concat(r) : r
+    }
     readonly property var toggles: registry ? (captured ? frozenToggles : registry.toggles) : []
     property bool open: false
     property real preview: -1       // the open amount while a finger drags the corner open, -1 otherwise

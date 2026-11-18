@@ -340,7 +340,7 @@
       "ring",
       "readout"
     ],
-    "label": "Laptop battery",
+    "label": "Battery",
     "icon": "laptopBattery",
     "defaultPlacement": "ring",
     "options": {}

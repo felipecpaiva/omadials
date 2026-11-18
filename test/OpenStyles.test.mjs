@@ -83,3 +83,12 @@ test('the tab battery ring fits inside the tab disc with its stroke', ()=>{
     assert.ok(O.TAB.battery+O.TAB.stroke/2<=O.TAB.radius);
     for(const [k,m] of Object.entries(O.TAB.mini))assert.ok(m[0]+O.TAB.knob/2<O.TAB.battery-O.TAB.stroke/2,k+' knob clears the battery ring');
 });
+test('with the battery as ring 0, the tab knob stays on the first dial ring at p = 0', ()=>{
+    const c=G.capacity('M',1600),radii=G.ringRadii(c.R+G.BAND,c.rings+1);
+    const s={R:c.R+G.BAND,radii,strokes:radii.map(()=>4),toggleRadius:c.toggleRadius,toggles:G.arcSlots(c.toggleRadius).count,
+        mini:[O.TAB.battery].concat(O.TAB.mini.rings3knob),knob:true,knobRing:1,tab:1};
+    const f=O.frame('morph',0,s);
+    assert.equal(f.rings[1].knob,1); assert.equal(f.rings[0].knob,0);
+    assert.equal(f.rings[0].r,O.TAB.battery); near(f.rings[0].r,s.mini[0],'battery mini');
+    near(O.frame('morph',1,s).rings[0].r,c.R+G.BAND/2,'battery opens one band outside the dials');
+});

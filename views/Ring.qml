@@ -26,7 +26,7 @@ Item {
   MotionValue { id: valueMotion; theme: root.theme; initial: root.targetValue; target: root.targetValue; direct: root.model.draftControl === root.control; base: Motion.TIMES.value; proportional: false }
   property var look: ({ r: radius, sweep: 1, width: stroke, value: 1, cover: 1, knob: 1, knobSize: OpenStyles.KNOB, label: 1, grow: 1 })
   readonly property string reading: model.draftControl === control ? Math.round(model.draft) + (control.range.unit || "") : control.valueText
-  property string label: (compact ? "" : control.label + " ") + reading + (readOnly ? " · read only" : "")
+  property string label: (compact ? "" : control.label + " ") + reading + (readOnly && control !== model.battery ? " · read only" : "")
   property real stroke: OpenStyles.strokeFor(style.thickness)
   property real outline: 2
   readonly property real segmentCount: (control.steps || []).length > 1 ? control.steps.length-1 : Math.max(1,(control.range.max-control.range.min)/(control.range.step || Gesture.DETENT))
@@ -51,7 +51,7 @@ Item {
       PathAngleArc { centerX: root.origin.x; centerY: root.origin.y; radiusX: root.look.r; radiusY: root.look.r; startAngle: root.track.start; sweepAngle: root.track.sweep }
     }
     ShapePath {
-      strokeColor: root.control.value === null || root.control.availability === "probing" ? Qt.alpha(root.theme.accent,0) : root.theme.accent; strokeWidth: root.look.width; fillColor: "transparent"; capStyle: root.readOnly ? ShapePath.FlatCap : ShapePath.RoundCap
+      strokeColor: root.control.value === null || root.control.availability === "probing" ? Qt.alpha(root.theme.accent,0) : root.control === root.model.battery && root.model.batteryLow ? root.theme.warn : root.theme.accent; strokeWidth: root.look.width; fillColor: "transparent"; capStyle: root.readOnly ? ShapePath.FlatCap : ShapePath.RoundCap
       strokeStyle: root.style.track === "solid" ? ShapePath.SolidLine : ShapePath.DashLine
       dashPattern: root.pattern
       PathAngleArc { centerX: root.origin.x; centerY: root.origin.y; radiusX: root.look.r; radiusY: root.look.r; startAngle: root.fill.start; sweepAngle: root.fill.sweep }

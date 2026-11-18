@@ -284,7 +284,7 @@ private slots:
         }
         // Clicking a toggle in the preview opens the Toggles page with its sheet.
         auto *preview = qobject_cast<QQuickItem*>(root->findChild<QObject*>("livePreview")); QVERIFY(preview);
-        QQmlExpression toggleAt(engine.rootContext(),preview,"(function() { let R=capacity.R, r=capacity.toggleRadius, a=shapes.angles[0]*Math.PI/180; return [r*Math.sin(a)*0.6,(R-r*Math.cos(a))*0.6, shapes.toggles[0].id] })()");
+        QQmlExpression toggleAt(engine.rootContext(),preview,"(function() { let R=extent, r=capacity.toggleRadius, a=shapes.angles[0]*Math.PI/180; return [r*Math.sin(a)*0.6,(R-r*Math.cos(a))*0.6, shapes.toggles[0].id] })()");
         QVariantList at = toggleAt.evaluate().toList(); QCOMPARE(at.size(),3);
         auto *canvas = findItem(preview,[](QQuickItem *i) { return i->inherits("QQuickCanvasItem"); }); QVERIFY(canvas);
         QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,canvas->mapToScene(QPointF(at[0].toReal(),at[1].toReal())).toPoint()); QTest::qWait(150);

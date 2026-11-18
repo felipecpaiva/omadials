@@ -55,7 +55,7 @@ const SHAPES=Object.freeze({
         const r=lerp(tabR(s),s.R,p);
         return {surf:r,clip:r,alpha:1,labels:after(p,0.72,0.28),
             ring:function(i){const q=stagger(p,0,0.05,0.9,i,n),mini=miniOf(s,i);   // rings leave a little apart, outer first
-                return {r:lerp(mini.r,s.radii[i],p),width:lerp(TAB.stroke*(s.tab||1),s.strokes[i],q),knob:i===0&&s.knob&&mini.has ? 1 : q,
+                return {r:lerp(mini.r,s.radii[i],p),width:lerp(TAB.stroke*(s.tab||1),s.strokes[i],q),knob:i===(s.knobRing||0)&&s.knob&&mini.has ? 1 : q,
                     knobSize:lerp(TAB.knob*(s.tab||1),KNOB,q),alpha:mini.has ? 1 : q,grow:q};},
             toggle:function(j){return {alpha:stagger(p,0.6,0.04,0.3,j,m)};}};
     },
