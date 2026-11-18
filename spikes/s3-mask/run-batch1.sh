@@ -3,7 +3,7 @@
 # Moves the real pointer for about 30 s. Hands off the machine while it runs.
 # Usage: bash spikes/s3-mask/run-batch1.sh
 here=$(cd "$(dirname "$0")" && pwd)
-test_py=/tmp/claude-1000/-home-felipe-Work/06fd7e45-c5c2-4364-af0e-d1d4d4c39fdd/scratchpad/batch1.py
+test_py="$here/batch1.py"
 
 spike_pids() { for p in $(pgrep -x qs); do case "$(readlink /proc/$p/cwd)" in */omadials/spikes/*) echo "$p" ;; esac; done; }
 stop_spikes() { for p in $(spike_pids); do kill "$p"; done; }
@@ -15,7 +15,7 @@ echo "Starting in 10 s. Hands off the keyboard, mouse and screen."
 sleep 10
 cd "$here" && (timeout 90 qs -p . >/dev/null 2>&1 &)
 sleep 2.5
-out=/tmp/claude-1000/-home-felipe-Work/06fd7e45-c5c2-4364-af0e-d1d4d4c39fdd/scratchpad/batch1.out
+out="${TMPDIR:-/tmp}/omadials-s3-batch1.out"
 timeout 60 python3 -u "$test_py" > "$out" 2>&1
 echo "exit $?" >> "$out"
 tail -14 "$out"
