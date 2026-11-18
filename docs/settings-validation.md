@@ -46,7 +46,7 @@ For the Effect check, we searched the plugin (`Service.qml core controls views v
 | Corner | Opening delay | `trigger.pushDelayMs` | run | code read; hand | run |
 | Rings | All rings style | `ringStyle.*` | run | run (was hidden by the built-in ring styles; IPC open shot) | run |
 | Rings | Edit sheet | `controls.<id>.icon`, `dials[].style` | existing test | code read | run |
-| Rings | Wheel step | `options.<id>.wheelStep` | existing test | code (was dead) | run |
+| Rings | Wheel step | `options.<id>.wheelStep` | existing test | unit test for the step; by hand the touchpad wheel changes the volume on the ring. A synthetic uinput wheel never reached the ring, so the step size is not measured live | run |
 | Rings | Add, Remove, order | `dials`, `controls.<id>.shown` | existing test | code read; drag order is hand | run |
 | Toggles | Add, Remove, When tapped, When held | `toggles`, `controls.<id>.shown` | existing test | code read | run |
 | Toggles | Theme toggle tap | `toggles[theme].tapAction` | run (schema test) | run (IPC `detail theme` shows the installed theme list) | run |
