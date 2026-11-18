@@ -258,6 +258,7 @@ The following is the complete default file. Object keys are fixed except the cat
 | trigger.pushDelayMs | Number 0 to 500 |
 | behavior.idleTimeoutS | Number 0 to 120; 0 disables timeout |
 | cornerIcon.mode | always, onApproach, never |
+| cornerIcon.scale | Number 0.5 to 1, default 1: the closed tab size. The tab, its mini rings, knob and own icon get smaller together, and the open styles start from the smaller tab. The open corner keeps its size. |
 | cornerIcon.source, controls.<id>.icon | default or a registered icon resource string |
 | controls.<id> | Catalog id or configured readout id; object with shown boolean (new ids default false) and icon string (default default). Visibility lives here, never in list entries. |
 | ringStyle.track, ring style.track | solid, dashed, dotted, segmented |

@@ -81,6 +81,7 @@ private slots:
             {0,"","",{},"cornerIcon.mode","\"always\""},
             {0,"Open when the pointer rests in the corner","click",{},"trigger.push","true"},
             {0,"Opening delay","slider",300,"trigger.pushDelayMs","300"}, {0,"Opening delay","slider",150,"trigger.pushDelayMs","150"},
+            {0,"Tab size","slider",60,"cornerIcon.scale","0.6"}, {0,"Tab size","slider",100,"cornerIcon.scale","1"},
             {1,"Track","combo",1,"ringStyle.track","!\"solid\""}, {1,"Track","combo",0,"ringStyle.track","\"solid\""},
             {1,"Knob","combo",1,"ringStyle.knob","!\"round\""}, {1,"Knob","combo",0,"ringStyle.knob","\"round\""},
             {1,"Thickness","combo",0,"ringStyle.thickness","!\"normal\""}, {1,"Thickness","combo",1,"ringStyle.thickness","\"normal\""},

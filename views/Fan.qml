@@ -34,7 +34,7 @@ Item {
     readonly property string style: fanPalette.reduceMotion ? "still" : animation.style || "morph"
     readonly property var shownRings: model.rings.slice(0, radii.length)
     readonly property var sizes: ({ R: fanRadius, radii: radii, toggleRadius: toggleRadius, toggles: Geometry.arcSlots(toggleRadius).count,
-        strokes: shownRings.map(c => OpenStyles.strokeFor(model.ringStyle(c).thickness)), mini: tabMark.mini, knob: tabMark.knob })
+        strokes: shownRings.map(c => OpenStyles.strokeFor(model.ringStyle(c).thickness)), mini: tabMark.mini, knob: tabMark.knob, tab: tabMark.tabScale })
     readonly property var frame: OpenStyles.frame(style, amount, sizes)
     function plan(from, to) { return OpenStyles.timing(style, from, to, model.flick, animation) }
     MotionValue {

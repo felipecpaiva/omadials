@@ -40,6 +40,7 @@ For the Effect check, we searched the plugin (`Service.qml core controls views v
 | Corner | Screens | `outputs.*` | run | code (was dead; this machine has one screen, so not testable here) | run |
 | Corner | Size | `size` | run | run | run |
 | Corner | Tab style, own icon | `tabStyle`, `cornerIcon.source` | run | code read | run |
+| Corner | Tab size (new, 2026-11-18) | `cornerIcon.scale` | run | run (unit tests at 0.5; live shot at 0.6) | run |
 | Corner | Show the tab | `cornerIcon.mode` | run | code read | run |
 | Corner | Above windows | `cornerIcon.aboveWindows` | run | code read | run |
 | Corner | Open when the pointer rests | `trigger.push` (new) | run, and `cornerIcon.mode` stays unchanged | run (live, run-p5) | run |

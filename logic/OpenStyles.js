@@ -40,9 +40,11 @@ function stagger(p,start,step,span,i,n) {
 // How much of a band from lo to hi a circular clip of radius clipR shows, 0 to 1.
 function cover(clipR,lo,hi) { return clamp((clipR-lo)/Math.max(EPS,hi-lo)); }
 function strokeFor(thickness) { return STROKES[thickness]||STROKES.normal; }
+// s.tab is the tab size setting (cornerIcon.scale, 0.5 to 1); s.mini comes already scaled from TabMark.
+function tabR(s) { return TAB.radius*(s.tab||1); }
 function miniOf(s,i) {
     const m=s.mini||[];
-    return i<m.length ? {r:m[i],has:true} : {r:m.length ? m[m.length-1] : TAB.radius*HALF,has:false};
+    return i<m.length ? {r:m[i],has:true} : {r:m.length ? m[m.length-1] : tabR(s)*HALF,has:false};
 }
 function ringDefaults(s,i) { return {r:s.radii[i],sweep:1,value:1,width:s.strokes[i],knob:1,knobSize:KNOB,alpha:1,grow:1}; }
 const ONE=function(){return {};};
@@ -50,30 +52,30 @@ const ONE=function(){return {};};
 // Each style: p and size data to the raw shape {surf, clip, alpha, labels, ring(i), toggle(j)}. frame() applies the clip.
 const SHAPES=Object.freeze({
     morph:function(p,s,n,m) {
-        const r=lerp(TAB.radius,s.R,p);
+        const r=lerp(tabR(s),s.R,p);
         return {surf:r,clip:r,alpha:1,labels:after(p,0.72,0.28),
             ring:function(i){const q=stagger(p,0,0.05,0.9,i,n),mini=miniOf(s,i);   // rings leave a little apart, outer first
-                return {r:lerp(mini.r,s.radii[i],p),width:lerp(TAB.stroke,s.strokes[i],q),knob:i===0&&s.knob&&mini.has ? 1 : q,
-                    knobSize:lerp(TAB.knob,KNOB,q),alpha:mini.has ? 1 : q,grow:q};},
+                return {r:lerp(mini.r,s.radii[i],p),width:lerp(TAB.stroke*(s.tab||1),s.strokes[i],q),knob:i===0&&s.knob&&mini.has ? 1 : q,
+                    knobSize:lerp(TAB.knob*(s.tab||1),KNOB,q),alpha:mini.has ? 1 : q,grow:q};},
             toggle:function(j){return {alpha:stagger(p,0.6,0.04,0.3,j,m)};}};
     },
     hybrid:function(p,s) {
-        const r=lerp(TAB.radius,s.R,p);
+        const r=lerp(tabR(s),s.R,p);
         return {surf:r,clip:r,alpha:1,labels:after(p,0.6,0.4),ring:ONE,toggle:function(){return {alpha:after(p,0.5,0.4)};}};
     },
-    lens:function(p,s) { return {surf:s.R,clip:lerp(TAB.radius,s.R+LENS_OVER,p),alpha:1,labels:1,ring:ONE,toggle:ONE}; },
+    lens:function(p,s) { return {surf:s.R,clip:lerp(tabR(s),s.R+LENS_OVER,p),alpha:1,labels:1,ring:ONE,toggle:ONE}; },
     cascade:function(p,s,n,m) {
-        const r=lerp(TAB.radius,s.R,p);
+        const r=lerp(tabR(s),s.R,p);
         return {surf:r,clip:r,alpha:1,labels:after(p,0.7,0.3),
             ring:function(i){return {alpha:stagger(p,0.25,0.1,0.25,i,n),value:stagger(p,0.35,0.1,0.5,i,n)};},
             toggle:function(j){return {alpha:stagger(p,0.55,0.05,0.2,j,m),scale:lerp(0.7,1,stagger(p,0.55,0.05,0.3,j,m))};}};
     },
     minimal:function(p,s) {
-        const r=lerp(TAB.radius,s.R,p);
+        const r=lerp(tabR(s),s.R,p);
         return {surf:r,clip:r,alpha:clamp(p*MINIMAL_FADE),labels:1,ring:ONE,toggle:ONE};
     },
     fan:function(p,s,n,m) {
-        const r=lerp(TAB.radius,s.R,clamp(p*1.4));
+        const r=lerp(tabR(s),s.R,clamp(p*1.4));
         return {surf:r,clip:r,alpha:1,labels:after(p,0.7,0.3),
             ring:function(i){return {sweep:stagger(p,0.15,0.08,0.7,i,n),alpha:after(p,0.1,0.2)};},
             toggle:function(j){return {alpha:stagger(p,0.5,0.05,0.2,j,m),scale:lerp(0.6,1,stagger(p,0.5,0.05,0.35,j,m))};}};

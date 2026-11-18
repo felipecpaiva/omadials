@@ -18,9 +18,11 @@ Item {
     signal iconFailed(string source)
     readonly property bool custom: customIcon.status === Image.Ready   // not `visible`: that turns false when hidden
     // What the open styles start from: the mini ring radii ([] for a custom icon) and whether a knob rides the first.
-    readonly property var mini: custom ? [] : OpenStyles.TAB.mini[tabStyle] || OpenStyles.TAB.mini.rings2knob
+    // cornerIcon.scale (0.5 to 1): the whole tab shrinks around the corner, and the open styles start from it.
+    readonly property real tabScale: model.config.cornerIcon && model.config.cornerIcon.scale > 0 ? model.config.cornerIcon.scale : 1
+    readonly property var mini: custom ? [] : (OpenStyles.TAB.mini[tabStyle] || OpenStyles.TAB.mini.rings2knob).map(r => r * tabScale)
     readonly property bool knob: !custom && OpenStyles.TAB.knob0[tabStyle] === true
-    readonly property real tabRadius: OpenStyles.TAB.radius
+    readonly property real tabRadius: OpenStyles.TAB.radius * tabScale
     readonly property var origin: Geometry.fromCanonical({ x: 0, y: height }, width, height, corner)
     Rectangle {
         x: mark.origin.x - mark.tabRadius; y: mark.origin.y - mark.tabRadius; width: mark.tabRadius * 2; height: width; radius: mark.tabRadius
@@ -40,11 +42,11 @@ Item {
             readonly property var fillArc: Geometry.qtArc(Geometry.RING_START, Math.max(Geometry.RING_START + 0.01, endAngle), mark.corner)
             anchors.fill: parent; preferredRendererType: Shape.CurveRenderer
             ShapePath {
-                strokeColor: mark.theme.track; strokeWidth: OpenStyles.TAB.stroke; fillColor: "transparent"; capStyle: ShapePath.RoundCap
+                strokeColor: mark.theme.track; strokeWidth: OpenStyles.TAB.stroke * mark.tabScale; fillColor: "transparent"; capStyle: ShapePath.RoundCap
                 PathAngleArc { centerX: mark.origin.x; centerY: mark.origin.y; radiusX: miniRing.modelData; radiusY: miniRing.modelData; startAngle: miniRing.trackArc.start; sweepAngle: miniRing.trackArc.sweep }
             }
             ShapePath {
-                strokeColor: mark.theme.accent; strokeWidth: OpenStyles.TAB.stroke; fillColor: "transparent"; capStyle: ShapePath.RoundCap
+                strokeColor: mark.theme.accent; strokeWidth: OpenStyles.TAB.stroke * mark.tabScale; fillColor: "transparent"; capStyle: ShapePath.RoundCap
                 PathAngleArc { centerX: mark.origin.x; centerY: mark.origin.y; radiusX: miniRing.modelData; radiusY: miniRing.modelData; startAngle: miniRing.fillArc.start; sweepAngle: miniRing.fillArc.sweep }
             }
         }
@@ -54,13 +56,14 @@ Item {
         readonly property real ringRadius: mark.mini.length ? mark.mini[0] : 0
         readonly property var pos: Geometry.fromCanonical(Geometry.knobPos(ringRadius, outer ? outer.endAngle : Geometry.RING_START, mark.height), mark.width, mark.height, mark.corner)
         visible: mark.knob
-        x: pos.x - width / 2; y: pos.y - height / 2; width: OpenStyles.TAB.knob; height: width; radius: width / 2; color: mark.theme.accent
+        x: pos.x - width / 2; y: pos.y - height / 2; width: OpenStyles.TAB.knob * mark.tabScale; height: width; radius: width / 2; color: mark.theme.accent
     }
     Image {
         id: customIcon
-        x: mark.corner.indexOf("right") >= 0 ? mark.width - 28 : 8
-        y: mark.corner.indexOf("top") >= 0 ? 8 : mark.height - 28
-        width: 20; height: 20; source: mark.source === "default" ? "" : (mark.source.indexOf("/") >= 0 ? mark.source : "image://icon/" + mark.source)
+        readonly property real gap: 8 * mark.tabScale
+        x: mark.corner.indexOf("right") >= 0 ? mark.width - gap - width : gap
+        y: mark.corner.indexOf("top") >= 0 ? gap : mark.height - gap - height
+        width: 20 * mark.tabScale; height: width; sourceSize: Qt.size(20, 20); source: mark.source === "default" ? "" : (mark.source.indexOf("/") >= 0 ? mark.source : "image://icon/" + mark.source)
         visible: mark.custom
         onStatusChanged: if (status === Image.Error) mark.iconFailed(mark.source)
     }

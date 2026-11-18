@@ -6,17 +6,17 @@ const near=(a,b,msg)=>assert.ok(Math.abs(a-b)<1e-9,`${msg}: ${a} != ${b}`);
 // Real size data, built the way views/Fan.qml builds it, for every size and tab style (and a custom icon tab).
 function sizes() {
     const out=[];
-    for(const size of ['S','M','L'])for(const shortSide of [1600,700])for(const tab of ['rings2knob','rings3','rings3knob','custom']) {
+    for(const size of ['S','M','L'])for(const shortSide of [1600,700])for(const tab of ['rings2knob','rings3','rings3knob','custom'])for(const k of [1,0.5]) {
         const c=G.capacity(size,shortSide),radii=G.ringRadii(c.R,c.rings);
-        out.push({name:`${size}@${shortSide} ${tab}`,R:c.R,radii,strokes:radii.map((_,i)=>O.strokeFor(['thin','normal','bold'][i%3])),
+        out.push({name:`${size}@${shortSide} ${tab} x${k}`,tab:k,R:c.R,radii,strokes:radii.map((_,i)=>O.strokeFor(['thin','normal','bold'][i%3])),
             toggleRadius:c.toggleRadius,toggles:G.arcSlots(c.toggleRadius).count,
-            mini:tab==='custom' ? [] : O.TAB.mini[tab],knob:tab!=='custom'&&O.TAB.knob0[tab]});
+            mini:tab==='custom' ? [] : O.TAB.mini[tab].map(r=>r*k),knob:tab!=='custom'&&O.TAB.knob0[tab]});
     }
     return out;
 }
 // At p = 0 the frame is the closed tab: the overlay is fully on, and nothing of the body shows outside the tab disc.
 function assertClosedTab(f,s,msg) {
-    const R=O.TAB.radius,body=f.alpha>0;
+    const R=O.TAB.radius*s.tab,body=f.alpha>0;   // the tab size setting scales the whole tab
     assert.equal(f.tab,1,msg+' tab overlay');
     if(!body)return;
     assert.ok(f.disc<=R,msg+' disc');
@@ -27,7 +27,7 @@ function assertClosedTab(f,s,msg) {
         if(g.alpha*g.knob>0)assert.ok(g.r+g.knobSize/2<=R,`${msg} ring ${i} knob inside the tab`);
         assert.equal(g.alpha*g.label,0,`${msg} ring ${i} label`);
         // A ring drawn at p = 0 is the tab's own mini ring, exactly.
-        if(g.alpha*g.cover>0){assert.equal(g.r,s.mini[i],`${msg} ring ${i} is mini`);assert.equal(g.width,O.TAB.stroke);assert.equal(g.value,1);assert.equal(g.sweep,1);}
+        if(g.alpha*g.cover>0){assert.equal(g.r,s.mini[i],`${msg} ring ${i} is mini`);near(g.width,O.TAB.stroke*s.tab,`${msg} ring ${i} mini stroke`);assert.equal(g.value,1);assert.equal(g.sweep,1);}
     });
 }
 function assertFullCorner(f,s,msg) {

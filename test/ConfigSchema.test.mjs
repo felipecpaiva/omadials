@@ -136,3 +136,9 @@ test('all rings style reaches the default rings (no own style hides it)', ()=>{
     const r=validate({version:1,ringStyle:{track:'dotted',knob:'bar',thickness:'thin'}});
     for(const d of r.config.dials)assert.equal(d.style,undefined,d.id);
 });
+test('tab size: cornerIcon.scale defaults to 1 and accepts 0.5 to 1 only', ()=>{
+    assert.equal(validate({version:1}).config.cornerIcon.scale,1);
+    assert.equal(validate({version:1,cornerIcon:{scale:0.6}}).config.cornerIcon.scale,0.6);
+    for(const bad of [0.3,1.5]){const r=validate({version:1,cornerIcon:{scale:bad}});
+        assert.equal(r.config.cornerIcon.scale,1);assert.ok(r.errors.some(e=>e.path==='cornerIcon.scale'),String(bad));}
+});
