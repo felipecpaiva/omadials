@@ -139,7 +139,7 @@ Goal: open the corner on the Z13 and change real values.
 - [x] **P5.1 Panel shell** with live preview and the problems banner. Done when: opens from IPC and the corner.
 - [x] **P5.2 Layout settings.** Corner, size (Compact, Normal, Large, with the cap message), corner tab and icon modes,
   above or behind windows. Done when: each change applies live within 1 s.
-- [~] **P5.3 Control settings.** (panel live with readable dropdowns; every field not yet exercised) Show or hide, icon, order for every toggle and ring; toggle tap and hold actions; ring
+- [x] **P5.3 Control settings.** (2026-11-17: every field exercised by the app sweep, 52 of 52 writes, 3 themes) Show or hide, icon, order for every toggle and ring; toggle tap and hold actions; ring
   styles. Done when: same.
 - [ ] **P5.4 Undo and reset.** Done when: [acceptance.md](acceptance.md) A-SET-2.
 - [~] **P5.5 All 4 corners and portrait.** (4 corners and 3 sizes checked by screenshots 2026-11-17; portrait open) Done when: [acceptance.md](acceptance.md) A-SIZE-2 on the Z13.
@@ -177,8 +177,8 @@ Done when (each): contract tests for the detail, plus a hand check on the Z13.
 
 - [x] **P9.1 App skeleton** (2026-11-17: builds with qmake6 and make, follows the theme) (C++, Qt Quick, qmake, Omarchy theme live).
 - [x] **P9.2 Every setting from P5** (same pages; real config validated read-only with `check --json`) on the frozen schema, reusing the logic JS.
-- [~] **P9.3 Live apply** (plugin reloads the file live, verified for corner and size; app edits not yet tried on the real file) to the running plugin, and a `status()` IPC check.
-- [~] **P9.4 Package and release v0.7.** (PKGBUILD ready; install and release not done)
+- [x] **P9.3 Live apply** (2026-11-18: app edits on the real file apply live; ring style and tab size seen on the Z13; see docs/settings-validation.md) to the running plugin, and a `status()` IPC check.
+- [~] **P9.4 Package and release v0.7.** (2026-11-18: package built and installed on the Z13; version bump, tag and release not done)
 
 ## P10. Daily use (v1.0)
 
