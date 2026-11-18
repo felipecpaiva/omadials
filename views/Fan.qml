@@ -55,6 +55,11 @@ Item {
         }
         Item {
             anchors.fill: parent; opacity: contentMotion.value; visible: opacity > 0
+            BatteryRing {   // the tab's battery ring, kept the same gap inside the disc edge as it grows
+                anchors.fill: parent; theme: fanPalette; model: fan.model; corner: fan.corner
+                origin: Qt.point(fan.origin.x, fan.origin.y); stroke: OpenStyles.TAB.stroke * tabMark.tabScale
+                radius: Math.max(OpenStyles.TAB.battery * tabMark.tabScale, fan.frame.disc - (OpenStyles.TAB.radius - OpenStyles.TAB.battery) * tabMark.tabScale - 6 * Math.min(1, Math.max(0, fan.amount)))   // 6 px more inside when open: off the edge line
+            }
             Repeater {
                 model: fan.shownRings
                 Ring {

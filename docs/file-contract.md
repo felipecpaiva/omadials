@@ -259,7 +259,7 @@ The following is the complete default file. Object keys are fixed except the cat
 | behavior.idleTimeoutS | Number 0 to 120; 0 disables timeout |
 | cornerIcon.mode | always, onApproach, never |
 | cornerIcon.scale | Number 0.5 to 1, default 1: the closed tab size. The tab, its mini rings, knob and own icon get smaller together, and the open styles start from the smaller tab. The open corner keeps its size. |
-| cornerIcon.battery | Boolean, default true: a thin outer ring in the closed tab shows the laptop battery level (hidden when there is no battery) |
+| cornerIcon.battery | Boolean, default true: a thin battery ring outside the other rings, in the closed tab and in the open corner (it grows with the disc while opening, so it is the same ring); hidden when there is no battery. It takes no ring slot |
 | readout.lowBatteryPercent | Number 5 to 50, default 20: at this level or lower and not charging, the tab battery ring and the readout battery text use the theme warn colour |
 | cornerIcon.source, controls.<id>.icon | default or a registered icon resource string |
 | controls.<id> | Catalog id or configured readout id; object with shown boolean (new ids default false) and icon string (default default). Visibility lives here, never in list entries. |

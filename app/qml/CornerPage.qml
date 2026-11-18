@@ -57,7 +57,7 @@ ColumnLayout {
             Slider { from: 50; to: 100; stepSize: 5; value: Math.round((page.store.config.cornerIcon.scale || 1) * 100); Accessible.name: qsTr("Tab size"); onMoved: page.store.set("cornerIcon.scale",Math.round(value) / 100) }
             Label { text: qsTr("%1 %").arg(Math.round((page.store.config.cornerIcon.scale || 1) * 100)); Layout.preferredWidth: 55 }
         }
-        SettingField { store: page.store; theme: page.theme; path: "cornerIcon.battery"; label: qsTr("Show battery in the tab"); help: qsTr("An outer ring in the closed tab shows how much battery is left."); kind: "bool" }
+        SettingField { store: page.store; theme: page.theme; path: "cornerIcon.battery"; label: qsTr("Show battery ring"); help: qsTr("A thin outer ring shows how much battery is left, in the closed tab and in the open corner."); kind: "bool" }
         RowLayout {
             Layout.fillWidth: true
             ColumnLayout {

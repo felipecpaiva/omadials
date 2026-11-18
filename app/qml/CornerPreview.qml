@@ -58,6 +58,10 @@ ColumnLayout {
                 ctx.strokeStyle=color;ctx.lineWidth=width*scale;ctx.stroke();
             }
             let rings=preview.shapes.rings, radii=preview.shapes.radii;
+            if (cfg.cornerIcon.battery !== false) {   // battery ring just inside the edge, as in the corner (example level)
+                let k=cfg.cornerIcon.scale || 1, r=R-4*k-6;
+                arc(r,3,87,preview.theme.track,2.5*k); arc(r,3,3+.85*84,preview.theme.accent,2.5*k);
+            }
             rings.forEach(function(entry,i) {
                 let style=Object.assign({},cfg.ringStyle,entry.style || {});
                 if (entry.id === preview.editingId) { ctx.globalAlpha=.3; arc(radii[i],3,87,preview.theme.accent,30); ctx.globalAlpha=1 }

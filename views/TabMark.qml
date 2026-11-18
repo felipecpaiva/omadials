@@ -51,23 +51,9 @@ Item {
             }
         }
     }
-    Shape {   // battery (cornerIcon.battery): a thin ring outside the mini rings; it fades with the tab as the corner opens
-        id: batteryRing
-        readonly property real r: OpenStyles.TAB.battery * mark.tabScale
-        readonly property var bat: mark.model.battery
-        readonly property real level: bat && bat.value !== null ? bat.value / 100 : 0
-        readonly property var trackArc: Geometry.qtArc(Geometry.RING_START, Geometry.RING_END, mark.corner)
-        readonly property var fillArc: Geometry.qtArc(Geometry.RING_START, Math.max(Geometry.RING_START + 0.01, Geometry.RING_START + (Geometry.RING_END - Geometry.RING_START) * level), mark.corner)
-        visible: !!bat && bat.value !== null && !(mark.model.config.cornerIcon && mark.model.config.cornerIcon.battery === false)
-        anchors.fill: parent; preferredRendererType: Shape.CurveRenderer
-        ShapePath {
-            strokeColor: mark.theme.track; strokeWidth: OpenStyles.TAB.stroke * mark.tabScale; fillColor: "transparent"; capStyle: ShapePath.RoundCap
-            PathAngleArc { centerX: mark.origin.x; centerY: mark.origin.y; radiusX: batteryRing.r; radiusY: batteryRing.r; startAngle: batteryRing.trackArc.start; sweepAngle: batteryRing.trackArc.sweep }
-        }
-        ShapePath {
-            strokeColor: mark.model.batteryLow ? mark.theme.warn : mark.theme.accent; strokeWidth: OpenStyles.TAB.stroke * mark.tabScale; fillColor: "transparent"; capStyle: ShapePath.RoundCap
-            PathAngleArc { centerX: mark.origin.x; centerY: mark.origin.y; radiusX: batteryRing.r; radiusY: batteryRing.r; startAngle: batteryRing.fillArc.start; sweepAngle: batteryRing.fillArc.sweep }
-        }
+    BatteryRing {
+        anchors.fill: parent; theme: mark.theme; model: mark.model; corner: mark.corner; origin: Qt.point(mark.origin.x, mark.origin.y)
+        radius: OpenStyles.TAB.battery * mark.tabScale; stroke: OpenStyles.TAB.stroke * mark.tabScale
     }
     Rectangle {   // the knob rides the outer ring's value
         readonly property var outer: miniRings.count > 0 ? miniRings.itemAt(0) : null

@@ -41,7 +41,7 @@ For the Effect check, we searched the plugin (`Service.qml core controls views v
 | Corner | Size | `size` | run | run | run |
 | Corner | Tab style, own icon | `tabStyle`, `cornerIcon.source` | run | code read | run |
 | Corner | Tab size (new, 2026-11-18) | `cornerIcon.scale` | run | run (unit tests at 0.5; live shot at 0.6) | run |
-| Corner | Show battery in the tab (new) | `cornerIcon.battery` | run | run (live shot on the Z13) | run |
+| Corner | Show battery ring (new) | `cornerIcon.battery` | run | run (live shots closed and open on the Z13) | run |
 | Corner | Battery turns red at (new) | `readout.lowBatteryPercent` | run | unit test for the low rule; not seen live (battery was 85 %) | run |
 | Corner | Show the tab | `cornerIcon.mode` | run | code read | run |
 | Corner | Above windows | `cornerIcon.aboveWindows` | run | code read | run |
