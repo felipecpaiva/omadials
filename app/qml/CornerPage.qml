@@ -57,6 +57,17 @@ ColumnLayout {
             Slider { from: 50; to: 100; stepSize: 5; value: Math.round((page.store.config.cornerIcon.scale || 1) * 100); Accessible.name: qsTr("Tab size"); onMoved: page.store.set("cornerIcon.scale",Math.round(value) / 100) }
             Label { text: qsTr("%1 %").arg(Math.round((page.store.config.cornerIcon.scale || 1) * 100)); Layout.preferredWidth: 55 }
         }
+        SettingField { store: page.store; theme: page.theme; path: "cornerIcon.battery"; label: qsTr("Show battery in the tab"); help: qsTr("An outer ring in the closed tab shows how much battery is left."); kind: "bool" }
+        RowLayout {
+            Layout.fillWidth: true
+            ColumnLayout {
+                Layout.fillWidth: true
+                Label { Layout.fillWidth: true; text: qsTr("Battery turns red at"); wrapMode: Text.WordWrap }
+                Label { Layout.fillWidth: true; text: qsTr("At this level or lower, and not charging, the battery shows in red in the tab and in the open corner."); wrapMode: Text.WordWrap; color: page.theme.secondary; font.pixelSize: 12 }
+            }
+            Slider { from: 5; to: 50; stepSize: 5; value: page.store.config.readout.lowBatteryPercent || 20; Accessible.name: qsTr("Battery turns red at"); onMoved: page.store.set("readout.lowBatteryPercent",Math.round(value)) }
+            Label { text: qsTr("%1 %").arg(page.store.config.readout.lowBatteryPercent || 20); Layout.preferredWidth: 55 }
+        }
         SettingField { store: page.store; theme: page.theme; path: "cornerIcon.mode"; label: qsTr("Show the tab"); help: qsTr("The corner can still open when the tab is hidden."); kind: "choice"; choices: ["always","onApproach","never"]; words: [qsTr("Always"),qsTr("When the pointer is near"),qsTr("Never")] }
         SettingField { store: page.store; theme: page.theme; path: "cornerIcon.aboveWindows"; label: qsTr("Above windows"); help: qsTr("Off: the tab hides behind windows; the corner still opens"); kind: "bool" }
     }

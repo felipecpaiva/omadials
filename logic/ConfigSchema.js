@@ -5,7 +5,7 @@ const DEFAULTS = {
     "size": "M",
     "outputs": {"mode":"all","names":[]},
     "trigger": {"tapZone":true,"push":true,"pushDelayMs":150},
-    "cornerIcon": {"mode":"always","aboveWindows":true,"source":"default","scale":1},
+    "cornerIcon": {"mode":"always","aboveWindows":true,"source":"default","scale":1,"battery":true},
     "controls": {
         "touchpad": {"shown":false,"icon":"default"},
         "touchscreen": {"shown":false,"icon":"default"},
@@ -29,7 +29,7 @@ const DEFAULTS = {
     "readoutRings": [],
     "dials": [{"id":"brightness","order":0},{"id":"volume","order":1},{"id":"mic","order":2}],
     "toggles": [{"id":"wifi","tapAction":"switchRadio","holdAction":"quickDetail"},{"id":"bluetooth","tapAction":"switchPower","holdAction":"quickDetail"},{"id":"nightlight","tapAction":"switch","holdAction":"quickDetail"},{"id":"dnd","tapAction":"switch","holdAction":"quickDetail"},{"id":"keepawake","tapAction":"switch","holdAction":"quickDetail"},{"id":"kbdlight","tapAction":"nextStep","holdAction":"quickDetail"},{"id":"airplane","tapAction":"switch","holdAction":"quickDetail"},{"id":"gameMode","tapAction":"switch","holdAction":"quickDetail"},{"id":"theme","tapAction":"quickDetail","holdAction":"quickDetail"},{"id":"media","tapAction":"quickDetail","holdAction":"quickDetail"},{"id":"touchpad","tapAction":"switch","holdAction":"quickDetail"},{"id":"touchscreen","tapAction":"switch","holdAction":"quickDetail"}],
-    "readout": {"battery":true,"powerProfile":true,"penBattery":true},
+    "readout": {"battery":true,"powerProfile":true,"penBattery":true,"lowBatteryPercent":20},
     "options": {"brightness":{"wheelStep":5,"monitor":"auto"},"volume":{"wheelStep":5,"maxPercent":100},"mic":{"wheelStep":5}},
     "tabStyle": "rings2knob",
     "dialInteraction": {"snap":true,"snapWindowPercent":2,"fineEnabled":true,"fineDistancesPx":[22,66],"fineGains":[0.25,0.1]},
@@ -39,7 +39,7 @@ const DEFAULTS = {
     "gameMode": {"animations":false,"blur":false,"shadows":false,"gapsIn":0,"gapsOut":0}
 };
 const VERSION=1, INDENT=2, MAX_RINGS=Object.freeze({S:2,M:3,L:4});
-const LIMITS=Object.freeze({scale:[0.5,1],pushDelayMs:[0,500],idleTimeoutS:[0,120],maxPercent:[100,150],snapWindowPercent:[0,2],gain:[0,1],speed:[0.5,2],bounce:[0,0.35]});
+const LIMITS=Object.freeze({scale:[0.5,1],lowBatteryPercent:[5,50],pushDelayMs:[0,500],idleTimeoutS:[0,120],maxPercent:[100,150],snapWindowPercent:[0,2],gain:[0,1],speed:[0.5,2],bounce:[0,0.35]});
 const ENUMS=Object.freeze({corner:['top-left','top-right','bottom-left','bottom-right'],size:['S','M','L'],mode:['all','focused','named'],iconMode:['always','onApproach','never'],track:['solid','dashed','dotted','segmented'],knob:['round','bar','none'],thickness:['thin','normal','bold'],source:['bluetoothBattery','wifiSignal','laptopBattery','penBattery'],tabStyle:['rings2knob','rings3','rings3knob'],toggleScroll:['resetOnOpen'],style:['morph','hybrid','lens','cascade','minimal','fan']});
 const ERROR_CODES=Object.freeze(['parse_error','newer_version','wrong_type','out_of_range','unknown_value','unknown_control','duplicate_control','wrong_placement','over_capacity']);
 const ACTIONS=Object.freeze({wifi:['switchRadio','quickDetail','fullWindow'],bluetooth:['switchPower','quickDetail','fullWindow'],kbdlight:['nextStep','quickDetail'],theme:['quickDetail'],media:['quickDetail']});

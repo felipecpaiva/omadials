@@ -30,7 +30,7 @@ Item {
         width: b.width; height: readout.layout.batteryFont
         visible: !readout.layout.hideBattery && !!readout.model.battery
         text: readout.model.battery ? readout.model.battery.valueText : ""
-        color: readout.theme.text; font.family: readout.theme.font; font.pixelSize: readout.layout.batteryFont; lineHeightMode: Text.FixedHeight; lineHeight: readout.layout.batteryFont
+        color: readout.model.batteryLow ? readout.theme.warn : readout.theme.text; font.family: readout.theme.font; font.pixelSize: readout.layout.batteryFont; lineHeightMode: Text.FixedHeight; lineHeight: readout.layout.batteryFont
         wrapMode: Text.Wrap
     }
     Text {

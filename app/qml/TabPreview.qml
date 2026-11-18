@@ -20,6 +20,11 @@ RowLayout {
                 for(let a=3;a<=87;a++) {let p=point(r,a);if(a===3)c.moveTo(p.x,p.y);else c.lineTo(p.x,p.y)}
                 c.stroke();
             });
+            if(cfg.cornerIcon.battery!==false) {   // example level, like the rest of the preview
+                c.beginPath(); c.lineWidth=2.5*k; c.strokeStyle=tab.theme.accent;
+                for(let a=3;a<=75;a++) {let p=point(38*k,a);if(a===3)c.moveTo(p.x,p.y);else c.lineTo(p.x,p.y)}
+                c.stroke();
+            }
             if(cfg.tabStyle!=="rings3") {let p=point(32*k,48);c.beginPath();c.fillStyle=tab.theme.accent;c.arc(p.x,p.y,4*k,0,Math.PI*2);c.fill()}
         }
     }

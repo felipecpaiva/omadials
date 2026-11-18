@@ -79,3 +79,7 @@ test('tab morph rings never leave the disc', ()=>{
         (f.rings||f.ring).forEach((g,i) => { if (g.alpha>0.01) assert.ok(g.r + g.width/2 <= f.disc + 0.5, `${sz.name} p=${p} ring ${i} r ${g.r} surf ${f.surf}`); });
     }
 });
+test('the tab battery ring fits inside the tab disc with its stroke', ()=>{
+    assert.ok(O.TAB.battery+O.TAB.stroke/2<=O.TAB.radius);
+    for(const [k,m] of Object.entries(O.TAB.mini))assert.ok(m[0]+O.TAB.knob/2<O.TAB.battery-O.TAB.stroke/2,k+' knob clears the battery ring');
+});

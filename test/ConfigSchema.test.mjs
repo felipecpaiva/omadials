@@ -142,3 +142,9 @@ test('tab size: cornerIcon.scale defaults to 1 and accepts 0.5 to 1 only', ()=>{
     for(const bad of [0.3,1.5]){const r=validate({version:1,cornerIcon:{scale:bad}});
         assert.equal(r.config.cornerIcon.scale,1);assert.ok(r.errors.some(e=>e.path==='cornerIcon.scale'),String(bad));}
 });
+test('battery: tab ring on by default, red threshold 20 % and 5 to 50 % only', ()=>{
+    const d=validate({version:1}).config;
+    assert.equal(d.cornerIcon.battery,true); assert.equal(d.readout.lowBatteryPercent,20);
+    assert.equal(validate({version:1,readout:{lowBatteryPercent:15}}).config.readout.lowBatteryPercent,15);
+    assert.ok(validate({version:1,readout:{lowBatteryPercent:60}}).errors.some(e=>e.path==='readout.lowBatteryPercent'));
+});

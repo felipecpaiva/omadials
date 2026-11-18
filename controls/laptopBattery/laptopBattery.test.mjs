@@ -13,3 +13,7 @@ assert.equal(S.reading(true,0,false),0);
 assert.equal(S.reading(true,NaN,false),null);
 assert.equal(S.text(false,null),'not connected');
 assert.equal(S.text(true,null),'unknown');
+assert.equal(S.low(20,false,20),true);
+assert.equal(S.low(21,false,20),false);
+assert.equal(S.low(5,true,20),false);
+assert.equal(S.low(null,false,20),false);

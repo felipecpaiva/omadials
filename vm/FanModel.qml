@@ -4,6 +4,7 @@ import "../logic/Gesture.js" as Gesture
 import "../logic/ValueMap.js" as ValueMap
 import "../logic/Motion.js" as Motion
 import "../logic/Layout.js" as Layout
+import "../controls/laptopBattery/map.js" as BatteryMap
 
 QtObject {
     id: session
@@ -39,6 +40,8 @@ QtObject {
     property string bubbleText: ""
     property var battery: null
     property string batteryLine: battery ? battery.label : ""
+    // readout.lowBatteryPercent: the tab ring and the readout turn the theme's warn colour (laptopBattery/map.js low()).
+    readonly property bool batteryLow: !!battery && BatteryMap.low(battery.value, battery.charging, config.readout && config.readout.lowBatteryPercent > 0 ? config.readout.lowBatteryPercent : 20)
     property var profile: null
     signal settingsRequested()
     signal actionRequested(var control)

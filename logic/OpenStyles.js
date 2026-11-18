@@ -5,7 +5,7 @@
 // fully on top; at p = 1 every part sits at its final place and the overlay is gone.
 const STYLES=Object.freeze(['morph','hybrid','lens','cascade','minimal','fan']);
 // The closed tab (views/TabMark.qml draws it from these): disc radius, mini ring radii per tab style, stroke, knob.
-const TAB=Object.freeze({radius:42,stroke:2.5,knob:8,mini:Object.freeze({rings2knob:[32,21],rings3:[32,24,16],rings3knob:[32,24,16]}),
+const TAB=Object.freeze({radius:42,stroke:2.5,knob:8,battery:38,mini:Object.freeze({rings2knob:[32,21],rings3:[32,24,16],rings3knob:[32,24,16]}),
     knob0:Object.freeze({rings2knob:true,rings3:false,rings3knob:true})});
 const KNOB=14, STROKES=Object.freeze({thin:2,normal:4,bold:6});
 // How far parts reach from their radius, for the clip: a toggle circle is 40 px wide, a curved label sits 8 to 20 px
