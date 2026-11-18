@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.felipecpaiva.omadials",
   "name": "omadials",
-  "version": "0.1.0",
+  "version": "0.7.0",
   "author": "Felipe Paiva",
   "license": "MIT",
   "description": "Quick settings in a screen corner: tap or drag from the corner for brightness, volume and toggles. Settings: omarchy-shell omadials settings (opens the omadials-settings app)",

@@ -79,7 +79,7 @@ QtObject {
     readonly property var rings: arrangement.rings.map(e => byId(e.id)).filter(c => c !== null)
     readonly property var toggles: arrangement.toggles.map(e => byId(e.id)).filter(c => c !== null)
     function status() {
-        return JSON.stringify({version: "0.1.0", schemaVersion: Schema.VERSION,
+        return JSON.stringify({version: "0.7.0", schemaVersion: Schema.VERSION,
             controls: entries().map(e => {
                 const c = byId(e.id), meta = catalog.find(m => m.id === e.source)
                 return {id: e.id, kind: meta ? meta.kind : "readout", availability: c ? c.availability : "probing",

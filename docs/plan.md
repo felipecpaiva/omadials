@@ -178,7 +178,7 @@ Done when (each): contract tests for the detail, plus a hand check on the Z13.
 - [x] **P9.1 App skeleton** (2026-11-17: builds with qmake6 and make, follows the theme) (C++, Qt Quick, qmake, Omarchy theme live).
 - [x] **P9.2 Every setting from P5** (same pages; real config validated read-only with `check --json`) on the frozen schema, reusing the logic JS.
 - [x] **P9.3 Live apply** (2026-11-18: app edits on the real file apply live; ring style and tab size seen on the Z13; see docs/settings-validation.md) to the running plugin, and a `status()` IPC check.
-- [~] **P9.4 Package and release v0.7.** (2026-11-18: package built and installed on the Z13; version bump, tag and release not done)
+- [x] **P9.4 Package and release v0.7.** (2026-11-18: tag v0.7.0, GitHub release with the settings app package and 6 GIFs; notes in docs/releases/v0.7.0.md)
 
 ## P10. Daily use (v1.0)
 

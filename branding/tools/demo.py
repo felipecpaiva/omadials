@@ -1,333 +1,222 @@
 #!/usr/bin/env python3
-"""Record OmaBar demo GIFs without touching the keyboard or mouse.
+"""Records the v0.7.0 feature GIFs from the REAL corner on a spare, empty workspace (never a virtual monitor).
+Mouse only (uinput moves and clicks, never keys), plus omadials IPC commands and settings file edits. gifkit.py turns
+each scene into a captioned GIF and MP4 in branding/demo/.
+Scenes: open, dial, toggles, styles, battery, settings. The settings scene never shows the About page (it shows the
+settings file path, which names the home folder).
+Privacy and restore: Do Not Disturb is on while it runs; the settings file, volume, keep awake, Do Not Disturb, the
+pointer and the workspace are put back. A demo window shows only this repository's README.
+Needs grim, ffmpeg, kitty, bat, omadials-settings installed, and the omahop repo next to this one (its uinput helper).
+Do not touch the keyboard or mouse while it runs (about 2 minutes).
+Usage: python3 branding/tools/demo.py [scene ...]   (no argument: all scenes)"""
+import json, math, os, shutil, subprocess, sys, tempfile, threading, time
 
-Each scene opens the OmaBar panel on a topic (IPC), then changes the store and the bar layout with the same
-commands the panel runs, while grim captures the top of the screen. The bar and the panel both show the change.
-shell.json and the OmaBar store are backed up first and put back after every scene.
-
-Usage: python3 branding/tools/demo.py <scene> [<scene> ...]    scenes: see SCENES at the bottom.
-Do not touch the keyboard or mouse while it runs. Needs grim, ffmpeg, Hyprland, the OmaBar plugin installed."""
-import glob, json, os, shutil, subprocess, sys, tempfile, threading, time
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+sys.path.insert(0, HERE); sys.path.insert(0, os.path.expanduser("~/Work/omahop/tests"))
+from uinput_kbd import Mouse
 import gifkit
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(ROOT, "branding", "demo")
-HOME = os.path.expanduser("~")
-STORE = os.path.join(HOME, ".config/omarchy/oma-bar-configurator.json")
-SHELL = os.path.join(HOME, ".config/omarchy/shell.json")
-PLUGIN = "io.github.felipecpaiva.omadials"
-# Logical pixels (the screen is scaled): the bar plus the panel card under its middle.
-# Logical pixels: the whole bar and the panel card under its middle. Frames come out at 2x.
-REGION = "0,0 1280x600"
-# Physical pixels inside a frame: the panel area, and the default bar strip shown zoomed above it.
-# Narrow enough to leave out notification cards, which stack on the right.
-PANEL_CROP = (760, 0, 1040, 1200)
-STRIP = (440, 1680)  # x and width of the bar strip: the pills from end to end on this bar
-OUT_W = 1100
+CFG = os.path.expanduser("~/.config/omadials/config.json")
+SPARE = 8
+H = 1000                                    # logical height of the Z13 screen (2560x1600 at scale 1.6)
+CORNER = "0,380 1000x620"                    # the bottom-left corner and room for the captions above it
+SETTINGS_AT = (200, 140)                     # where the settings window is placed, logical px
+SETTINGS = f"{SETTINGS_AT[0]},{SETTINGS_AT[1]} 1200x760"
+TOGGLE_R = 240
+STEP = math.degrees(48 / TOGGLE_R)
+VOLUME_R = 354                               # volume ring at Normal with the battery ring outside it
+m = None
 
 
-def env():
-    e = dict(os.environ)
-    sigs = sorted(glob.glob("/run/user/1000/hypr/*/"), key=os.path.getmtime)
-    if sigs: e["HYPRLAND_INSTANCE_SIGNATURE"] = os.path.basename(sigs[-1].rstrip("/"))
-    return e
+def sh(*a): return subprocess.run(a, capture_output=True, text=True).stdout.strip()
+def ev(lua): subprocess.run(["hyprctl", "eval", lua], capture_output=True)
+def ipc(*a): sh("qs", "ipc", "-p", "/usr/share/omarchy/shell", "call", "omadials", *a)
+def status(): return json.loads(sh("qs", "ipc", "-p", "/usr/share/omarchy/shell", "call", "omadials", "status"))
+def value(cid): return next(c["value"] for c in status()["controls"] if c["id"] == cid)
+def to(x, y): ev(f"hl.dispatch(hl.dsp.cursor.move({{ x = {round(x)}, y = {round(y)} }}))"); time.sleep(0.12)
+def at(r, a): return r * math.sin(math.radians(a)), H - r * math.cos(math.radians(a))
+def toggle_angle(i): return 6 + STEP * (i + 0.5)
+def slide(dx, dy, steps=30): m.move(round(dx * 1.6), round(dy * 1.6), steps=steps, pause=0.012); time.sleep(0.1)  # uinput is physical px
+def click(): m.press(); time.sleep(0.05); m.release()
 
 
-def run(*cmd):
-    return subprocess.run(list(cmd), capture_output=True, text=True, env=env())
+def write(cfg):
+    tmp = CFG + ".demo"
+    with open(tmp, "w") as f: json.dump(cfg, f, indent=2)
+    os.replace(tmp, CFG); time.sleep(0.8)   # the plugin watches the file
 
 
-def panel_open():
-    return PLUGIN.split(".")[-1] in run("hyprctl", "layers").stdout
-
-
-def open_panel(topic):
-    if panel_open(): run("omarchy-shell", "shell", "toggle", PLUGIN)
-    time.sleep(0.4)
-    run("omarchy-shell", "shell", "toggle", PLUGIN, json.dumps({"topic": topic}))
-    time.sleep(0.8)
-    if not panel_open():
-        run("omarchy-shell", "shell", "toggle", PLUGIN, json.dumps({"topic": topic}))
-        time.sleep(0.8)
-
-
-def close_panel():
-    if panel_open(): run("omarchy-shell", "shell", "toggle", PLUGIN)
-
-
-def store():
-    return json.load(open(STORE))
-
-
-def write_store(d):
-    tmp = STORE + ".tmp"
-    open(tmp, "w").write(json.dumps(d, indent=2) + "\n")
-    os.replace(tmp, STORE)
-
-
-def patch(section, **kw):
-    d = store()
-    d.setdefault(section, {}).update(kw)
-    write_store(d)
-
-
-def bar(*args):
-    r = run("omarchy-bar", *args)
-    if r.returncode: print("bar", args, r.stderr.strip())
+def config(**extra):
+    """The default settings, so the GIFs show what a new user sees, plus the scene's own keys."""
+    cfg = {"version": 1}
+    for path, v in extra.items():
+        node = cfg; *parents, last = path.split(".")
+        for p in parents: node = node.setdefault(p, {})
+        node[last] = v
+    return cfg
 
 
 class Recorder:
-    """grim in a loop; frames carry their own time so slow captures keep real timing."""
-    def __init__(self, region=None):
-        self.region = region or REGION
-        self.dir = tempfile.mkdtemp(prefix="omabar-frames-")
-        self.frames, self.marks, self.stop, self.t0 = [], [], False, None
+    def __init__(self, region):
+        self.region, self.frames, self.marks, self.stop = region, [], [], threading.Event()
+        self.dir = tempfile.mkdtemp(prefix="omadials-demo-")
 
-    def start(self):
+    def __enter__(self):
         self.t0 = time.time()
-        def loop():
-            k = 0
-            while not self.stop:
-                p = os.path.join(self.dir, f"f{k:05d}.jpg")
-                t = time.time() - self.t0
-                run("grim", "-g", self.region, "-t", "jpeg", "-q", "88", p)
-                if os.path.exists(p): self.frames.append((t, p)); k += 1
-        self.th = threading.Thread(target=loop); self.th.start()
+        def grab():
+            n = 0
+            while not self.stop.is_set():
+                p = os.path.join(self.dir, f"f{n:05d}.jpg"); a = time.time() - self.t0
+                subprocess.run(["grim", "-s", "1", "-g", self.region, "-t", "jpeg", "-q", "88", p], capture_output=True)
+                self.frames.append((a, p)); n += 1
+        self.th = threading.Thread(target=grab); self.th.start()
+        return self
 
-    def mark(self, caption):
-        self.marks.append((time.time() - self.t0, caption))
+    def caption(self, text): self.marks.append((time.time() - self.t0, text))
 
-    def finish(self, name, strip=None, compose=None, width=None, panel=None):
-        """The bar strip (zoomed, physical pixels) over the panel, both scaled to OUT_W."""
-        self.stop = True; self.th.join()
+    def finish(self, name, width=800):
+        self.marks.append((time.time() - self.t0, ""))
+        self.stop.set(); self.th.join()
         total = time.time() - self.t0
-        sx, sw = strip or STRIP
-        px, py, pw, ph = panel or PANEL_CROP
-        compose = compose or (f"split[s][m];[s]crop={sw}:48:{sx}:0,scale={OUT_W}:-1:flags=lanczos,pad=iw:ih+16:0:8:color=#16181d[s2];"
-                   f"[m]crop={pw}:{ph}:{px}:{py},scale={OUT_W}:-1:flags=lanczos[m2];[s2][m2]vstack")
-        w = width or OUT_W
-        gifkit.build(self.frames, total, self.marks, OUT, name, width=w, mp4_width=w, fontsize=30, compose=compose)
-        print("wrote", os.path.join(OUT, name + ".gif"), f"{len(self.frames)} frames in {total:.1f} s")
+        gifkit.build(self.frames, total, self.marks, OUT, name, width=width, fps=15, fontsize=30)
+        shutil.rmtree(self.dir, ignore_errors=True)
+        print(f"wrote {name}.gif ({os.path.getsize(os.path.join(OUT, name + '.gif')) // 1024} KB, {total:.0f} s, {len(self.frames) / total:.0f} fps captured)", flush=True)
+
+    def __exit__(self, *exc): self.stop.set()
 
 
-def focus(ws):
-    # Omarchy's Hyprland takes Lua dispatches.
-    run("hyprctl", "dispatch", 'hl.dsp.focus({ workspace = "%s" })' % ws)
+def scene_open():
+    write(config())
+    to(700, 450)
+    with Recorder(CORNER) as r:
+        time.sleep(0.8); r.caption("Rest the pointer in the corner")
+        to(60, H - 60); slide(-200, 200); time.sleep(1.8)
+        r.caption("Move away and it closes"); slide(450, -350); time.sleep(1.6)
+        r.caption("Or tap the corner"); to(6, H - 6); time.sleep(0.3); click(); time.sleep(1.6)
+        r.caption("Click outside to close"); to(700, 450); time.sleep(0.4); click(); time.sleep(1.4)
+        r.finish("open")
 
 
-def indicator_items():
-    for sec in json.load(open(SHELL))["bar"]["layout"].values():
-        for e in sec:
-            if isinstance(e, dict) and e.get("id") == "omarchy.indicators": return e.get("items")
-    return None
+def drag(r0, a0, a1, step=1.5):
+    """Press at angle a0 on radius r0 and slide to a1 with real relative motion (a warp sends no motion while pressed)."""
+    to(*at(r0, a0)); m.press(); x, y = at(r0, a0); a = a0
+    while (a1 - a) * (1 if a1 > a0 else -1) > 0:
+        a += step if a1 > a0 else -step
+        nx, ny = at(r0, a); m.move(round((nx - x) * 1.6), round((ny - y) * 1.6), steps=2); x, y = nx, ny
 
 
-def scene(fn):
-    """Run on an empty workspace (nothing private behind the panel), then put everything back.
-    The OmaBar store is ours, so it is restored as a file. Bar settings go back through the CLI:
-    the shell keeps its own copy of shell.json and would write a file restore back over."""
-    def wrapped():
-        bak = tempfile.mkdtemp(prefix="omabar-demo-bak-")
-        shutil.copy(STORE, bak)
-        items = indicator_items()
-        ws = json.loads(run("hyprctl", "activeworkspace", "-j").stdout or "{}").get("id", 1)
-        # Do not disturb while recording, so no new notification lands in a frame.
-        dnd = run("omarchy-shell", "notifications", "isDnd").stdout.strip()
-        run("omarchy-shell", "notifications", "setDnd", "on")
-        focus("8")
-        time.sleep(0.6)
-        try:
-            fn()
-        finally:
-            close_panel()
-            shutil.copy(os.path.join(bak, os.path.basename(STORE)), STORE + ".tmp"); os.replace(STORE + ".tmp", STORE)
-            if indicator_items() != items and items is not None:
-                bar("set", "omarchy.indicators", "items", json.dumps(items), "--json")
-            focus(str(ws))
-            run("omarchy-shell", "notifications", "setDnd", dnd if dnd in ("on", "off") else "off")
-            print("restored from", bak)
-    return wrapped
+def scene_dial():
+    write(config())
+    sh("wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0.6")
+    ipc("open"); time.sleep(0.8)
+    with Recorder(CORNER) as r:
+        time.sleep(0.6); r.caption("Drag a ring to set it")
+        drag(VOLUME_R, 52, 28); time.sleep(0.3); m.release(); time.sleep(0.5)
+        drag(VOLUME_R, 28, 62); m.release(); time.sleep(1.0)
+        r.caption("Brightness, volume and mic, live"); time.sleep(1.4)
+        ipc("close"); time.sleep(1.0)
+        r.finish("dial")
 
 
-def beat(rec, caption, seconds, action=None):
-    # The caption goes up first, so it names the change while it happens (a theme takes a moment).
-    rec.mark(caption)
-    t = time.time()
-    if action: action()
-    time.sleep(max(0.4, seconds - (time.time() - t)))
+def scene_toggles():
+    write(config())
+    ipc("open"); time.sleep(0.8)
+    with Recorder(CORNER) as r:
+        time.sleep(0.6); r.caption("Tap a toggle")
+        to(*at(TOGGLE_R, toggle_angle(4))); time.sleep(0.3); click(); time.sleep(1.2)
+        click(); time.sleep(1.0)
+        r.caption("Slide the arc for more")
+        drag(TOGGLE_R, toggle_angle(5), 16, step=1); time.sleep(0.3); m.release(); time.sleep(1.4)
+        r.caption("Hold a toggle for its details")
+        ipc("detail", "theme"); time.sleep(2.4)
+        ipc("close"); time.sleep(1.2)
+        r.finish("toggles")
 
 
-@scene
-def pills():
-    patch("style", enabled=False)
-    open_panel("pills")
-    rec = Recorder(); rec.start(); time.sleep(0.6)
-    beat(rec, "Pills off: the stock bar", 2.0)
-    beat(rec, "Show pills", 2.2, lambda: patch("style", enabled=True))
-    beat(rec, "Square corners", 2.0, lambda: patch("style", radius=4))
-    beat(rec, "Round again", 1.6, lambda: patch("style", radius=999))
-    beat(rec, "Accent fill", 2.2, lambda: patch("style", color="accent", fillOpacity=0.35))
-    beat(rec, "Back to the theme background", 1.8, lambda: patch("style", color="background", fillOpacity=0.85))
-    beat(rec, "Docked at the screen edge", 2.4, lambda: patch("style", squareEdges=True))
-    rec.finish("pills")
+STYLE_NAMES = {"morph": "Tab morph", "hybrid": "Hybrid", "lens": "Lens", "cascade": "Spring cascade", "minimal": "Minimal", "fan": "Fan"}
 
 
-@scene
-def groups():
-    d = store(); g = d.setdefault("groups", {}); g.update(breaks={"left": [], "center": [], "right": []}, solo=[], noPill=[])
-    write_store(d)
-    open_panel("groups")
-    rec = Recorder(); rec.start(); time.sleep(0.6)
-    beat(rec, "One pill per section", 2.0)
-    beat(rec, "Click a seam: split", 2.2, lambda: patch("groups", breaks={"left": [], "center": ["omarchy.indicators"], "right": []}))
-    beat(rec, "Split again", 2.2, lambda: patch("groups", breaks={"left": [], "center": ["omarchy.indicators", "omarchy.agents"], "right": []}))
-    beat(rec, "Own: a pill of its own", 2.4, lambda: patch("groups", solo=["google-calendar.clock"]))
-    beat(rec, "None: no pill behind it", 2.4, lambda: patch("groups", solo=[], noPill=["tornikegomareli.spaces"]))
-    beat(rec, "Join everything back", 2.0, lambda: patch("groups", noPill=[], breaks={"left": [], "center": [], "right": []}))
-    rec.finish("groups")
+def scene_styles():
+    with Recorder(CORNER) as r:
+        for style, name in STYLE_NAMES.items():
+            write(config(**{"animation.style": style}))
+            r.caption(f"Open style: {name}"); time.sleep(0.4)
+            ipc("open"); time.sleep(1.3); ipc("close"); time.sleep(1.0)
+        r.finish("styles")
 
 
-@scene
-def themes():
-    open_panel("pills")
-    cur = run("omarchy", "theme", "current").stdout.strip()
-    rec = Recorder(); rec.start(); time.sleep(0.6)
-    beat(rec, "Pills follow the theme: " + cur, 1.8)
-    for name in [n for n in ["Catppuccin Latte", "Gruvbox", "Rose Pine", "Tokyo Night"] if n != cur]:
-        beat(rec, "Pills follow the theme: " + name, 2.4, lambda n=name: run("omarchy", "theme", "set", n))
-    beat(rec, "", 1.0, lambda: run("omarchy", "theme", "set", cur))
-    rec.finish("themes")
+def scene_battery():
+    write(config())
+    with Recorder(CORNER) as r:
+        time.sleep(0.4); r.caption("Battery ring in the closed tab"); time.sleep(1.8)
+        r.caption("and in the open corner"); ipc("open"); time.sleep(2.2); ipc("close"); time.sleep(1.2)
+        r.caption("Tab size: 60%"); write(config(**{"cornerIcon.scale": 0.6})); time.sleep(1.8)
+        ipc("open"); time.sleep(1.6); ipc("close"); time.sleep(1.2)
+        write(config()); time.sleep(0.6)
+        r.finish("battery")
 
 
-@scene
-def indicators():
-    full = ["PasswordlessSudo", "ScreenRecording", "RemoteSession", "Reminder", "NightLight", "Dnd", "StayAwake"]
-    bar("set", "omarchy.indicators", "items", json.dumps(full), "--json")
-    open_panel("widgets")
-    rec = Recorder(); rec.start(); time.sleep(0.8)
-    beat(rec, "Each indicator, one by one", 2.2)
-    beat(rec, "Hide Reminder", 2.2, lambda: bar("set", "omarchy.indicators", "items", json.dumps([x for x in full if x != "Reminder"]), "--json"))
-    beat(rec, "Hide Night light", 2.2, lambda: bar("set", "omarchy.indicators", "items", json.dumps([x for x in full if x not in ("Reminder", "NightLight")]), "--json"))
-    beat(rec, "Hide Do not disturb", 2.4, lambda: bar("set", "omarchy.indicators", "items", json.dumps([x for x in full if x not in ("Reminder", "NightLight", "Dnd")]), "--json"))
-    rec.finish("indicators")
-
-
-TOOLS = os.path.dirname(os.path.abspath(__file__))
-
-
-def plan(*args):
-    return json.loads(subprocess.run(["node", os.path.join(TOOLS, "plan.js"), *args], capture_output=True, text=True).stdout or "{}")
-
-
-def run_argv(argv):
-    for a in argv:
-        r = run(*a)
-        if r.returncode: print("step failed", a, r.stderr.strip())
-
-
-def layout_now():
-    return json.load(open(SHELL))["bar"]["layout"]
-
-
-def back_to(layout):
-    tmp = tempfile.mktemp(suffix=".json"); json.dump(layout, open(tmp, "w"))
-    run_argv(plan("to", tmp).get("argv", []))
-
-
-def preset(pid):
-    p = plan("preset", pid)
-    run_argv(p.get("argv", []))
-    if p.get("breaks"): patch("groups", breaks=p["breaks"])
-
-
-@scene
-def presets():
-    start = layout_now()
-    open_panel("presets")
-    rec = Recorder(); rec.start(); time.sleep(0.8)
+def scene_settings():
+    write(config())
+    before = {c["address"] for c in json.loads(sh("hyprctl", "clients", "-j"))}
+    ev(f'hl.exec_cmd("[float; size 1200 760; move {SETTINGS_AT[0]} {SETTINGS_AT[1]}] omadials-settings")'); time.sleep(3.0)
+    new = [c for c in json.loads(sh("hyprctl", "clients", "-j")) if c["address"] not in before]
     try:
-        beat(rec, "Layout presets", 1.8)
-        beat(rec, "Spread: groups at both edges", 3.2, lambda: preset("spread"))
-        beat(rec, "Denial: workspaces centered, the rest right", 3.4, lambda: preset("denial"))
-        beat(rec, "Grouped: everything beside the clock", 3.4, lambda: preset("grouped"))
-        beat(rec, "Undo: back exactly as it was", 3.0, lambda: back_to(start))
-        rec.finish("presets")
+        to(SETTINGS_AT[0] + 700, SETTINGS_AT[1] + 400)
+        with Recorder(SETTINGS) as r:
+            time.sleep(0.8); r.caption("A settings app with a live preview")
+            for name, y in (("Rings", 146), ("Toggles", 198), ("Behavior", 250), ("Corner", 94)):
+                time.sleep(1.6); r.caption(name); to(SETTINGS_AT[0] + 80, SETTINGS_AT[1] + y); time.sleep(0.3); click()
+            time.sleep(2.0)
+            r.finish("settings", width=900)
     finally:
-        back_to(start)
+        for c in new:
+            ev(f'local w = hl.get_window("address:{c["address"]}"); if w then hl.dispatch(hl.dsp.window.close({{ window = w }})) end')
+        time.sleep(1.0)
 
 
-@scene
-def saved():
-    start = layout_now()
-    d = store()
-    entry = {"id": str(int(time.time() * 1000)), "name": "Layout 1", "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-             "layout": start, "groups": d.get("groups", {}), "style": d.get("style", {}), "background": json.load(open(SHELL))["bar"].get("background", "")}
-    patch_top(saved=[])  # start from an empty list; the wrapper puts the user's own list back
-    open_panel("presets")
-    rec = Recorder(region="0,0 1280x800"); rec.start(); time.sleep(0.8)
+SCENES = {"open": scene_open, "dial": scene_dial, "toggles": scene_toggles, "styles": scene_styles, "battery": scene_battery, "settings": scene_settings}
+
+
+def main():
+    global m
+    wanted = sys.argv[1:] or list(SCENES)
+    if any(c["workspace"]["id"] == SPARE for c in json.loads(sh("hyprctl", "clients", "-j"))):
+        raise SystemExit(f"spare workspace {SPARE} is not empty; not touching it")
+    origin = json.loads(sh("hyprctl", "activeworkspace", "-j"))["id"]
+    saved = open(CFG, "rb").read() if os.path.exists(CFG) else None
+    vol0 = sh("wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@").split()[1]
+    awake0, dnd0 = value("keepawake"), sh("omarchy-shell", "notifications", "isDnd")
+    cursor = json.loads(sh("hyprctl", "cursorpos", "-j") or '{"x":800,"y":500}')
+    os.makedirs(OUT, exist_ok=True)
+    print("Starting in 10 s. Hands off the keyboard, mouse and screen.", flush=True); time.sleep(10)
     try:
-        beat(rec, "Save the bar as it is now", 2.4, lambda: patch_top(saved=[entry]))
-        beat(rec, "Give it a name", 2.2, lambda: patch_top(saved=[dict(entry, name="My daily bar")]))
-        beat(rec, "Experiment: another layout", 3.0, lambda: preset("spread"))
-        beat(rec, "Experiment: another look", 2.4, lambda: patch("style", radius=4, color="accent", fillOpacity=0.35))
-        def apply():
-            back_to(entry["layout"])
-            d2 = store(); d2["groups"] = entry["groups"]; d2["style"] = entry["style"]; write_store(d2)
-        beat(rec, "Apply My daily bar: all of it comes back", 3.4, apply)
-        # The saved layouts sit below the presets: show the lower part of the card.
-        rec.finish("saved", panel=(760, 640, 1040, 900))
+        if dnd0 != "on" and dnd0 != "true": sh("omarchy", "toggle", "notification", "silencing")
+        ev(f'hl.dispatch(hl.dsp.focus({{ workspace = "{SPARE}" }}))'); time.sleep(0.8)
+        readme = f"cd {ROOT} && bat --paging=never --style=plain --color=always --line-range=8:60 README.md; sleep 3600"
+        ev(f'hl.exec_cmd("[float; size 1590 612; move 4 384] kitty --title README.md -e sh -c \'{readme}\'")'); time.sleep(2.5)
+        with Mouse() as mouse:
+            m = mouse; time.sleep(0.5)
+            for name in wanted:
+                print("scene", name, flush=True); SCENES[name]()
     finally:
-        back_to(start)
+        ipc("close")
+        for c in json.loads(sh("hyprctl", "clients", "-j")):
+            if c["workspace"]["id"] == SPARE:
+                ev(f'local w = hl.get_window("address:{c["address"]}"); if w then hl.dispatch(hl.dsp.window.close({{ window = w }})) end')
+        time.sleep(1.5)
+        ev(f'hl.dispatch(hl.dsp.focus({{ workspace = "{origin}" }}))'); time.sleep(0.5)
+        if saved is not None:
+            with open(CFG, "wb") as f: f.write(saved)
+        sh("wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", vol0)
+        if value("keepawake") != awake0: ipc("activate", "keepawake", "tap")
+        if sh("omarchy-shell", "notifications", "isDnd") != dnd0: sh("omarchy", "toggle", "notification", "silencing")
+        to(cursor["x"], cursor["y"])
+        same = saved is None or open(CFG, "rb").read() == saved
+        print("restored: config", "exact" if same else "DIFFERENT", "| volume", sh("wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"),
+              "| keep awake", value("keepawake"), "| dnd", sh("omarchy-shell", "notifications", "isDnd"), flush=True)
 
 
-def patch_top(**kw):
-    d = store(); d.update(kw); write_store(d)
-
-
-def spacer_size():
-    for sec in layout_now().values():
-        for e in sec:
-            if isinstance(e, dict) and e.get("id") == "omarchy.spacer": return e.get("size")
-    return None
-
-
-@scene
-def spacer():
-    size = spacer_size()
-    if size is None: print("no spacer on the bar, skipping"); return
-    open_panel("pills")
-    rec = Recorder(); rec.start(); time.sleep(0.8)
-    try:
-        beat(rec, "Where two pills meet, Omarchy leaves no room", 3.0, lambda: bar("set", "omarchy.spacer", "size", "0", "--json"))
-        beat(rec, "One Omarchy spacer: real room between pills", 3.4, lambda: bar("set", "omarchy.spacer", "size", "12", "--json"))
-        rec.finish("spacer", strip=(1040, 900))
-    finally:
-        bar("set", "omarchy.spacer", "size", json.dumps(size), "--json")
-
-
-@scene
-def vertical():
-    pos = json.load(open(SHELL))["bar"].get("position", "top")
-    rec = Recorder(region="0,0 1280x800"); rec.start(); time.sleep(0.6)
-    try:
-        beat(rec, "Top bar", 2.0)
-        beat(rec, "Left: the pills turn with the bar", 3.6, lambda: bar("position", "left"))
-        beat(rec, "Square corners at the top and bottom", 2.8, lambda: patch("style", squareEdges=True))
-        beat(rec, "Back on top", 2.6, lambda: bar("position", pos))
-        # The top left corner of the screen, where both the top bar and the left bar show.
-        # Two strips: the top bar, and the left bar turned on its side, so both read the same way.
-        rec.finish("vertical", compose="split[a][b];[a]crop=1600:56:0:0[t];[b]crop=56:1600:0:0,transpose=2[l];"
-                   "[t]pad=iw:ih+24:0:12:color=#16181d[t2];[l]pad=iw:ih+24:0:12:color=#16181d[l2];[t2][l2]vstack,"
-                   "scale=1100:-1:flags=lanczos,pad=iw:ih+120:0:0:color=#16181d")
-    finally:
-        bar("position", pos)
-
-
-SCENES = {"pills": pills, "groups": groups, "themes": themes, "indicators": indicators,
-          "presets": presets, "saved": saved, "spacer": spacer, "vertical": vertical}
-
-if __name__ == "__main__":
-    for s in sys.argv[1:] or list(SCENES):
-        SCENES[s]()
+main()
